@@ -14,6 +14,8 @@ Updated: 2026-08-02
   exercised Linux tests, 33 server integration, and frontend checks); release
   publish, image build, Compose renders, and NuGet/npm vulnerability audits
   pass. `tmux-mobile:pre-c011-rollback` retains the pre-rollout image.
+- C011 is completed with a ready-with-follow-ups Change Review; merge and push
+  remain explicitly owner-controlled.
 
 - The application MVP is committed at `26c8e4d`.
 - Tempo governance is committed at `f6d0990`.
@@ -49,7 +51,7 @@ Updated: 2026-08-02
 
 ## Next
 
-- Complete C011 Change Review and obtain owner approval before merge or push.
+- Obtain owner approval before merging or pushing the completed C011 branch.
 - C009 device acceptance remains preserved as a paused physical-device follow-up.
 
 ## Known Limitations

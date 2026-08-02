@@ -1,6 +1,6 @@
 # Goal: Security Hardening and .NET 10 LTS Migration
 
-Status: active
+Status: completed
 Owner: Human Partner and AI Agent
 Risk: T3
 Updated: 2026-08-02
@@ -79,9 +79,12 @@ tmux workloads.
   - Evidence: canonical backend/frontend verification and all three isolated
     Linux lifecycle tests pass; live shell, manifest, service worker, icons,
     hashed JS/CSS/terminal bundle, login, and authenticated status succeed.
-- [ ] AC11 — Documentation, rollback, roadmap, status, decisions, secret hygiene,
+- [x] AC11 — Documentation, rollback, roadmap, status, decisions, secret hygiene,
   canonical verification, live checks, and Change Review agree.
-  - Evidence: pending
+  - Evidence: all named documentation agrees; Gitleaks 8.30.1 reports no leaks
+    in nine reachable commits; the pre-C011 image is tagged for rollback; and
+    `REVIEWS/2026-08-02--security-hardening-and-dotnet10.md` finds the change
+    ready with explicit non-blocking follow-ups.
 
 ## Authority Envelope
 
@@ -113,7 +116,7 @@ tmux workloads.
 | 4. PTY lifecycle | completed | AC3 passes | fake and isolated real tmux |
 | 5. Audit integrity | completed | AC4 passes | injected sink/action outcomes |
 | 6. Browser/deploy | completed | AC7 and local AC9 pass | headers/PWA/Compose/proxy |
-| 7. Deploy/review | in_progress | AC9-AC11 pass live | canonical/live/rollback/review |
+| 7. Deploy/review | completed | AC9-AC11 pass live | canonical/live/rollback/review |
 
 ## Progress
 
@@ -186,8 +189,8 @@ tmux workloads.
 
 ## Next Action
 
-- Complete the C011 Change Review, record final criterion evidence, and close
-  the living goal without crossing the owner-controlled merge/push boundary.
+- No implementation action remains. Merge and push remain an owner-controlled
+  boundary outside this completed goal.
 
 ## Pause Conditions
 
@@ -197,4 +200,9 @@ tmux workloads.
 
 ## Outcomes
 
-- Pending.
+- Completed on 2026-08-02. The actively deployed exact-Tailscale-IP Serve
+  container runs .NET 10.0.10 with findings 2-10 remediated, unchanged access
+  key/state/tmux workloads, passing canonical and live evidence, a validated
+  rollback image, and a ready-with-follow-ups Change Review.
+- No merge, push, access-key rotation, tailnet-policy edit, or user-pane input
+  occurred.
