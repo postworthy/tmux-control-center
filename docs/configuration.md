@@ -15,21 +15,25 @@ ASP.NET Core configuration applies in this order: checked-in JSON, environment-s
 | `Tmux:ProcessTimeoutSeconds` | 5 | Every tmux subprocess, 1–60 seconds. |
 | `Tmux:CardPreviewLines` | 80 | Normal card capture depth. |
 | `Tmux:Prefix` | `C-b` | Configurable control-letter prefix exposed to the shortcut bar. |
-| `Authentication:Mode` | `ApiKey` | `ApiKey`, `Development`, or `Disabled`. |
+| `Authentication:Mode` | `ApiKey` | `ApiKey` or development-only `Development`. Disabled authentication is rejected in every environment. |
 | `Authentication:ApiKey` | unset | Required in `ApiKey` mode, minimum 24 characters; use 32+ random bytes. |
 | `Authentication:AllowDevelopmentBypass` | false | Works only in the Development environment. |
-| `Authentication:UnsafeAllowProductionBypass` | false | High-friction emergency override; never recommended. |
+| `Authentication:UnsafeAllowProductionBypass` | false | Legacy setting retained only for fail-closed validation; `true` is always rejected. |
 | `Authentication:UnsafeAllowInsecureHttp` | false | Test-only: permits non-Secure cookies over HTTP, but only with API-key authentication. Bind solely to a trusted Tailscale IP and remove after testing. |
 | `Authentication:UnsafeAllowWeakApiKeyForTest` | false | Test-only: reduces the API-key minimum from 24 to 8 characters, and only in API-key mode. Remove after temporary validation. |
+| `Authentication:UnsafeTestProfileAcknowledgement` | unset | Must equal `TAILNET_TEST_ONLY` whenever either unsafe test switch is enabled. |
 | `Security:AllowedOrigins` | empty | Exact HTTPS origins required outside development; never wildcard. |
+| `Security:ExternalHttpsTermination` | false | Requires HTTPS origins. After trusted forwarded headers run, non-HTTPS application traffic receives 426; anonymous liveness and loopback readiness remain available. |
 | `Security:MaxRequestBodyBytes` | 65536 | Kestrel request body cap. |
 | `Security:MaxWebSocketMessageBytes` | 16384 | Complete client terminal message cap. |
 | `Security:MaxTerminalConnections` | 4 | Global active terminal limit. |
 | `Security:MaxTerminalConnectionsPerUser` | 2 | Per-identity active terminal limit. |
 | `Security:TerminalIdleTimeoutMinutes` | 30 | PTY cleanup after no browser input. |
+| `Security:MaxTerminalInputMessagesPerSecond` | 64 | Per-connection terminal-input message bucket. |
+| `Security:MaxTerminalInputBytesPerSecond` | 262144 | Per-connection terminal-input byte bucket. |
 | `ForwardedHeaders:Enabled` | false | Enable only behind a known local proxy. |
 | `ForwardedHeaders:KnownProxies` | loopback v4/v6 | Explicit IPs allowed to set forwarded scheme/address. |
-| `Audit:Destination` | `logs/audit.jsonl` | Use an absolute protected production path. |
+| `Audit:Destination` | `logs/audit.jsonl` | Use an absolute production path beneath an owner-only directory. Linux startup rejects group/other-accessible audit storage. |
 | `DataProtection:KeysDirectory` | `data-protection` | Persistent cookie keys; use an absolute protected production path. |
 | `Status:IdleAfterMinutes` | 10 | Conservative inactivity threshold. |
 | `Status:WaitingPatterns` | built-in examples | Case-insensitive literal patterns. |

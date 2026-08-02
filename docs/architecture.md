@@ -33,13 +33,20 @@ One singleton background service polls metadata. Connected browsers do not creat
 
 ## Terminal lifecycle
 
-The server validates the opaque session ID against current tmux state before allocating a terminal. The Linux adapter calls `forkpty`, immediately executes:
+The server validates the opaque session ID against current tmux state before
+allocating a terminal. A tiny native boundary calls `forkpty` and executes the
+child before returning to managed code:
 
 ```text
 /usr/bin/tmux [-L configured-socket] attach-session -t validated-raw-target
 ```
 
-The PTY master is bridged to xterm.js. Input and terminal output are never logged. Resize uses `TIOCSWINSZ`. A connection ends on browser close, cancellation, idle timeout, PTY exit, application shutdown, or network loss. Disposal signals only the attached tmux client child; tmux's server and session remain alive. A real isolated-socket test verifies this behavior.
+The PTY master is bridged to xterm.js. Input and terminal output are never
+logged. Resize uses `TIOCSWINSZ`. A connection ends on browser close,
+cancellation, idle timeout, PTY exit, application shutdown, or network loss.
+Disposal sends HUP/TERM and finally KILL only to the attach-client process group,
+then reaps its leader; tmux's server and session remain alive. Real
+isolated-socket and stubborn-descendant tests verify this behavior.
 
 The bridge has global and per-identity leases, bounded client messages, one send lock for PTY output and heartbeat frames, and explicit cleanup. Because an attached tmux client—not xterm's alternate buffer—owns authoritative pane history, typed terminal history messages resolve the safe session target and invoke fixed `copy-mode` and `send-keys -X` argument arrays. One completed vertical gesture produces one bounded operation; Latest and disconnect cancel copy mode entered by the connection. The abstraction permits replacing `forkpty` without changing routes or frontend protocol.
 
@@ -68,9 +75,12 @@ The service worker caches only application-shell GETs. Requests under `/api`, `/
 - .NET 10 LTS is the server, test, and container target. Runtime migration is
   kept behavior-neutral and verified before security behavior changes.
 - The single-user API-key bootstrap is smaller than adding an external identity provider, while keeping authorization boundaries ready for replacement.
-- Linux `forkpty` avoids a third-party native PTY dependency, at the cost of Linux/glibc specificity.
+- The small repository-owned native `forkpty`/`exec` boundary avoids running
+  managed child code after fork, at the cost of a Linux/glibc build dependency.
 - tmux format output is delimiter-based. tmux-local names and titles are treated as untrusted display text, but pathological embedded delimiter/newline values can make a record fail closed with a parse error.
-- The audit sink is a permission-restricted JSON-lines file. Rotation is delegated to systemd/logrotate in the MVP.
+- The audit sink is an owner-only JSON-lines file. Its result is independent of
+  the tmux action result so a failed append cannot make an already-applied
+  action look safe to retry. Rotation is delegated to systemd/logrotate.
 
 ## Extension points
 

@@ -203,8 +203,11 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 }));
 app.Use(async (context, next) =>
 {
+    var isLocalReadiness = context.Request.Path.Equals("/health/ready", StringComparison.OrdinalIgnoreCase) &&
+                           IsLoopback(context.Connection.RemoteIpAddress);
     if (security.ExternalHttpsTermination && !context.Request.IsHttps &&
-        !context.Request.Path.Equals("/health/live", StringComparison.OrdinalIgnoreCase))
+        !context.Request.Path.Equals("/health/live", StringComparison.OrdinalIgnoreCase) &&
+        !isLocalReadiness)
     {
         context.Response.StatusCode = StatusCodes.Status426UpgradeRequired;
         context.Response.Headers.Upgrade = "TLS/1.2, HTTP/1.1";

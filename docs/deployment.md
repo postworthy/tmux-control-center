@@ -3,20 +3,21 @@
 Run the service as the same non-root Linux user that owns the tmux server. That gives the service the access needed to attach, but a service compromise has all permissions of that account. Use a dedicated account for tmux workloads when practical.
 
 The preferred publishing path is the lightweight Docker Compose deployment in
-[`deploy/docker/README.md`](../deploy/docker/README.md). It terminates HTTPS in
-the application container and maps the host port only on a required Tailscale
-IP. The existing systemd approaches below remain supported alternatives.
+[`deploy/docker/README.md`](../deploy/docker/README.md). It either terminates
+HTTPS in the application container or uses Tailscale Serve, and maps the host
+port only on a required Tailscale IP. The existing systemd approaches below
+remain supported alternatives.
 
 ## Docker Compose on the host tailnet
 
-Copy and complete the safe environment example, obtain a Tailscale certificate,
-and validate before starting:
+Copy and complete the safe environment example. For the current Tailscale Serve
+shape, validate and start with:
 
 ```bash
 cp deploy/docker/.env.example deploy/docker/.env
-docker compose --env-file deploy/docker/.env config --quiet
-docker compose --env-file deploy/docker/.env build
-docker compose --env-file deploy/docker/.env up -d
+docker compose -f compose.tailscale-serve.yaml --env-file deploy/docker/.env config --quiet
+docker compose -f compose.tailscale-serve.yaml --env-file deploy/docker/.env build
+docker compose -f compose.tailscale-serve.yaml --env-file deploy/docker/.env up -d
 ```
 
 The container runs with the tmux owner's numeric UID/GID and mounts that user's
@@ -104,14 +105,27 @@ Tailscale CLI syntax can change; confirm the current command with `tailscale ser
 For the exact-Tailscale-IP Docker constraint, use
 `compose.tailscale-serve.yaml` instead. Docker publishes the backend only on the
 required Tailscale IP, while `AllowedHosts` and `Security:AllowedOrigins` accept
-only the Serve hostname and HTTPS origin. The browser receives Secure cookies;
-the HTTP port exists only as the local Serve proxy target. Do not enable
-forwarded or Tailscale identity-header trust in this shape because tailnet peers
-can reach the exact-IP backend directly.
+only the Serve hostname and HTTPS origin. The browser receives Secure cookies.
+Forwarded scheme/address headers are accepted only from the configured proxy
+address; after that trust check, unforwarded HTTP application traffic receives
+426. The HTTP port exists as the Serve target, not as a second application URL.
+
+For the currently deployed shape:
+
+```bash
+sudo tailscale serve --https=8443 --bg http://100.85.13.102:8780
+tailscale serve status
+```
+
+Replace both addresses with the exact values for the host. Rollback for the
+proxy is `sudo tailscale serve --https=8443 off`; capture `tailscale serve
+status` before changing it. The current application rollout does not require a
+Serve rule change when that mapping already exists.
 
 ## Tailscale grants
 
-Conceptual policy restricting only the owner to the service port:
+Conceptual policy restricting only the owner to the HTTPS service port (do not
+grant the backend port):
 
 ```json
 {
@@ -119,7 +133,7 @@ Conceptual policy restricting only the owner to the service port:
     {
       "src": ["user:owner@example.com"],
       "dst": ["tag:tmux-host"],
-      "ip": ["tcp:443"]
+      "ip": ["tcp:8443"]
     }
   ],
   "tagOwners": {
@@ -156,6 +170,8 @@ sudo tail -f /var/log/tmux-mobile/audit.jsonl
 ```
 
 Readiness may be degraded when no tmux server is running. Application logs intentionally omit terminal contents.
+Readiness is loopback-or-authenticated because it executes tmux; liveness is
+anonymous, inexpensive, and independently rate limited.
 
 ## Upgrade and rollback
 
@@ -168,4 +184,9 @@ Keep versioned releases:
 
 To upgrade: build and test, install a new immutable release directory, stop the unit, repoint `current`, start, check health/logs, then let the PWA advertise its waiting service-worker update. Active terminal connections drop during restart, but tmux sessions do not.
 
-To roll back: stop, repoint `current` to the previous release, start, and verify health. Preserve `/var/lib/tmux-mobile/keys` across both operations so cookies remain valid. Keep configuration compatibility notes with each release.
+To roll back: stop, repoint `current` to the previous release, start, and verify
+health. For Compose, tag the pre-rollout image before replacement and restore
+that tag with the same Compose profile. Preserve Data Protection keys and audit
+storage across both operations so cookies and evidence remain intact. Verify
+the HTTPS URL, direct-backend denial, exact listeners, runtime logs, and local
+readiness after upgrade or rollback.

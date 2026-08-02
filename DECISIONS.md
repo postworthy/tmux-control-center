@@ -67,6 +67,19 @@ publication boundary.
 Date: 2026-08-02
 
 All server, infrastructure, core, test, publish, and production-container targets
-use .NET 10 LTS. Runtime migration is completed and verified as a behavior-neutral
-thin slice before C011 security behavior changes, and the last reviewed .NET 8
-image remains the rollback artifact until live validation completes.
+use .NET 10 LTS. Runtime migration was completed and verified as a
+behavior-neutral thin slice before C011 security behavior changes. The deployed
+pre-C011 image is retained locally as `tmux-mobile:pre-c011-rollback` for the
+bounded rollback window.
+
+## D009 — Separate action outcome from audit and proxy outcome
+
+Date: 2026-08-02
+
+An audit append reports its own success without rewriting a tmux action that
+has already completed; operators receive structured sink errors and Linux
+startup enforces owner-only storage. For externally terminated HTTPS, trusted
+forwarded headers run first and the application rejects remaining HTTP
+application traffic. Anonymous liveness and loopback readiness are the only
+HTTP exceptions. This preserves the exact Tailscale-IP Docker bind while making
+the Serve backend unusable as an ordinary browser application origin.

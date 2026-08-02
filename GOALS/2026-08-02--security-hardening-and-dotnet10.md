@@ -68,13 +68,17 @@ tmux workloads.
   - Evidence: anonymous liveness returns 200 without a tmux query; anonymous
     remote readiness returns 401 before execution; the Readiness policy permits
     loopback or an authenticated read claim and both health routes are bounded.
-- [ ] AC9 — Docker remains bound only to the configured Tailscale IP; the live
+- [x] AC9 — Docker remains bound only to the configured Tailscale IP; the live
   HTTPS Serve origin works and ordinary tailnet clients cannot use the direct
   backend HTTP port after the approved rollout.
-  - Evidence: pending
-- [ ] AC10 — Existing API, PWA, clipboard, scrollback, reconnect, tmux validation,
+  - Evidence: live listener is exactly `100.85.13.102:8780`; Tailscale Serve at
+    the approved `:8443` HTTPS origin returns 200 while direct backend root
+    returns 426. Container liveness and local tmux readiness are healthy.
+- [x] AC10 — Existing API, PWA, clipboard, scrollback, reconnect, tmux validation,
   and terminal lifecycle behavior remain compatible.
-  - Evidence: pending
+  - Evidence: canonical backend/frontend verification and all three isolated
+    Linux lifecycle tests pass; live shell, manifest, service worker, icons,
+    hashed JS/CSS/terminal bundle, login, and authenticated status succeed.
 - [ ] AC11 — Documentation, rollback, roadmap, status, decisions, secret hygiene,
   canonical verification, live checks, and Change Review agree.
   - Evidence: pending
@@ -143,6 +147,11 @@ tmux workloads.
   no-store headers, and an HTTPS-terminator guard that leaves only liveness on
   direct HTTP. All 33 server tests, the PWA build, and all exact-IP Compose
   renders pass.
+- 2026-08-02: tagged the prior container image as
+  `tmux-mobile:pre-c011-rollback`, rebuilt and replaced only the approved Serve
+  container, and preserved its access key and state. Live .NET 10.0.10, exact
+  listener, HTTPS, asset, auth, direct-deny, readiness, audit-mode, and
+  content-free audit-schema checks pass.
 
 ## Evidence
 
@@ -177,8 +186,8 @@ tmux workloads.
 
 ## Next Action
 
-- Run complete verification and audits, update operational documentation, then
-  stage and validate the approved live Tailscale Serve rollout.
+- Complete the C011 Change Review, record final criterion evidence, and close
+  the living goal without crossing the owner-controlled merge/push boundary.
 
 ## Pause Conditions
 

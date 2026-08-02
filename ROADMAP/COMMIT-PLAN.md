@@ -105,7 +105,7 @@ Status: completed
 
 ## C011 — Security hardening and .NET 10 LTS migration
 
-Status: active
+Status: review
 
 - Migrate and verify the complete application/container/test stack on .NET 10
   LTS before making security behavior changes.
@@ -116,6 +116,8 @@ Status: active
   host bind, and tmux workloads; deploy and review the verified result.
 - Planned commits: staged under
   `PROPOSALS/2026-08-02--security-hardening-and-dotnet10.md`.
+- Implementation and active deployment are complete; Change Review and the
+  owner-controlled merge/push boundary remain.
 
 ## Later
 
