@@ -39,10 +39,13 @@ tmux workloads.
     with HUP/TERM/KILL and reaps its leader. Three dedicated Linux integration
     tests pass, including a HUP/TERM-resistant child group and tmux-session
     survival; Release publish includes `libtmuxmobilepty.so`.
-- [ ] AC4 — Audits cover successful and allowed failed interactions, remain
+- [x] AC4 — Audits cover successful and allowed failed interactions, remain
   content-free and permission-protected, and audit failure cannot misreport an
   already-applied action as a retryable action failure.
-  - Evidence: pending
+  - Evidence: HTTP and terminal interaction paths record content-free outcomes;
+    Linux audit storage is created and validated with owner-only permissions;
+    an injected sink failure leaves an applied rename response successful.
+    Focused infrastructure and all 30 server integration tests pass.
 - [x] AC5 — Login, authenticated HTTP, terminal connection/input, and anonymous
   health limits use explicit tested partitions after correct middleware order.
   - Evidence: authentication now precedes rate limiting; global and interaction
@@ -102,8 +105,8 @@ tmux workloads.
 | 2. Auth/config | completed | AC2 and AC6 pass | negative startup matrix |
 | 3. Limits/health | completed | AC5 and AC8 pass | HTTP/WebSocket integration |
 | 4. PTY lifecycle | completed | AC3 passes | fake and isolated real tmux |
-| 5. Audit integrity | in_progress | AC4 passes | injected sink/action outcomes |
-| 6. Browser/deploy | pending | AC7 and local AC9 pass | headers/PWA/Compose/proxy |
+| 5. Audit integrity | completed | AC4 passes | injected sink/action outcomes |
+| 6. Browser/deploy | in_progress | AC7 and local AC9 pass | headers/PWA/Compose/proxy |
 | 7. Deploy/review | pending | AC9-AC11 pass live | canonical/live/rollback/review |
 
 ## Progress
@@ -130,6 +133,10 @@ tmux workloads.
   into managed child code crashes the host. Moved fork-and-immediate-exec into a
   20-line native boundary, added process-group HUP/TERM/KILL escalation and
   EINTR-safe reaping, and passed all three isolated Linux tests plus publish.
+- 2026-08-02: made audit appends return an independent sink outcome, added
+  content-free success/failure records across HTTP and terminal paths, enforced
+  owner-only Linux storage, and proved audit degradation cannot misreport an
+  applied rename. Focused infrastructure and all 30 server tests pass.
 
 ## Evidence
 
@@ -164,8 +171,8 @@ tmux workloads.
 
 ## Next Action
 
-- Implement complete, permission-protected audit attempts and non-ambiguous
-  action/audit failure semantics for AC4.
+- Add HSTS, exact-origin CSP and authenticated API no-store headers, then reject
+  unproxied production HTTP while retaining local liveness.
 
 ## Pause Conditions
 

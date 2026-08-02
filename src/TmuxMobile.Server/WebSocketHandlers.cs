@@ -66,6 +66,7 @@ public sealed class WebSocketHandlers(
         var rawTarget = await targetResolver.ResolveRawSessionAsync(sessionId, context.RequestAborted);
         if (rawTarget is null)
         {
+            await audit.WriteAsync("terminal.connect", user, sessionId, false, context.RequestAborted);
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             return;
         }
@@ -81,12 +82,22 @@ public sealed class WebSocketHandlers(
             args.AddRange(["-L", tmuxOptions.Value.SocketName]);
         args.AddRange(["attach-session", "-t", rawTarget]);
 
-        await using var pty = await ptyFactory.StartAsync(tmuxOptions.Value.ExecutablePath, args,
-            new TerminalSize(80, 24), new Dictionary<string, string>
-            {
-                ["TERM"] = "xterm-256color",
-                ["COLORTERM"] = "truecolor"
-            }, context.RequestAborted);
+        IPseudoTerminal pty;
+        try
+        {
+            pty = await ptyFactory.StartAsync(tmuxOptions.Value.ExecutablePath, args,
+                new TerminalSize(80, 24), new Dictionary<string, string>
+                {
+                    ["TERM"] = "xterm-256color",
+                    ["COLORTERM"] = "truecolor"
+                }, context.RequestAborted);
+        }
+        catch
+        {
+            await audit.WriteAsync("terminal.connect", user, sessionId, false, CancellationToken.None);
+            throw;
+        }
+        await using var ownedPty = pty;
         await audit.WriteAsync("terminal.connect", user, sessionId, true, context.RequestAborted);
         logger.LogInformation("Terminal WebSocket connected for {User} to {SessionId}; PTY child {ProcessId}",
             user, sessionId, pty.ProcessId);

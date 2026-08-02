@@ -36,7 +36,8 @@ public sealed class ConfigurationValidationTests
                     ["Authentication:Mode"] = "Disabled",
                     ["Authentication:UnsafeAllowProductionBypass"] = "true",
                     ["Security:AllowedOrigins:0"] = "https://localhost",
-                    ["Audit:Destination"] = Path.Combine(Path.GetTempPath(), "tmux-mobile-invalid-auth-audit.jsonl"),
+                    ["Audit:Destination"] = Path.Combine(Path.GetTempPath(),
+                        "tmux-mobile-invalid-auth", "audit.jsonl"),
                     ["DataProtection:KeysDirectory"] = Path.Combine(Path.GetTempPath(), "tmux-mobile-invalid-auth-keys")
                 }));
         });

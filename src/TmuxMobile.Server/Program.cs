@@ -47,11 +47,6 @@ var keyDirectory = Path.IsPathFullyQualified(dataProtection.KeysDirectory)
     ? dataProtection.KeysDirectory
     : Path.Combine(builder.Environment.ContentRootPath, dataProtection.KeysDirectory);
 Directory.CreateDirectory(keyDirectory);
-var auditSettings = builder.Configuration.GetSection(AuditOptions.Section).Get<AuditOptions>() ?? new();
-var auditPath = Path.IsPathFullyQualified(auditSettings.Destination)
-    ? auditSettings.Destination
-    : Path.Combine(builder.Environment.ContentRootPath, auditSettings.Destination);
-Directory.CreateDirectory(Path.GetDirectoryName(auditPath)!);
 builder.Services.AddDataProtection()
     .SetApplicationName("TmuxMobile")
     .PersistKeysToFileSystem(new DirectoryInfo(keyDirectory));
@@ -172,6 +167,7 @@ builder.Services.AddSingleton<InventoryStore>();
 builder.Services.AddSingleton<IInventoryStore>(sp => sp.GetRequiredService<InventoryStore>());
 builder.Services.AddHostedService<InventoryPollingService>();
 builder.Services.AddSingleton<IAuditLogger, JsonLineAuditLogger>();
+builder.Services.AddHostedService<AuditStorageStartupService>();
 builder.Services.AddSingleton<TerminalConnectionLimiter>();
 builder.Services.AddSingleton<WebSocketHandlers>();
 
@@ -256,10 +252,13 @@ app.MapPost("/api/auth/login", async (
     return Results.NoContent();
 }).AllowAnonymous().RequireRateLimiting("login");
 
-app.MapPost("/api/auth/logout", async (HttpContext context, IAntiforgery antiforgery) =>
+app.MapPost("/api/auth/logout", async (HttpContext context, IAntiforgery antiforgery,
+    IAuditLogger auditLogger) =>
 {
     await antiforgery.ValidateRequestAsync(context);
+    var user = UserId(context.User);
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    await auditLogger.WriteAsync("auth.logout", user, "local", true, context.RequestAborted);
     return Results.NoContent();
 }).RequireAuthorization("Read");
 
@@ -298,8 +297,24 @@ sessions.MapPost("/{sessionId}/rename", async (
         await auditLogger.WriteAsync("session.rename", UserId(context.User), sessionId, true, context.RequestAborted);
         return Results.NoContent();
     }
-    catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
-    catch (TmuxNotFoundException) { return Results.NotFound(); }
+    catch (ArgumentException exception)
+    {
+        await auditLogger.WriteAsync("session.rename", UserId(context.User), sessionId, false,
+            context.RequestAborted);
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (TmuxNotFoundException)
+    {
+        await auditLogger.WriteAsync("session.rename", UserId(context.User), sessionId, false,
+            context.RequestAborted);
+        return Results.NotFound();
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("session.rename", UserId(context.User), sessionId, false,
+            CancellationToken.None);
+        throw;
+    }
 }).RequireAuthorization("Interact").RequireRateLimiting("interact");
 
 var panes = app.MapGroup("/api/panes").RequireAuthorization("Read");
@@ -322,8 +337,21 @@ panes.MapPost("/{paneId}/keys", async (
         await auditLogger.WriteAsync("pane.keys", UserId(context.User), paneId, true, context.RequestAborted);
         return Results.NoContent();
     }
-    catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
-    catch (TmuxNotFoundException) { return Results.NotFound(); }
+    catch (ArgumentException exception)
+    {
+        await auditLogger.WriteAsync("pane.keys", UserId(context.User), paneId, false, context.RequestAborted);
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (TmuxNotFoundException)
+    {
+        await auditLogger.WriteAsync("pane.keys", UserId(context.User), paneId, false, context.RequestAborted);
+        return Results.NotFound();
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("pane.keys", UserId(context.User), paneId, false, CancellationToken.None);
+        throw;
+    }
 }).RequireAuthorization("Interact").RequireRateLimiting("interact");
 panes.MapPost("/{paneId}/text", async (
     string paneId, TextRequest request, HttpContext context, ITmuxService tmux,
@@ -336,8 +364,21 @@ panes.MapPost("/{paneId}/text", async (
         await auditLogger.WriteAsync("pane.text", UserId(context.User), paneId, true, context.RequestAborted);
         return Results.NoContent();
     }
-    catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
-    catch (TmuxNotFoundException) { return Results.NotFound(); }
+    catch (ArgumentException exception)
+    {
+        await auditLogger.WriteAsync("pane.text", UserId(context.User), paneId, false, context.RequestAborted);
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (TmuxNotFoundException)
+    {
+        await auditLogger.WriteAsync("pane.text", UserId(context.User), paneId, false, context.RequestAborted);
+        return Results.NotFound();
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("pane.text", UserId(context.User), paneId, false, CancellationToken.None);
+        throw;
+    }
 }).RequireAuthorization("Interact").RequireRateLimiting("interact");
 panes.MapPost("/{paneId}/interrupt", async (
     string paneId, HttpContext context, ITmuxService tmux, IAntiforgery antiforgery,
@@ -350,7 +391,18 @@ panes.MapPost("/{paneId}/interrupt", async (
         await auditLogger.WriteAsync("pane.interrupt", UserId(context.User), paneId, true, context.RequestAborted);
         return Results.NoContent();
     }
-    catch (TmuxNotFoundException) { return Results.NotFound(); }
+    catch (TmuxNotFoundException)
+    {
+        await auditLogger.WriteAsync("pane.interrupt", UserId(context.User), paneId, false,
+            context.RequestAborted);
+        return Results.NotFound();
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("pane.interrupt", UserId(context.User), paneId, false,
+            CancellationToken.None);
+        throw;
+    }
 }).RequireAuthorization("Interact").RequireRateLimiting("interact");
 
 app.Map("/ws/inventory", async (HttpContext context, WebSocketHandlers handlers) =>

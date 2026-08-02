@@ -2,6 +2,8 @@ using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Security;
+using System.Text;
 using TmuxMobile.Core;
 
 namespace TmuxMobile.Infrastructure;
@@ -59,17 +61,17 @@ public sealed class InventoryPollingService(
 public sealed class JsonLineAuditLogger(
     IOptions<AuditOptions> options,
     TimeProvider timeProvider,
-    IHostEnvironment environment) : IAuditLogger
+    IHostEnvironment environment,
+    ILogger<JsonLineAuditLogger> logger) : IAuditLogger
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
 
-    public async Task WriteAsync(string action, string subject, string target, bool succeeded,
+    public async Task<bool> WriteAsync(string action, string subject, string target, bool succeeded,
         CancellationToken cancellationToken)
     {
         var path = Path.IsPathFullyQualified(options.Value.Destination)
             ? options.Value.Destination
             : Path.Combine(environment.ContentRootPath, options.Value.Destination);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var line = JsonSerializer.Serialize(new
         {
             timestamp = timeProvider.GetUtcNow(),
@@ -78,8 +80,89 @@ public sealed class JsonLineAuditLogger(
             target,
             succeeded
         }) + Environment.NewLine;
-        await _gate.WaitAsync(cancellationToken);
-        try { await File.AppendAllTextAsync(path, line, cancellationToken); }
-        finally { _gate.Release(); }
+        try
+        {
+            await _gate.WaitAsync(cancellationToken);
+            try
+            {
+                AuditStorage.Prepare(path);
+                var streamOptions = new FileStreamOptions
+                {
+                    Mode = FileMode.Append,
+                    Access = FileAccess.Write,
+                    Share = FileShare.Read,
+                    Options = FileOptions.Asynchronous
+                };
+                if (OperatingSystem.IsLinux())
+                    streamOptions.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+                await using var stream = new FileStream(path, streamOptions);
+                var bytes = Encoding.UTF8.GetBytes(line);
+                await stream.WriteAsync(bytes, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+                return true;
+            }
+            finally { _gate.Release(); }
+        }
+        catch (OperationCanceledException exception)
+        {
+            logger.LogWarning(exception, "Audit write canceled for action {Action} and target {Target}", action, target);
+            return false;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or SecurityException)
+        {
+            logger.LogError(exception, "Audit sink failed for action {Action} and target {Target}", action, target);
+            return false;
+        }
     }
+}
+
+public static class AuditStorage
+{
+    private const UnixFileMode DirectoryMode =
+        UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
+    private const UnixFileMode FileMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+    private const UnixFileMode GroupOrOtherPermissions =
+        UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.GroupExecute |
+        UnixFileMode.OtherRead | UnixFileMode.OtherWrite | UnixFileMode.OtherExecute;
+
+    public static void Prepare(string path)
+    {
+        var directory = Path.GetDirectoryName(path)
+            ?? throw new InvalidOperationException("Audit destination must have a parent directory.");
+        if (!Directory.Exists(directory))
+        {
+            if (OperatingSystem.IsLinux()) Directory.CreateDirectory(directory, DirectoryMode);
+            else Directory.CreateDirectory(directory);
+        }
+
+        if (!OperatingSystem.IsLinux()) return;
+
+        var directoryMode = File.GetUnixFileMode(directory);
+        if ((directoryMode & GroupOrOtherPermissions) != 0)
+            throw new SecurityException($"Audit directory '{directory}' must not grant group or other permissions.");
+        if ((directoryMode & DirectoryMode) != DirectoryMode)
+            throw new SecurityException($"Audit directory '{directory}' must grant its owner read, write, and execute permissions.");
+
+        if (!File.Exists(path)) return;
+        var fileMode = File.GetUnixFileMode(path);
+        if ((fileMode & GroupOrOtherPermissions) != 0 || (fileMode & FileMode) != FileMode)
+            throw new SecurityException($"Audit file '{path}' must be owner-readable and owner-writable only.");
+    }
+}
+
+public sealed class AuditStorageStartupService(
+    IOptions<AuditOptions> options,
+    IHostEnvironment environment) : IHostedService
+{
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        var destination = options.Value.Destination;
+        var path = Path.IsPathFullyQualified(destination)
+            ? destination
+            : Path.Combine(environment.ContentRootPath, destination);
+        AuditStorage.Prepare(path);
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
