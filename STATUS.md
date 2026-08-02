@@ -32,8 +32,9 @@ Updated: 2026-08-01
 - The owner further clarified that the Older/Latest pair must lead the shortcut
   list, recorded in `RCA/2026-08-01--history-controls-order-mismatch.md`.
 - The empty public GitHub repository is configured as SSH `origin`. Initial
-  publication is held by `REVIEWS/2026-08-02--initial-github-publication.md`
-  until a parentless sanitized `main` passes exact-tree secret scanning.
+  publication completed with a parentless sanitized `main`; Gitleaks and
+  canonical verification pass, and no pre-sanitization ref was pushed. Evidence
+  is in `REVIEWS/2026-08-02--initial-github-publication.md`.
 
 ## Next
 

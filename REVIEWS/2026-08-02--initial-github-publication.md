@@ -7,11 +7,11 @@ Related Proposal: `PROPOSALS/2026-08-02--initial-github-publication.md`
 
 ## Decision
 
-Ready for the authorized initial push. SSH origin configuration is correct, the
+Published and verified. SSH origin configuration is correct, the
 live key remains only in the ignored environment, all tracked disclosures are
 redacted, and the initial public `main` is a new parentless sanitized snapshot.
 The exact detached tree passes independent secret scanning and canonical
-verification.
+verification. GitHub exposes only that clean `main` ref.
 
 ## Evidence
 
@@ -42,6 +42,9 @@ verification.
   known vulnerabilities.
 - Root topology: the publication commit has an empty parent list. No old branch
   or tag is included in the approved push refspec.
+- Remote observation after push: GitHub reports public default branch `main`,
+  commit `1e10f3c150eae26064bd2aef90425488ae1a0268`, zero parents, and no other
+  branch or tag refs.
 
 ## Findings
 
@@ -49,7 +52,8 @@ verification.
 - Advisory: tracked Tailscale IP and MagicDNS host values are not authentication
   secrets, but they are deployment identifiers. The owner should decide whether
   to retain or redact them in the public record.
-- No code, runtime state, user tmux content, or Git ref has been sent to GitHub.
+- No runtime state, local environment, recovery bundle, user tmux content,
+  pre-sanitization branch, or tag was sent to GitHub.
 
 ## Rollback
 
@@ -61,4 +65,4 @@ bundle and must never be pushed.
 
 - SSH origin configuration: approved by repository owner, 2026-08-02.
 - Sanitized-history publication: authorized by repository owner, 2026-08-02.
-- First push of only the clean root as `main`: approved.
+- First push of only the clean root as `main`: completed and verified.

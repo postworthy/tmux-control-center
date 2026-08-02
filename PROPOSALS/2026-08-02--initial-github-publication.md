@@ -48,6 +48,8 @@ Out of scope:
   before the first push.
 - [x] The owner explicitly authorizes the history sanitization needed to prevent
   any secret from being published.
+- [x] GitHub contains only sanitized `main`; its root commit has no parents and
+  no tag or pre-sanitization branch was published.
 
 ## Abort and Rollback
 

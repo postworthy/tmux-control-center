@@ -90,6 +90,19 @@ Status: active
 - Rebuild, verify, review, and require owner confirmation on a physical iPhone.
 - Planned commit: `fix(terminal): navigate tmux-backed scrollback`
 
+## C010 — Sanitized initial public publication
+
+Status: completed
+
+- Configure the public GitHub repository as SSH `origin`.
+- Redact the live test key from tracked content without changing the ignored
+  deployment environment.
+- Publish a Gitleaks-clean parentless `main` so pre-sanitization commits are not
+  reachable remotely.
+- Preserve old local history only in an ignored permission-restricted bundle and
+  remove its branch refs from the working repository.
+- Planned commit: `docs(review): record sanitized initial publication`
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.
