@@ -25,7 +25,10 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
 {
     private const int Tiocswinsz = 0x5414;
     private const int SigHup = 1;
+    private const int SigKill = 9;
     private const int SigTerm = 15;
+    private const int ErrorInterrupted = 4;
+    private const int ErrorNoSuchProcess = 3;
     private readonly FileStream _input;
     private readonly FileStream _output;
     private readonly ILogger _logger;
@@ -45,7 +48,12 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
             FileAccess.Write, 4096, isAsync: false);
         _waitTask = Task.Run(() =>
         {
-            Native.waitpid(ProcessId, out _exitStatus, 0);
+            int result;
+            do { result = Native.waitpid(ProcessId, out _exitStatus, 0); }
+            while (result < 0 && Marshal.GetLastPInvokeError() == ErrorInterrupted);
+            if (result < 0)
+                _logger.LogWarning("waitpid failed for PTY child {ProcessId} with errno {Errno}",
+                    ProcessId, Marshal.GetLastPInvokeError());
         });
     }
 
@@ -77,13 +85,9 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
         try
         {
             var winsize = new Native.WinSize((ushort)size.Rows, (ushort)size.Columns, 0, 0);
-            var pid = Native.forkpty(out var master, IntPtr.Zero, IntPtr.Zero, ref winsize);
+            var pid = Native.tmux_mobile_forkpty_exec(out var master, ref winsize,
+                executablePointer, argvBlock);
             if (pid < 0) throw new InvalidOperationException($"forkpty failed with errno {Marshal.GetLastPInvokeError()}.");
-            if (pid == 0)
-            {
-                Native.execv(executablePointer, argvBlock);
-                Native._exit(127);
-            }
             logger.LogInformation("Started PTY child {ProcessId}", pid);
             return new LinuxPseudoTerminal(master, pid, logger);
         }
@@ -116,12 +120,15 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
         {
             if (!_waitTask.IsCompleted)
             {
-                Native.kill(ProcessId, SigHup);
-                try { await _waitTask.WaitAsync(TimeSpan.FromSeconds(2)); }
-                catch (TimeoutException)
+                if (!await SignalGroupAndWaitAsync(SigHup, "SIGHUP"))
                 {
-                    Native.kill(ProcessId, SigTerm);
-                    await _waitTask.WaitAsync(TimeSpan.FromSeconds(2));
+                    _logger.LogInformation("Escalating PTY process group {ProcessId} cleanup to SIGTERM", ProcessId);
+                    if (!await SignalGroupAndWaitAsync(SigTerm, "SIGTERM"))
+                    {
+                        _logger.LogWarning("Forcing PTY process group {ProcessId} cleanup with SIGKILL", ProcessId);
+                        if (!await SignalGroupAndWaitAsync(SigKill, "SIGKILL"))
+                            throw new TimeoutException($"PTY process group {ProcessId} did not exit after SIGKILL.");
+                    }
                 }
             }
         }
@@ -137,6 +144,20 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
         }
     }
 
+    private async Task<bool> SignalGroupAndWaitAsync(int signal, string signalName)
+    {
+        var result = Native.kill(-ProcessId, signal);
+        if (result < 0 && Marshal.GetLastPInvokeError() != ErrorNoSuchProcess)
+            _logger.LogWarning("Unable to send {Signal} to PTY process group {ProcessId}; errno {Errno}",
+                signalName, ProcessId, Marshal.GetLastPInvokeError());
+        try
+        {
+            await _waitTask.WaitAsync(TimeSpan.FromSeconds(2));
+            return true;
+        }
+        catch (TimeoutException) { return false; }
+    }
+
     private static class Native
     {
         [StructLayout(LayoutKind.Sequential)]
@@ -148,13 +169,12 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
             public ushort YPixel = ypixel;
         }
 
-        [DllImport("libutil.so.1", SetLastError = true)]
-        internal static extern int forkpty(out int master, IntPtr name, IntPtr termp, ref WinSize winsize);
+        [DllImport("tmuxmobilepty", SetLastError = true)]
+        internal static extern int tmux_mobile_forkpty_exec(
+            out int master, ref WinSize winsize, IntPtr executable, IntPtr argv);
         [DllImport("libc", SetLastError = true)] internal static extern int dup(int fd);
         [DllImport("libc", SetLastError = true)] internal static extern int ioctl(int fd, int request, ref WinSize value);
         [DllImport("libc", SetLastError = true)] internal static extern int kill(int pid, int signal);
         [DllImport("libc", SetLastError = true)] internal static extern int waitpid(int pid, out int status, int options);
-        [DllImport("libc")] internal static extern int execv(IntPtr path, IntPtr argv);
-        [DllImport("libc")] internal static extern void _exit(int status);
     }
 }

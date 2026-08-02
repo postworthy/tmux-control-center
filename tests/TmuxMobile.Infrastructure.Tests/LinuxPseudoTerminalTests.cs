@@ -48,6 +48,44 @@ public sealed class LinuxPseudoTerminalTests
         }
     }
 
+    [LinuxIntegrationFact]
+    [Trait("Category", "LinuxIntegration")]
+    public async Task DisposalKillsStubbornPtyProcessGroup()
+    {
+        if (!File.Exists("/bin/bash") || !File.Exists("/usr/bin/pgrep")) return;
+        var factory = new LinuxPseudoTerminalFactory(NullLoggerFactory.Instance);
+        var pty = await factory.StartAsync("/bin/bash",
+            ["-c", "trap '' HUP TERM; sleep 300 & printf 'STUBBORN_READY\\n'; wait"], new TerminalSize(80, 24),
+            new Dictionary<string, string> { ["TERM"] = "xterm-256color" }, CancellationToken.None);
+        var processGroup = pty.ProcessId;
+        using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+        {
+            var buffer = new byte[256];
+            var output = new StringBuilder();
+            while (!output.ToString().Contains("STUBBORN_READY", StringComparison.Ordinal))
+            {
+                var read = await pty.Output.ReadAsync(buffer, timeout.Token);
+                if (read == 0) break;
+                output.Append(Encoding.UTF8.GetString(buffer, 0, read));
+            }
+            Assert.Contains("STUBBORN_READY", output.ToString());
+        }
+
+        await pty.DisposeAsync();
+
+        Assert.True(pty.HasExited);
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "/usr/bin/pgrep",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            ArgumentList = { "-g", processGroup.ToString() }
+        })!;
+        await process.WaitForExitAsync();
+        Assert.Equal(1, process.ExitCode);
+    }
+
     private static Task<ProcessResult> RunTmux(
         ProcessRunner runner, string socket, IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {

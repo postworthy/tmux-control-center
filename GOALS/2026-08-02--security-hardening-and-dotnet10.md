@@ -32,9 +32,13 @@ tmux workloads.
   - Evidence: validator and full-host startup regression reject Disabled plus
     the legacy production override; Development still requires both the
     Development environment and explicit local bypass.
-- [ ] AC3 — PTY disconnect, timeout, failure, and shutdown reap the entire attach
+- [x] AC3 — PTY disconnect, timeout, failure, and shutdown reap the entire attach
   client process group without terminating the isolated tmux session.
-  - Evidence: pending
+  - Evidence: fork-and-exec now completes inside a minimal native function so no
+    .NET code runs in the child; disposal signals the verified forkpty group
+    with HUP/TERM/KILL and reaps its leader. Three dedicated Linux integration
+    tests pass, including a HUP/TERM-resistant child group and tmux-session
+    survival; Release publish includes `libtmuxmobilepty.so`.
 - [ ] AC4 — Audits cover successful and allowed failed interactions, remain
   content-free and permission-protected, and audit failure cannot misreport an
   already-applied action as a retryable action failure.
@@ -97,8 +101,8 @@ tmux workloads.
 | 1. .NET 10 thin slice | completed | AC1 passes with no .NET 8 target/image | clean build/test/publish/image/audits |
 | 2. Auth/config | completed | AC2 and AC6 pass | negative startup matrix |
 | 3. Limits/health | completed | AC5 and AC8 pass | HTTP/WebSocket integration |
-| 4. PTY lifecycle | in_progress | AC3 passes | fake and isolated real tmux |
-| 5. Audit integrity | pending | AC4 passes | injected sink/action outcomes |
+| 4. PTY lifecycle | completed | AC3 passes | fake and isolated real tmux |
+| 5. Audit integrity | in_progress | AC4 passes | injected sink/action outcomes |
 | 6. Browser/deploy | pending | AC7 and local AC9 pass | headers/PWA/Compose/proxy |
 | 7. Deploy/review | pending | AC9-AC11 pass live | canonical/live/rollback/review |
 
@@ -122,6 +126,10 @@ tmux workloads.
   buckets, and restricted readiness to loopback or authenticated readers. All
   28 server integration tests pass, including login/terminal bursts and remote
   health authorization.
+- 2026-08-02: a clean .NET 10 real-PTY run proved that returning from `forkpty`
+  into managed child code crashes the host. Moved fork-and-immediate-exec into a
+  20-line native boundary, added process-group HUP/TERM/KILL escalation and
+  EINTR-safe reaping, and passed all three isolated Linux tests plus publish.
 
 ## Evidence
 
@@ -137,6 +145,9 @@ tmux workloads.
   C011 changes.
 - .NET 10 MCR publishes supported Noble SDK/runtime images but no Bookworm-slim
   tags; C011 uses the explicit Noble variants and installs tmux from Noble.
+- Direct `forkpty` return into managed child code is not safe on .NET 10. The
+  native boundary is required for runtime compatibility and is compiled with
+  warnings-as-errors into test, publish, and container outputs.
 
 ## Decisions
 
@@ -153,8 +164,8 @@ tmux workloads.
 
 ## Next Action
 
-- Make Linux PTY cleanup process-group aware with bounded HUP/TERM/KILL
-  escalation and prove isolated tmux-session survival for AC3.
+- Implement complete, permission-protected audit attempts and non-ambiguous
+  action/audit failure semantics for AC4.
 
 ## Pause Conditions
 

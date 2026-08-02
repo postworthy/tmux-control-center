@@ -8,6 +8,9 @@ COPY src/TmuxMobile.Web src/TmuxMobile.Web
 RUN npm --prefix src/TmuxMobile.Web run build
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS server-build
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends gcc libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /source
 COPY . .
 RUN dotnet restore TmuxMobile.sln
