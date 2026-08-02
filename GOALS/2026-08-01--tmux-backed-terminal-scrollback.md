@@ -1,6 +1,6 @@
 # Goal: tmux-Backed Terminal Scrollback Correction
 
-Status: paused
+Status: completed
 Owner: Human Partner and AI Agent
 Risk: T2
 Updated: 2026-08-01
@@ -32,8 +32,9 @@ output on the target iPhone.
 - [x] AC5 — Focused and canonical verification pass.
   - Evidence: frontend, infrastructure, server integration, production build,
     real isolated tmux, and `./scripts/verify.sh` pass.
-- [ ] AC6 — Live exact-IP deployment and physical-iPhone gesture pass.
-  - Evidence: pending deployment and owner confirmation.
+- [x] AC6 — Live exact-IP deployment and physical-iPhone gesture pass.
+  - Evidence: exact-IP/HTTPS deployment evidence was already recorded; on
+    2026-08-02 the owner reported that iPhone testing was successful.
 
 ## Authority Envelope
 
@@ -55,7 +56,7 @@ output on the target iPhone.
 | 1. Protocol | completed | Typed bounded history action crosses WebSocket boundary | frontend/server passed |
 | 2. tmux control | completed | Exact safe copy-mode commands and cleanup | infrastructure/real tmux passed |
 | 3. Deploy/review | completed | Canonical/live checks and review recorded | verify/HTTPS/review passed |
-| 4. Device acceptance | pending | Owner confirms physical-iPhone gesture | owner evidence |
+| 4. Device acceptance | completed | Owner confirms physical-iPhone gesture | owner evidence |
 
 ## Progress
 
@@ -139,6 +140,8 @@ output on the target iPhone.
 - Live first-control correction: healthy container; HTTP/2 HTTPS health 200;
   served bundle order begins Older, Latest, Esc, Tab; exact Tailscale-IP
   listener confirmed.
+- Physical-device acceptance: on 2026-08-02 the owner reported successful
+  iPhone testing against the actively deployed build.
 
 ## Retry State
 
@@ -151,8 +154,7 @@ output on the target iPhone.
 
 ## Next Action
 
-- Owner fully reopens the PWA and confirms the bottom bar begins Older, Latest,
-  Esc, Tab and Latest returns history mode to live output.
+- No implementation or acceptance action remains.
 
 ## Pause Conditions
 
@@ -161,6 +163,5 @@ output on the target iPhone.
 
 ## Outcomes
 
-- 2026-08-02: paused with AC6 still open when the owner prioritized the approved
-  C011 security-hardening and active-deployment goal. The deployed correction,
-  review, and pending device-acceptance evidence remain intact.
+- Completed on 2026-08-02 after the owner confirmed successful iPhone testing
+  against the actively deployed build.

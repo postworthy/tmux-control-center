@@ -16,6 +16,8 @@ Updated: 2026-08-02
   pass. `tmux-mobile:pre-c011-rollback` retains the pre-rollout image.
 - C011 is completed with a ready-with-follow-ups Change Review; merge and push
   remain explicitly owner-controlled.
+- The owner reported successful iPhone testing of the actively deployed PWA on
+  2026-08-02. C009 physical-device acceptance and its Review Record are complete.
 
 - The application MVP is committed at `26c8e4d`.
 - Tempo governance is committed at `f6d0990`.
@@ -35,7 +37,7 @@ Updated: 2026-08-02
 - C008 touch-scrollback was deployed, but its original physical-iPhone validation failed:
   xterm-local scrolling does not navigate authoritative tmux pane history.
 - RCA is recorded in `RCA/2026-08-01--xterm-local-scrollback-noop.md`; C009 is
-  preserved as paused follow-up evidence.
+  completed with owner-confirmed device evidence.
 - tmux-backed scrolling now works on the target iPhone, but the owner rejected
   the dedicated Latest banner. A narrower same-row layout correction is active
   under `RCA/2026-08-01--latest-banner-layout-miss.md`.
@@ -52,14 +54,11 @@ Updated: 2026-08-02
 ## Next
 
 - Obtain owner approval before merging or pushing the completed C011 branch.
-- C009 device acceptance remains preserved as a paused physical-device follow-up.
 
 ## Known Limitations
 
 - A containerized tmux client can require the same compatible tmux protocol
   version as the host server.
 - The current access key is intentionally temporary and unchanged by C011.
-- Physical iPhone installed-mode, sleep/wake, and network-change acceptance
-  remains owner/device validation; automated and live HTTP checks cannot prove it.
 - Tailnet policy changes remain human-controlled; direct-backend application
   rejection is active as defense in depth.

@@ -82,13 +82,14 @@ Status: completed
 
 ## C009 — tmux-backed terminal scrollback correction
 
-Status: paused — deployed; final explicit device acceptance remains open
+Status: completed
 
 - Replace ineffective xterm-local history navigation with bounded tmux copy-mode
   controls.
 - Add regression coverage across the frontend/WebSocket/tmux-command boundary.
 - Rebuild, verify, review, and require owner confirmation on a physical iPhone.
 - Planned commit: `fix(terminal): navigate tmux-backed scrollback`
+- Owner confirmed successful physical-iPhone testing on 2026-08-02.
 
 ## C010 — Sanitized initial public publication
 

@@ -11,9 +11,9 @@ Related Proposal: `PROPOSALS/2026-08-02--security-hardening-and-dotnet10.md`
 Ready with explicit follow-ups. The approved findings 2-10 are implemented,
 verified, documented, and actively deployed. There are no blocking code,
 security, compatibility, secret-hygiene, or recovery findings. The temporary
-access key remains unchanged by explicit scope, physical-iPhone regression
-acceptance remains the paused C009 follow-up, and merge/push still require the
-owner's separate approval.
+access key remains unchanged by explicit scope, and merge/push still require
+the owner's separate approval. The owner subsequently reported successful
+iPhone testing on 2026-08-02, closing the former C009 device follow-up.
 
 ## Branch and Commits
 
@@ -123,9 +123,8 @@ gitleaks detect --source=. --redact
 - Low follow-up: no tailnet policy was modified. The server-side 426 boundary
   prevents ordinary direct browser use; operators should continue to omit 8780
   from tailnet grants and limit 8443 to the owner/device.
-- Device follow-up: this review did not repeat installed-iPhone sleep/wake,
-  orientation, and network-change checks. That subjective/device evidence is
-  retained under paused C009 and does not weaken the C011 server hardening.
+- Resolved device follow-up: on 2026-08-02 the owner reported successful iPhone
+  testing of the actively deployed build, closing C009 physical acceptance.
 
 ## Compatibility and Recovery
 
@@ -151,8 +150,7 @@ gitleaks detect --source=. --redact
 
 ## Follow-Ups
 
-- Owner may validate the installed PWA on the physical iPhone and close paused
-  C009 device acceptance.
+- Physical-iPhone acceptance is complete by owner report on 2026-08-02.
 - Replace the deliberately temporary access key when the owner chooses; this
   remains outside C011.
 - Confirm tailnet grants/ACLs expose 8443 only to the intended identity/device
