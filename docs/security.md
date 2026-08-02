@@ -15,11 +15,11 @@ This service controls terminals owned by its Linux account and must be treated a
 - No `/bin/sh -c`, command interpolation, arbitrary process launch, arbitrary filesystem endpoint, restart, or destructive API.
 - Process executable and arguments remain separate. Every session/pane target is rediscovered from tmux and compared through an opaque identifier immediately before use.
 - Rename values use Unicode normalization, a 64-character allowlist, and typed bodies. Text has NUL and length checks and uses literal tmux input.
-- Process timeouts, cancellation, separate bounded stdout/stderr drains, capture line/byte limits, HTTP body limits, WebSocket frame limits, terminal idle timeout, global/per-user terminal leases, and request limits.
-- Secure/HttpOnly/SameSite production cookies, persistent Data Protection keys, constant-time access-key comparison, antiforgery tokens, explicit policies, and failed-login auditing. The loopback-only Development bypass uses a non-Secure development antiforgery cookie so actions can be exercised over local HTTP; that exception cannot activate outside the Development environment.
+- Process timeouts, cancellation, separate bounded stdout/stderr drains, capture line/byte limits, HTTP body limits, WebSocket frame limits, terminal idle timeout, global/per-user terminal leases, identity/IP-partitioned request limits, and per-connection terminal message/byte limits.
+- Secure/HttpOnly/SameSite production cookies, persistent Data Protection keys, constant-time access-key comparison, antiforgery tokens, explicit policies, and failed-login auditing. Disabled authentication is rejected in every environment. The loopback-only Development bypass uses a non-Secure development antiforgery cookie so actions can be exercised over local HTTP; that exception cannot activate outside the Development environment.
 - Strict same-origin frontend usage and configured WebSocket origins. Forwarded headers are disabled by default and, when enabled, trust only listed proxy IPs.
-- CSP, frame denial, MIME sniffing denial, no-referrer, and a restrictive browser permissions policy.
-- Terminal contents and keystrokes are absent from application logs and audits. Audits record actor, operation, opaque target, success, and time.
+- One-year HSTS on production HTTPS, same-origin-only CSP connectivity, frame denial, MIME sniffing denial, no-referrer, a restrictive browser permissions policy, and `Cache-Control: no-store` on APIs. `style-src 'unsafe-inline'` remains narrowly required for xterm.js runtime styles; scripts do not receive an inline exception.
+- Terminal contents and keystrokes are absent from application logs and audits. Audits record actor, operation, opaque target, success, and time. Failed allowed interactions are recorded, and a sink failure is logged separately without changing an already-applied action response.
 - Clipboard text is read only after the user taps Paste, remains in ephemeral
   terminal component state, and is cleared after send or cancel. Multiline and
   large pastes require confirmation, no Enter is appended, and serialized input
@@ -30,7 +30,7 @@ This service controls terminals owned by its Linux account and must be treated a
   and never write bytes into the PTY input stream. A per-connection token bucket
   closes burst senders before they can amplify tmux process creation.
 - Service worker exclusions prevent caching APIs, health responses, captured output, or socket traffic.
-- Startup validation rejects disabled production authentication without the high-friction override, short/missing API keys, wildcard origins, relative tmux paths, invalid socket names, and invalid prefixes.
+- Startup validation rejects disabled authentication and the legacy bypass in all environments, short/missing API keys, wildcard or non-origin values, insecure production origins, mismatched Hosts, unsafe proxy/listener combinations, relative tmux paths, invalid socket names, and invalid prefixes.
 
 ## Secret and file permissions
 
@@ -44,6 +44,12 @@ sudo install -d -o tmuxuser -g tmuxuser -m 0700 /var/lib/tmux-mobile/keys /var/l
 ```
 
 Set `DataProtection__KeysDirectory=/var/lib/tmux-mobile/keys` and `Audit__Destination=/var/log/tmux-mobile/audit.jsonl`. Filesystem permissions protect cookie keys; use a certificate-backed ASP.NET Core key encryptor if the host threat model requires at-rest cryptographic protection.
+
+On Linux the audit parent must be owner-only (`0700`) and an existing file must
+be owner-readable/writable only (`0600`). Startup fails if either grants group
+or other access. Audit append cancellation, I/O, authorization, or permission
+failure is emitted as a structured application error; the action result is not
+rewritten, which avoids encouraging duplicate retries.
 
 Generate a key without putting it in shell history where possible:
 
@@ -113,6 +119,12 @@ the explicit weak-key switch. Direct HTTP is not the browser-facing URL.
 Tailscale Serve remains tailnet-only and tailnet access rules still apply. Do
 not replace Serve with Funnel for this control service.
 
+Trusted forwarded headers run before the HTTPS boundary. The application then
+rejects ordinary direct HTTP application traffic with 426; anonymous liveness
+and loopback readiness are the only exceptions. Continue to omit the backend
+port from grants/ACLs because application rejection is defense in depth, not a
+replacement for network policy.
+
 ## Audit and incident response
 
 Inspect:
@@ -121,6 +133,12 @@ Inspect:
 journalctl -u tmux-mobile --since today
 sudo tail -n 100 /var/log/tmux-mobile/audit.jsonl
 ```
+
+Rotate by renaming the file and allowing the next append to create a new `0600`
+file, or stop the service during copy/truncate rotation. Keep the directory
+`0700`, retain audit files according to local policy, and alert on
+`Audit sink failed` or startup permission-validation errors. Never configure a
+log shipper that broadens local permissions or records terminal streams.
 
 On suspected key disclosure: restrict the Tailscale rule, stop the unit, replace the access key, remove the Data Protection keys to invalidate all cookies, restart, and inspect audit/system logs. Removing keys logs everyone out and is intentionally disruptive.
 

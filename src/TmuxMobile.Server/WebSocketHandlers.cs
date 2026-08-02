@@ -66,6 +66,7 @@ public sealed class WebSocketHandlers(
         var rawTarget = await targetResolver.ResolveRawSessionAsync(sessionId, context.RequestAborted);
         if (rawTarget is null)
         {
+            await audit.WriteAsync("terminal.connect", user, sessionId, false, context.RequestAborted);
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             return;
         }
@@ -81,12 +82,22 @@ public sealed class WebSocketHandlers(
             args.AddRange(["-L", tmuxOptions.Value.SocketName]);
         args.AddRange(["attach-session", "-t", rawTarget]);
 
-        await using var pty = await ptyFactory.StartAsync(tmuxOptions.Value.ExecutablePath, args,
-            new TerminalSize(80, 24), new Dictionary<string, string>
-            {
-                ["TERM"] = "xterm-256color",
-                ["COLORTERM"] = "truecolor"
-            }, context.RequestAborted);
+        IPseudoTerminal pty;
+        try
+        {
+            pty = await ptyFactory.StartAsync(tmuxOptions.Value.ExecutablePath, args,
+                new TerminalSize(80, 24), new Dictionary<string, string>
+                {
+                    ["TERM"] = "xterm-256color",
+                    ["COLORTERM"] = "truecolor"
+                }, context.RequestAborted);
+        }
+        catch
+        {
+            await audit.WriteAsync("terminal.connect", user, sessionId, false, CancellationToken.None);
+            throw;
+        }
+        await using var ownedPty = pty;
         await audit.WriteAsync("terminal.connect", user, sessionId, true, context.RequestAborted);
         logger.LogInformation("Terminal WebSocket connected for {User} to {SessionId}; PTY child {ProcessId}",
             user, sessionId, pty.ProcessId);
@@ -157,6 +168,9 @@ public sealed class WebSocketHandlers(
         CancellationToken cancellationToken)
     {
         var buffer = new byte[maxMessageBytes];
+        var inputRate = new TerminalInputRateState(
+            securityOptions.Value.MaxTerminalInputMessagesPerSecond,
+            securityOptions.Value.MaxTerminalInputBytesPerSecond);
         while (!cancellationToken.IsCancellationRequested)
         {
             WebSocketReceiveResult result;
@@ -169,6 +183,14 @@ public sealed class WebSocketHandlers(
             if (!result.EndOfMessage)
             {
                 await socket.CloseAsync(WebSocketCloseStatus.MessageTooBig, "Message too large", CancellationToken.None);
+                break;
+            }
+            if (!inputRate.TryConsume(result.Count))
+            {
+                logger.LogWarning("Terminal input rate limit exceeded for {User} on {SessionId}", user, sessionId);
+                await audit.WriteAsync("terminal.input.rate-limit", user, sessionId, false, CancellationToken.None);
+                await CloseQuietlyAsync(socket, WebSocketCloseStatus.PolicyViolation,
+                    "Terminal input rate limit exceeded");
                 break;
             }
             idle.CancelAfter(idleTimeout);
@@ -304,6 +326,26 @@ public sealed class WebSocketHandlers(
             lastRefill = now;
             if (tokens < 1) return false;
             tokens--;
+            return true;
+        }
+    }
+
+    private sealed class TerminalInputRateState(int messagesPerSecond, int bytesPerSecond)
+    {
+        private double messageTokens = messagesPerSecond;
+        private double byteTokens = bytesPerSecond;
+        private long lastRefill = Stopwatch.GetTimestamp();
+
+        public bool TryConsume(int bytes)
+        {
+            var now = Stopwatch.GetTimestamp();
+            var elapsed = Stopwatch.GetElapsedTime(lastRefill, now).TotalSeconds;
+            messageTokens = Math.Min(messagesPerSecond, messageTokens + elapsed * messagesPerSecond);
+            byteTokens = Math.Min(bytesPerSecond, byteTokens + elapsed * bytesPerSecond);
+            lastRefill = now;
+            if (messageTokens < 1 || byteTokens < bytes) return false;
+            messageTokens--;
+            byteTokens -= bytes;
             return true;
         }
     }

@@ -1,8 +1,23 @@
 # Project Status
 
-Updated: 2026-08-01
+Updated: 2026-08-02
 
 ## Current
+
+- C011 is implemented and actively deployed from
+  `security/c011-dotnet10-and-hardening` at
+  `https://ubuntu-box-1.monster-ionian.ts.net:8443/`.
+- The live container is healthy on .NET/ASP.NET Core 10.0.10, remains bound only
+  to `100.85.13.102:8780`, accepts the unchanged temporary access key through
+  the HTTPS origin, and returns 426 for direct backend application HTTP.
+- Canonical verification passes (24 core, 12 infrastructure plus 3 separately
+  exercised Linux tests, 33 server integration, and frontend checks); release
+  publish, image build, Compose renders, and NuGet/npm vulnerability audits
+  pass. `tmux-mobile:pre-c011-rollback` retains the pre-rollout image.
+- C011 is completed with a ready-with-follow-ups Change Review; merge and push
+  remain explicitly owner-controlled.
+- The owner reported successful iPhone testing of the actively deployed PWA on
+  2026-08-02. C009 physical-device acceptance and its Review Record are complete.
 
 - The application MVP is committed at `26c8e4d`.
 - Tempo governance is committed at `f6d0990`.
@@ -12,17 +27,17 @@ Updated: 2026-08-01
 - Canonical verification, a production image build, a disposable HTTPS
   container startup, dependency audits, and the isolated real-tmux lifecycle
   test pass.
-- The temporary instance is healthy and bound only to
-  `100.85.13.102:8780`; root, JS, CSS, manifest, service worker, login, and real
-  inventory paths now pass.
+- The previous temporary instance was healthy and bound only to
+  `100.85.13.102:8780`; C011 supersedes its runtime/security posture while
+  preserving the exact mapping and application state.
 - The blank-page failure is resolved by `f27414a` and documented in
   `RCA/2026-07-31--blank-anonymous-app-shell.md`.
 - C004 review is ready with the explicit TLS follow-up; merge/push remain
   owner-controlled.
-- C008 touch-scrollback was deployed, but physical-iPhone validation failed:
+- C008 touch-scrollback was deployed, but its original physical-iPhone validation failed:
   xterm-local scrolling does not navigate authoritative tmux pane history.
 - RCA is recorded in `RCA/2026-08-01--xterm-local-scrollback-noop.md`; C009 is
-  active on `fix/c009-tmux-backed-scrollback`.
+  completed with owner-confirmed device evidence.
 - tmux-backed scrolling now works on the target iPhone, but the owner rejected
   the dedicated Latest banner. A narrower same-row layout correction is active
   under `RCA/2026-08-01--latest-banner-layout-miss.md`.
@@ -38,14 +53,12 @@ Updated: 2026-08-01
 
 ## Next
 
-- Have the owner fully reopen the deployed PWA and confirm Older/Latest are the
-  first two bottom-bar controls on the physical iPhone.
+- Obtain owner approval before merging or pushing the completed C011 branch.
 
 ## Known Limitations
 
-- Physical iPhone/Tailscale behavior has not been exercised from this workspace.
 - A containerized tmux client can require the same compatible tmux protocol
   version as the host server.
-- The current HTTP cookie mode is intentionally temporary and does not provide
-  browser-level TLS; the tailnet transport and API-key authentication remain.
-- Certificate issuance and tailnet policy changes remain human-controlled.
+- The current access key is intentionally temporary and unchanged by C011.
+- Tailnet policy changes remain human-controlled; direct-backend application
+  rejection is active as defense in depth.

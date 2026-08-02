@@ -45,8 +45,10 @@ Out of scope:
 - [x] Exact-IP live health/bundle/listener checks pass.
 - [x] Older and Latest are always the first two controls inside the bottom
   shortcut bar; Latest is disabled only while history mode is inactive.
-- [ ] The owner confirms the gesture on a physical iPhone before final
+- [x] The owner confirms the gesture on a physical iPhone before final
   acceptance.
+  - Evidence: on 2026-08-02 the owner reported that iPhone testing of the
+    actively deployed build was successful.
 
 ## Rollback Plan
 

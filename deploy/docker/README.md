@@ -1,7 +1,7 @@
 # Docker Compose deployment
 
 This deployment runs one non-root application container and publishes its HTTPS
-port only on the host's explicit Tailscale IPv4 address. Docker bridge
+or Serve-backend port only on the host's explicit Tailscale IPv4 address. Docker bridge
 networking keeps the container isolated; the `0.0.0.0` listener in
 `compose.yaml` exists only inside that container namespace.
 
@@ -34,6 +34,12 @@ docker compose -f compose.tailscale-serve.yaml --env-file deploy/docker/.env up 
 
 The current temporary profile still permits an eight-character test key. Remove
 that override and rotate to a strong random key after validation.
+
+The Serve profile trusts forwarded scheme/address headers only from its
+configured local Tailscale proxy address. Requests that do not become HTTPS
+after that trust check receive `426 Upgrade Required`; only inexpensive
+`/health/live` and loopback `/health/ready` remain on HTTP. Thus opening the
+backend IP/port is not an alternate application URL.
 
 ## Prepare
 
@@ -73,6 +79,13 @@ install -d -m 0700 deploy/docker/state/keys deploy/docker/state/audit
 name`, also set `TMUX_SOCKET_NAME=name`. Never mount an unrelated `/tmp`
 directory or the Docker socket.
 
+If an audit file already exists, it must be owned by the service user and mode
+`0600`; startup deliberately rejects a group/other-readable file:
+
+```bash
+chmod 0600 deploy/docker/state/audit/audit.jsonl
+```
+
 ## Validate and start
 
 ```bash
@@ -92,6 +105,16 @@ wildcard address:
 ss -ltn
 curl --fail --cacert deploy/docker/secrets/tls.crt \
   "https://${TMUX_MOBILE_HOST}/health/live"
+```
+
+For the Serve profile, also verify the browser URL and direct-backend denial:
+
+```bash
+curl --fail "${TMUX_MOBILE_SERVE_ORIGIN}/health/live"
+curl -o /dev/null -w '%{http_code}\n' \
+  -H "Host: ${TMUX_MOBILE_SERVE_HOST}" \
+  "http://${TAILSCALE_IP}:${TMUX_MOBILE_HTTP_PORT:-8780}/"
+# expected: 426
 ```
 
 Readiness can report unhealthy if the host tmux server is not running. Before
@@ -114,3 +137,8 @@ For rollback, restore the previous image tag in the environment file and run
 `docker compose up -d` again. Do not delete `state/keys`; doing so invalidates
 all authentication cookies. Inspect `docker compose logs app` and
 `state/audit/audit.jsonl` after either operation.
+
+Before rollout, tag the currently running image with a rollback name. Rollback
+must preserve the tmux socket and state mounts; replacing the web container does
+not stop the tmux server. Recheck HTTPS root, authenticated status, liveness,
+readiness, listener addresses, and logs after either direction.

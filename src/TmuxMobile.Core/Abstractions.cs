@@ -65,5 +65,6 @@ public interface IInventoryStore
 
 public interface IAuditLogger
 {
-    Task WriteAsync(string action, string subject, string target, bool succeeded, CancellationToken cancellationToken);
+    Task<bool> WriteAsync(string action, string subject, string target, bool succeeded,
+        CancellationToken cancellationToken);
 }

@@ -99,6 +99,6 @@ Frames larger than the configured limit and fragmented client messages are rejec
 ## Health
 
 - `GET /health/live` — process liveness.
-- `GET /health/ready` — verifies the configured executable exists and executes a bounded harmless tmux query. No running tmux server is reported as degraded.
+- `GET /health/ready` — verifies the configured executable exists and executes a bounded harmless tmux query. It requires `Read` authorization except from loopback, and no running tmux server is reported as degraded.
 
 Normal error bodies do not include production exception details. `400`, `401`, `403`, `404`, `429`, and `500` have their standard meanings.

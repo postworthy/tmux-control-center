@@ -13,12 +13,10 @@ Related RCAs: `RCA/2026-08-01--xterm-local-scrollback-noop.md`,
 
 ## Decision
 
-Technically ready for owner device acceptance; not yet ready to cross the review
-boundary. The correction replaces ineffective xterm-local scrolling with typed,
+Ready. The correction replaces ineffective xterm-local scrolling with typed,
 bounded tmux copy-mode page actions and has frontend, WebSocket, exact-command,
-real isolated-tmux, canonical, and live-deployment evidence. The proposal makes
-physical-iPhone confirmation a required acceptance criterion, and that evidence
-is still pending.
+real isolated-tmux, canonical, live-deployment, and successful physical-iPhone
+evidence. The owner supplied the final required device acceptance on 2026-08-02.
 
 ## Commits in Scope
 
@@ -65,6 +63,8 @@ The eventual review-status update is documentation-only evidence afterward.
   is disabled only while history mode is inactive.
 - [x] Per-connection four-token/four-per-second bucket closes process bursts;
   regression observes four operations, policy close, cleanup, and zero PTY data.
+- [x] On 2026-08-02 the owner reported successful iPhone testing of the actively
+  deployed build, satisfying the physical-device acceptance gate.
 
 ## Verification
 
@@ -104,10 +104,8 @@ bundle_absent=history_banner,terminal_toolbar,pinned_latest_button
   stable-adjacency contract, and `55c9f70` restored the permanent pair at the
   trailing end. The owner then clarified that the pair must be first;
   `2026-08-01--history-controls-order-mismatch.md` records that ordering gap and
-  `1383b83` makes Older/Latest the first two controls. Final physical-device
-  appearance confirmation remains pending.
-- Acceptance gate: exact Mobile Safari gesture behavior is not reproducible in
-  this workspace; owner confirmation is required before review-boundary ready.
+  `1383b83` makes Older/Latest the first two controls. The owner's successful
+  iPhone test closes the final device finding.
 - Low: tmux copy mode is authoritative pane state, so concurrent attached
   clients may observe history mode briefly. Cleanup is explicit and the MVP is
   single-user, but simultaneous terminal clients can affect one another.
@@ -130,15 +128,11 @@ bundle_absent=history_banner,terminal_toolbar,pinned_latest_button
 - Corrective implementation and current test-container deployment: repository
   owner, 2026-08-01.
 - Reviewer: Codex, evidence-backed local review.
-- Status: pending required physical-iPhone acceptance.
+- Status: ready; required physical-iPhone acceptance received 2026-08-02.
 - Merge/push: not authorized or implied.
 
-## Required Owner Acceptance
+## Owner Acceptance
 
-- Fully close and reopen the installed PWA so the new service-worker bundle is
-  active.
-- Confirm the bottom shortcut bar begins Older, Latest, Esc, Tab before and
-  after entering history mode; Latest should be disabled before scrolling, then
-  enabled while viewing history.
-- Tap Latest and confirm live output resumes.
-- Confirm an ordinary tap still focuses the terminal keyboard.
+- Completed: the owner reported that iPhone testing was successful on
+  2026-08-02, confirming the requested device acceptance checklist against the
+  actively deployed application.

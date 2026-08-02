@@ -9,9 +9,21 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <NativePtyLibrary>$(IntermediateOutputPath)libtmuxmobilepty.so</NativePtyLibrary>
   </PropertyGroup>
+
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <None Include="$(NativePtyLibrary)" Link="libtmuxmobilepty.so"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="BuildNativePtyLibrary" BeforeTargets="CoreCompile"
+          Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(NativePtyLibrary)'))" />
+    <Exec Command="cc -shared -fPIC -O2 -Wall -Wextra -Werror -o &quot;$(NativePtyLibrary)&quot; &quot;$(MSBuildProjectDirectory)/native/tmux_mobile_pty.c&quot; -lutil" />
+  </Target>
 
 </Project>

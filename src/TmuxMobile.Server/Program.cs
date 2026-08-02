@@ -31,11 +31,14 @@ builder.Services.AddOptions<AuditOptions>().BindConfiguration(AuditOptions.Secti
     .ValidateDataAnnotations().ValidateOnStart();
 builder.Services.AddOptions<DataProtectionSettings>().BindConfiguration(DataProtectionSettings.Section)
     .ValidateDataAnnotations().ValidateOnStart();
-builder.Services.AddOptions<ForwardedHeaderSettings>().BindConfiguration(ForwardedHeaderSettings.Section);
+builder.Services.AddOptions<ForwardedHeaderSettings>().BindConfiguration(ForwardedHeaderSettings.Section)
+    .ValidateOnStart();
 builder.Services.AddSingleton<SecurityConfigurationValidator>();
 builder.Services.AddSingleton<IValidateOptions<AuthOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
 builder.Services.AddSingleton<IValidateOptions<SecurityOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
 builder.Services.AddSingleton<IValidateOptions<TmuxOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
+builder.Services.AddSingleton<IValidateOptions<ForwardedHeaderSettings>>(sp =>
+    sp.GetRequiredService<SecurityConfigurationValidator>());
 
 var auth = builder.Configuration.GetSection(AuthOptions.Section).Get<AuthOptions>() ?? new();
 var dataProtection = builder.Configuration.GetSection(DataProtectionSettings.Section)
@@ -44,16 +47,10 @@ var keyDirectory = Path.IsPathFullyQualified(dataProtection.KeysDirectory)
     ? dataProtection.KeysDirectory
     : Path.Combine(builder.Environment.ContentRootPath, dataProtection.KeysDirectory);
 Directory.CreateDirectory(keyDirectory);
-var auditSettings = builder.Configuration.GetSection(AuditOptions.Section).Get<AuditOptions>() ?? new();
-var auditPath = Path.IsPathFullyQualified(auditSettings.Destination)
-    ? auditSettings.Destination
-    : Path.Combine(builder.Environment.ContentRootPath, auditSettings.Destination);
-Directory.CreateDirectory(Path.GetDirectoryName(auditPath)!);
 builder.Services.AddDataProtection()
     .SetApplicationName("TmuxMobile")
     .PersistKeysToFileSystem(new DirectoryInfo(keyDirectory));
-var useDevelopmentAuth = auth.Mode.Equals("Development", StringComparison.OrdinalIgnoreCase) ||
-                         auth.Mode.Equals("Disabled", StringComparison.OrdinalIgnoreCase);
+var useDevelopmentAuth = auth.Mode.Equals("Development", StringComparison.OrdinalIgnoreCase);
 var useInsecureHttpCookies = auth.UnsafeAllowInsecureHttp;
 builder.Services.AddAuthentication(options =>
 {
@@ -88,6 +85,9 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Read", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "read"));
     options.AddPolicy("Interact", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "interact"));
     options.AddPolicy("Admin", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "admin"));
+    options.AddPolicy("Readiness", policy => policy.RequireAssertion(context =>
+        context.User.HasClaim("permission", "read") ||
+        context.Resource is HttpContext http && IsLoopback(http.Connection.RemoteIpAddress)));
     options.FallbackPolicy = options.GetPolicy("Read");
 });
 builder.Services.AddAntiforgery(options =>
@@ -106,26 +106,40 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
-            context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        RateLimitPartition.GetFixedWindowLimiter(PartitionKey(context, includeIdentity: true),
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 120,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
-    options.AddFixedWindowLimiter("interact", limiter =>
-    {
-        limiter.PermitLimit = 30;
-        limiter.Window = TimeSpan.FromMinutes(1);
-        limiter.QueueLimit = 0;
-    });
+    options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(
+        PartitionKey(context, includeIdentity: false), _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+        }));
+    options.AddPolicy("interact", context => RateLimitPartition.GetFixedWindowLimiter(
+        PartitionKey(context, includeIdentity: true), _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+        }));
+    options.AddPolicy("health", context => RateLimitPartition.GetFixedWindowLimiter(
+        PartitionKey(context, includeIdentity: false), _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 12, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+        }));
 });
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHsts(options =>
+{
+    options.MaxAge = TimeSpan.FromDays(365);
+    options.IncludeSubDomains = false;
+    options.Preload = false;
+    options.ExcludedHosts.Clear();
+});
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(),
         tags: ["live"])
@@ -137,7 +151,7 @@ if (forwarded.Enabled)
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        options.KnownNetworks.Clear();
+        options.KnownIPNetworks.Clear();
         options.KnownProxies.Clear();
         foreach (var proxy in forwarded.KnownProxies)
         {
@@ -160,6 +174,7 @@ builder.Services.AddSingleton<InventoryStore>();
 builder.Services.AddSingleton<IInventoryStore>(sp => sp.GetRequiredService<InventoryStore>());
 builder.Services.AddHostedService<InventoryPollingService>();
 builder.Services.AddSingleton<IAuditLogger, JsonLineAuditLogger>();
+builder.Services.AddHostedService<AuditStorageStartupService>();
 builder.Services.AddSingleton<TerminalConnectionLimiter>();
 builder.Services.AddSingleton<WebSocketHandlers>();
 
@@ -167,6 +182,7 @@ var security = builder.Configuration.GetSection(SecurityOptions.Section).Get<Sec
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = security.MaxRequestBodyBytes);
 
 var app = builder.Build();
+security = app.Services.GetRequiredService<IOptions<SecurityOptions>>().Value;
 app.Logger.LogInformation("Tmux Mobile starting in {Environment}", app.Environment.EnvironmentName);
 if (useInsecureHttpCookies)
     app.Logger.LogWarning(
@@ -175,6 +191,7 @@ if (auth.UnsafeAllowWeakApiKeyForTest)
     app.Logger.LogWarning(
         "UNSAFE TEST MODE: the minimum API key length is reduced to eight characters for this test instance.");
 if (forwarded.Enabled) app.UseForwardedHeaders();
+if (!app.Environment.IsDevelopment()) app.UseHsts();
 app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 {
     var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
@@ -186,6 +203,18 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 }));
 app.Use(async (context, next) =>
 {
+    var isLocalReadiness = context.Request.Path.Equals("/health/ready", StringComparison.OrdinalIgnoreCase) &&
+                           IsLoopback(context.Connection.RemoteIpAddress);
+    if (security.ExternalHttpsTermination && !context.Request.IsHttps &&
+        !context.Request.Path.Equals("/health/live", StringComparison.OrdinalIgnoreCase) &&
+        !isLocalReadiness)
+    {
+        context.Response.StatusCode = StatusCodes.Status426UpgradeRequired;
+        context.Response.Headers.Upgrade = "TLS/1.2, HTTP/1.1";
+        await Results.Problem("This backend accepts application traffic only through the configured HTTPS terminator.",
+            statusCode: StatusCodes.Status426UpgradeRequired).ExecuteAsync(context);
+        return;
+    }
     if (context.Request.ContentLength > security.MaxRequestBodyBytes)
     {
         context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
@@ -199,7 +228,12 @@ app.Use(async (context, next) =>
     context.Response.Headers["Referrer-Policy"] = "no-referrer";
     context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
     context.Response.Headers["Content-Security-Policy"] =
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+    if (context.Request.Path.StartsWithSegments("/api"))
+    {
+        context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers.Pragma = "no-cache";
+    }
     await next();
 });
 var webSocketOptions = new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(20) };
@@ -214,8 +248,8 @@ app.UseStaticFiles(new StaticFileOptions
             context.Context.Response.Headers.CacheControl = "no-cache";
     }
 });
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapPost("/api/auth/login", async (
@@ -242,12 +276,15 @@ app.MapPost("/api/auth/login", async (
         new AuthenticationProperties { IsPersistent = true });
     await auditLogger.WriteAsync("auth.login", "owner", "local", true, context.RequestAborted);
     return Results.NoContent();
-}).AllowAnonymous().RequireRateLimiting("interact");
+}).AllowAnonymous().RequireRateLimiting("login");
 
-app.MapPost("/api/auth/logout", async (HttpContext context, IAntiforgery antiforgery) =>
+app.MapPost("/api/auth/logout", async (HttpContext context, IAntiforgery antiforgery,
+    IAuditLogger auditLogger) =>
 {
     await antiforgery.ValidateRequestAsync(context);
+    var user = UserId(context.User);
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    await auditLogger.WriteAsync("auth.logout", user, "local", true, context.RequestAborted);
     return Results.NoContent();
 }).RequireAuthorization("Read");
 
@@ -286,8 +323,24 @@ sessions.MapPost("/{sessionId}/rename", async (
         await auditLogger.WriteAsync("session.rename", UserId(context.User), sessionId, true, context.RequestAborted);
         return Results.NoContent();
     }
-    catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
-    catch (TmuxNotFoundException) { return Results.NotFound(); }
+    catch (ArgumentException exception)
+    {
+        await auditLogger.WriteAsync("session.rename", UserId(context.User), sessionId, false,
+            context.RequestAborted);
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (TmuxNotFoundException)
+    {
+        await auditLogger.WriteAsync("session.rename", UserId(context.User), sessionId, false,
+            context.RequestAborted);
+        return Results.NotFound();
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("session.rename", UserId(context.User), sessionId, false,
+            CancellationToken.None);
+        throw;
+    }
 }).RequireAuthorization("Interact").RequireRateLimiting("interact");
 
 var panes = app.MapGroup("/api/panes").RequireAuthorization("Read");
@@ -310,8 +363,21 @@ panes.MapPost("/{paneId}/keys", async (
         await auditLogger.WriteAsync("pane.keys", UserId(context.User), paneId, true, context.RequestAborted);
         return Results.NoContent();
     }
-    catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
-    catch (TmuxNotFoundException) { return Results.NotFound(); }
+    catch (ArgumentException exception)
+    {
+        await auditLogger.WriteAsync("pane.keys", UserId(context.User), paneId, false, context.RequestAborted);
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (TmuxNotFoundException)
+    {
+        await auditLogger.WriteAsync("pane.keys", UserId(context.User), paneId, false, context.RequestAborted);
+        return Results.NotFound();
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("pane.keys", UserId(context.User), paneId, false, CancellationToken.None);
+        throw;
+    }
 }).RequireAuthorization("Interact").RequireRateLimiting("interact");
 panes.MapPost("/{paneId}/text", async (
     string paneId, TextRequest request, HttpContext context, ITmuxService tmux,
@@ -324,8 +390,21 @@ panes.MapPost("/{paneId}/text", async (
         await auditLogger.WriteAsync("pane.text", UserId(context.User), paneId, true, context.RequestAborted);
         return Results.NoContent();
     }
-    catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
-    catch (TmuxNotFoundException) { return Results.NotFound(); }
+    catch (ArgumentException exception)
+    {
+        await auditLogger.WriteAsync("pane.text", UserId(context.User), paneId, false, context.RequestAborted);
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (TmuxNotFoundException)
+    {
+        await auditLogger.WriteAsync("pane.text", UserId(context.User), paneId, false, context.RequestAborted);
+        return Results.NotFound();
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("pane.text", UserId(context.User), paneId, false, CancellationToken.None);
+        throw;
+    }
 }).RequireAuthorization("Interact").RequireRateLimiting("interact");
 panes.MapPost("/{paneId}/interrupt", async (
     string paneId, HttpContext context, ITmuxService tmux, IAntiforgery antiforgery,
@@ -338,7 +417,18 @@ panes.MapPost("/{paneId}/interrupt", async (
         await auditLogger.WriteAsync("pane.interrupt", UserId(context.User), paneId, true, context.RequestAborted);
         return Results.NoContent();
     }
-    catch (TmuxNotFoundException) { return Results.NotFound(); }
+    catch (TmuxNotFoundException)
+    {
+        await auditLogger.WriteAsync("pane.interrupt", UserId(context.User), paneId, false,
+            context.RequestAborted);
+        return Results.NotFound();
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("pane.interrupt", UserId(context.User), paneId, false,
+            CancellationToken.None);
+        throw;
+    }
 }).RequireAuthorization("Interact").RequireRateLimiting("interact");
 
 app.Map("/ws/inventory", async (HttpContext context, WebSocketHandlers handlers) =>
@@ -352,11 +442,11 @@ app.Map("/ws/terminal/{sessionId}", async (HttpContext context, string sessionId
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = registration => registration.Tags.Contains("live")
-}).AllowAnonymous();
+}).AllowAnonymous().RequireRateLimiting("health");
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = registration => registration.Tags.Contains("ready")
-}).AllowAnonymous();
+}).RequireAuthorization("Readiness").RequireRateLimiting("health");
 app.UseSwagger(options => options.RouteTemplate = "openapi/{documentName}.json");
 app.MapFallbackToFile("index.html").AllowAnonymous();
 
@@ -365,5 +455,16 @@ app.Run();
 
 static string UserId(ClaimsPrincipal user) =>
     user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+
+static string PartitionKey(HttpContext context, bool includeIdentity)
+{
+    var address = context.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
+    var identity = includeIdentity
+        ? context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous"
+        : "anonymous";
+    return $"{identity}|{address}";
+}
+
+static bool IsLoopback(IPAddress? address) => address is not null && IPAddress.IsLoopback(address);
 
 public partial class Program;

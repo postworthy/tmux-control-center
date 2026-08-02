@@ -4,8 +4,8 @@ A self-hosted, observation-first PWA for viewing and interacting with tmux sessi
 
 The production default is deliberately closed: loopback-only HTTP,
 authentication required, no configured key, and no allowed WebSocket origin.
-The supported Compose deployment terminates HTTPS and publishes only on an
-explicitly configured Tailscale IP.
+The supported Compose deployments either terminate HTTPS in Kestrel or use
+Tailscale Serve, and publish only on an explicitly configured Tailscale IP.
 
 ## What is included
 
@@ -20,7 +20,7 @@ explicitly configured Tailscale IP.
 
 ## Development
 
-Requirements: Linux, .NET 8 SDK, Node.js 20+, npm, and tmux 3.2+.
+Requirements: Linux, .NET 10 SDK, Node.js 20+, npm, and tmux 3.2+.
 
 ```bash
 npm --prefix src/TmuxMobile.Web ci
@@ -61,15 +61,17 @@ Tailscale-IP host binding:
 ```bash
 cp deploy/docker/.env.example deploy/docker/.env
 # Fill the host-specific IP, MagicDNS name, UID/GID, access key, tmux socket,
-# protected state directories, and Tailscale TLS certificate paths.
-docker compose --env-file deploy/docker/.env config --quiet
-docker compose --env-file deploy/docker/.env build
-docker compose --env-file deploy/docker/.env up -d
+# and protected state directories. For Tailscale Serve:
+docker compose -f compose.tailscale-serve.yaml \
+  --env-file deploy/docker/.env config --quiet
+docker compose -f compose.tailscale-serve.yaml \
+  --env-file deploy/docker/.env up -d --build
 ```
 
 See [the Compose guide](deploy/docker/README.md). Missing security-critical
 values make Compose fail before startup, and the host mapping never defaults to
-`0.0.0.0`.
+`0.0.0.0`. In the Serve profile, direct backend HTTP application traffic is
+rejected even though the exact-IP port remains available to the local proxy.
 
 ## Verification
 
@@ -94,7 +96,8 @@ The opt-in Linux PTY test creates a unique `tmux -L tmux-mobile-test-...` server
 ## Known limitations
 
 - One local tmux host and one owner identity are supported.
-- PTY support is Linux-only and uses glibc/libutil `forkpty`.
+- PTY support is Linux-only and uses a small native `forkpty`/immediate-`exec`
+  boundary compiled during build.
 - Status is heuristic and intentionally returns `Unknown` when signals are weak.
 - Preview polling is cached per active pane; this is not terminal history indexing.
 - iPhone Safari, installed-mode, sleep/wake, orientation, and Tailscale network switching still require validation on the target physical device and host.

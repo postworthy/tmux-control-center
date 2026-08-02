@@ -2,6 +2,7 @@
 **/obj/
 **/node_modules/
 **/.test-dist/
+src/TmuxMobile.Infrastructure/libtmuxmobilepty.so
 
 # Local SDK/package caches
 .dotnet/
