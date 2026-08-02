@@ -31,11 +31,14 @@ builder.Services.AddOptions<AuditOptions>().BindConfiguration(AuditOptions.Secti
     .ValidateDataAnnotations().ValidateOnStart();
 builder.Services.AddOptions<DataProtectionSettings>().BindConfiguration(DataProtectionSettings.Section)
     .ValidateDataAnnotations().ValidateOnStart();
-builder.Services.AddOptions<ForwardedHeaderSettings>().BindConfiguration(ForwardedHeaderSettings.Section);
+builder.Services.AddOptions<ForwardedHeaderSettings>().BindConfiguration(ForwardedHeaderSettings.Section)
+    .ValidateOnStart();
 builder.Services.AddSingleton<SecurityConfigurationValidator>();
 builder.Services.AddSingleton<IValidateOptions<AuthOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
 builder.Services.AddSingleton<IValidateOptions<SecurityOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
 builder.Services.AddSingleton<IValidateOptions<TmuxOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
+builder.Services.AddSingleton<IValidateOptions<ForwardedHeaderSettings>>(sp =>
+    sp.GetRequiredService<SecurityConfigurationValidator>());
 
 var auth = builder.Configuration.GetSection(AuthOptions.Section).Get<AuthOptions>() ?? new();
 var dataProtection = builder.Configuration.GetSection(DataProtectionSettings.Section)
@@ -52,8 +55,7 @@ Directory.CreateDirectory(Path.GetDirectoryName(auditPath)!);
 builder.Services.AddDataProtection()
     .SetApplicationName("TmuxMobile")
     .PersistKeysToFileSystem(new DirectoryInfo(keyDirectory));
-var useDevelopmentAuth = auth.Mode.Equals("Development", StringComparison.OrdinalIgnoreCase) ||
-                         auth.Mode.Equals("Disabled", StringComparison.OrdinalIgnoreCase);
+var useDevelopmentAuth = auth.Mode.Equals("Development", StringComparison.OrdinalIgnoreCase);
 var useInsecureHttpCookies = auth.UnsafeAllowInsecureHttp;
 builder.Services.AddAuthentication(options =>
 {

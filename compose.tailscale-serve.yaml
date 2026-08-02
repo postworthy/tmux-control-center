@@ -24,7 +24,9 @@ services:
       Authentication__Mode: ApiKey
       Authentication__ApiKey: "${TMUX_MOBILE_API_KEY:?Set the application access key}"
       Authentication__UnsafeAllowWeakApiKeyForTest: "true"
+      Authentication__UnsafeTestProfileAcknowledgement: "TAILNET_TEST_ONLY"
       Security__AllowedOrigins__0: "${TMUX_MOBILE_SERVE_ORIGIN:?Set the exact Tailscale Serve HTTPS origin}"
+      Security__ExternalHttpsTermination: "true"
       ForwardedHeaders__Enabled: "false"
       Tmux__ExecutablePath: /usr/bin/tmux
       Tmux__SocketName: "${TMUX_SOCKET_NAME:-}"

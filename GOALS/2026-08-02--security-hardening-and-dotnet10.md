@@ -28,8 +28,10 @@ tmux workloads.
   - Evidence: .NET SDK 10.0.302 canonical verification passes; Release publish
     passes; `tmux-mobile:c011-net10` builds and reports ASP.NET/Core runtime
     10.0.10; NuGet and npm audits report no known vulnerabilities.
-- [ ] AC2 — Production cannot activate disabled or development authentication.
-  - Evidence: pending
+- [x] AC2 — Production cannot activate disabled or development authentication.
+  - Evidence: validator and full-host startup regression reject Disabled plus
+    the legacy production override; Development still requires both the
+    Development environment and explicit local bypass.
 - [ ] AC3 — PTY disconnect, timeout, failure, and shutdown reap the entire attach
   client process group without terminating the isolated tmux session.
   - Evidence: pending
@@ -40,9 +42,12 @@ tmux workloads.
 - [ ] AC5 — Login, authenticated HTTP, terminal connection/input, and anonymous
   health limits use explicit tested partitions after correct middleware order.
   - Evidence: pending
-- [ ] AC6 — Production startup rejects unsafe origin, Host, proxy, HTTP, and
+- [x] AC6 — Production startup rejects unsafe origin, Host, proxy, HTTP, and
   authentication combinations with actionable errors.
-  - Evidence: pending
+  - Evidence: 25 server integration tests pass, including malformed/path/
+    userinfo/query/HTTP origins, Host mismatch, proxy, unsafe-test
+    acknowledgement, and disabled-auth startup negatives; all three Compose
+    profiles render successfully with their intended posture.
 - [ ] AC7 — Browser-facing HTTPS has HSTS, narrowed CSP, and authenticated API
   `no-store` headers while the xterm/PWA remains functional.
   - Evidence: pending
@@ -85,8 +90,8 @@ tmux workloads.
 | Unit | Status | Exit criteria | Verification |
 | --- | --- | --- | --- |
 | 1. .NET 10 thin slice | completed | AC1 passes with no .NET 8 target/image | clean build/test/publish/image/audits |
-| 2. Auth/config | in_progress | AC2 and AC6 pass | negative startup matrix |
-| 3. Limits/health | pending | AC5 and AC8 pass | HTTP/WebSocket integration |
+| 2. Auth/config | completed | AC2 and AC6 pass | negative startup matrix |
+| 3. Limits/health | in_progress | AC5 and AC8 pass | HTTP/WebSocket integration |
 | 4. PTY lifecycle | pending | AC3 passes | fake and isolated real tmux |
 | 5. Audit integrity | pending | AC4 passes | injected sink/action outcomes |
 | 6. Browser/deploy | pending | AC7 and local AC9 pass | headers/PWA/Compose/proxy |
@@ -103,6 +108,10 @@ tmux workloads.
 - 2026-08-02: canonical tests, Release publish, npm/NuGet audits, and production
   image build pass. The image contains ASP.NET/Core runtime 10.0.10 and no SDK;
   repository runtime targets contain no remaining .NET 8 target/image.
+- 2026-08-02: removed the production-disabled-auth path, added exact HTTPS
+  origin/Host/listener/proxy validation, and required the explicit
+  `TAILNET_TEST_ONLY` acknowledgement for unsafe HTTP or weak-key profiles.
+  Focused startup/configuration tests and all Compose renders pass.
 
 ## Evidence
 
@@ -134,8 +143,8 @@ tmux workloads.
 
 ## Next Action
 
-- Implement the fail-closed production authentication and deployment-security
-  configuration matrix for AC2 and AC6.
+- Reorder and partition HTTP rate limiting, add bounded terminal input
+  throughput, and restrict process-executing readiness for AC5 and AC8.
 
 ## Pause Conditions
 

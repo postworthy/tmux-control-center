@@ -25,6 +25,7 @@ services:
       Authentication__ApiKey: "${TMUX_MOBILE_API_KEY:?Set the temporary HTTP test access key}"
       Authentication__UnsafeAllowInsecureHttp: "true"
       Authentication__UnsafeAllowWeakApiKeyForTest: "true"
+      Authentication__UnsafeTestProfileAcknowledgement: "TAILNET_TEST_ONLY"
       Security__AllowedOrigins__0: "${TMUX_MOBILE_ORIGIN:?Set the exact HTTP test origin}"
       ForwardedHeaders__Enabled: "false"
       Tmux__ExecutablePath: /usr/bin/tmux

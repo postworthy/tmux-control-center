@@ -239,7 +239,8 @@ public sealed class TmuxFactory(bool authenticated) : WebApplicationFactory<Prog
                 ["Authentication:Mode"] = authenticated ? "Development" : "ApiKey",
                 ["Authentication:AllowDevelopmentBypass"] = authenticated ? "true" : "false",
                 ["Authentication:ApiKey"] = "test-secret-at-least-24-characters",
-                ["Security:AllowedOrigins:0"] = "http://localhost",
+                ["Security:AllowedOrigins:0"] = authenticated ? "http://localhost" : "https://localhost",
+                ["Security:ExternalHttpsTermination"] = authenticated ? "false" : "true",
                 ["Audit:Destination"] = Path.Combine(Path.GetTempPath(), "tmux-mobile-tests-audit.jsonl")
             });
         });
