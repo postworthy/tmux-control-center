@@ -58,9 +58,11 @@ tmux workloads.
     userinfo/query/HTTP origins, Host mismatch, proxy, unsafe-test
     acknowledgement, and disabled-auth startup negatives; all three Compose
     profiles render successfully with their intended posture.
-- [ ] AC7 — Browser-facing HTTPS has HSTS, narrowed CSP, and authenticated API
+- [x] AC7 — Browser-facing HTTPS has HSTS, narrowed CSP, and authenticated API
   `no-store` headers while the xterm/PWA remains functional.
-  - Evidence: pending
+  - Evidence: production HTTPS responses carry one-year HSTS, CSP WebSocket
+    access is reduced to same-origin, all API responses are `no-store`, linked
+    shell assets load in integration tests, and the production PWA build passes.
 - [x] AC8 — Anonymous liveness is inexpensive and process-executing readiness is
   local or explicitly authorized.
   - Evidence: anonymous liveness returns 200 without a tmux query; anonymous
@@ -106,8 +108,8 @@ tmux workloads.
 | 3. Limits/health | completed | AC5 and AC8 pass | HTTP/WebSocket integration |
 | 4. PTY lifecycle | completed | AC3 passes | fake and isolated real tmux |
 | 5. Audit integrity | completed | AC4 passes | injected sink/action outcomes |
-| 6. Browser/deploy | in_progress | AC7 and local AC9 pass | headers/PWA/Compose/proxy |
-| 7. Deploy/review | pending | AC9-AC11 pass live | canonical/live/rollback/review |
+| 6. Browser/deploy | completed | AC7 and local AC9 pass | headers/PWA/Compose/proxy |
+| 7. Deploy/review | in_progress | AC9-AC11 pass live | canonical/live/rollback/review |
 
 ## Progress
 
@@ -137,6 +139,10 @@ tmux workloads.
   content-free success/failure records across HTTP and terminal paths, enforced
   owner-only Linux storage, and proved audit degradation cannot misreport an
   applied rename. Focused infrastructure and all 30 server tests pass.
+- 2026-08-02: added one-year HSTS, same-origin-only CSP connectivity, API
+  no-store headers, and an HTTPS-terminator guard that leaves only liveness on
+  direct HTTP. All 33 server tests, the PWA build, and all exact-IP Compose
+  renders pass.
 
 ## Evidence
 
@@ -171,8 +177,8 @@ tmux workloads.
 
 ## Next Action
 
-- Add HSTS, exact-origin CSP and authenticated API no-store headers, then reject
-  unproxied production HTTP while retaining local liveness.
+- Run complete verification and audits, update operational documentation, then
+  stage and validate the approved live Tailscale Serve rollout.
 
 ## Pause Conditions
 

@@ -57,7 +57,7 @@ public sealed class ApiTests
     public async Task ProductionApiRequiresAuthentication()
     {
         await using var factory = new TmuxFactory(authenticated: false);
-        var response = await factory.CreateClient().GetAsync("/api/sessions");
+        var response = await CreateHttpsClient(factory).GetAsync("/api/sessions");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -65,7 +65,7 @@ public sealed class ApiTests
     public async Task AnonymousHealthCanOnlyUseLiveness()
     {
         await using var factory = new TmuxFactory(authenticated: false);
-        var client = factory.CreateClient();
+        var client = CreateHttpsClient(factory);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health/live")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/health/ready")).StatusCode);
     }
@@ -74,7 +74,7 @@ public sealed class ApiTests
     public async Task LoginAttemptsHaveIndependentRemotePartitionLimit()
     {
         await using var factory = new TmuxFactory(authenticated: false);
-        var client = factory.CreateClient();
+        var client = CreateHttpsClient(factory);
         for (var attempt = 0; attempt < 10; attempt++)
             Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/login",
                 new { apiKey = "invalid-access-key" })).StatusCode);
@@ -86,7 +86,7 @@ public sealed class ApiTests
     public async Task AnonymousAppShellCanLoadEveryLinkedAsset()
     {
         await using var factory = new TmuxFactory(authenticated: false);
-        var client = factory.CreateClient();
+        var client = CreateHttpsClient(factory);
         var html = await client.GetStringAsync("/");
         var assetPaths = Regex.Matches(html, "(?:src|href)=\"(?<path>/assets/[^\"]+)\"")
             .Select(match => match.Groups["path"].Value)
@@ -100,6 +100,48 @@ public sealed class ApiTests
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.True(response.Content.Headers.ContentLength > 0);
         }
+    }
+
+    [Fact]
+    public async Task ProductionHttpsHasHstsAndExactSameOriginCsp()
+    {
+        await using var factory = new TmuxFactory(authenticated: false);
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost")
+        });
+        var response = await client.GetAsync("/");
+
+        response.EnsureSuccessStatusCode();
+        Assert.Equal("max-age=31536000", response.Headers.GetValues("Strict-Transport-Security").Single());
+        var csp = response.Headers.GetValues("Content-Security-Policy").Single();
+        Assert.Contains("connect-src 'self'", csp, StringComparison.Ordinal);
+        Assert.DoesNotContain(" ws:", csp, StringComparison.Ordinal);
+        Assert.DoesNotContain(" wss:", csp, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AuthenticatedApiResponsesAreNeverStored()
+    {
+        await using var factory = new TmuxFactory(authenticated: true);
+        var response = await factory.CreateClient().GetAsync("/api/sessions");
+
+        response.EnsureSuccessStatusCode();
+        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+        Assert.Equal("no-cache", response.Headers.Pragma.Single().Name);
+    }
+
+    [Fact]
+    public async Task ExternalHttpsProfileRejectsDirectBackendHttpExceptLiveness()
+    {
+        await using var factory = new TmuxFactory(authenticated: false);
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("http://localhost")
+        });
+
+        Assert.Equal(HttpStatusCode.UpgradeRequired, (await client.GetAsync("/")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health/live")).StatusCode);
     }
 
     [Fact]
@@ -299,6 +341,9 @@ public sealed class ApiTests
             await Task.Delay(10);
         Assert.True(condition(), "Timed out waiting for terminal history operation.");
     }
+
+    private static HttpClient CreateHttpsClient(TmuxFactory factory) => factory.CreateClient(
+        new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
 
     private static async Task<HttpResponseMessage> SendWithCsrfAsync(HttpClient client,
         HttpMethod method, string path, object body)

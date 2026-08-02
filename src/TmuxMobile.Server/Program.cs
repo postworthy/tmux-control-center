@@ -133,6 +133,13 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHsts(options =>
+{
+    options.MaxAge = TimeSpan.FromDays(365);
+    options.IncludeSubDomains = false;
+    options.Preload = false;
+    options.ExcludedHosts.Clear();
+});
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(),
         tags: ["live"])
@@ -175,6 +182,7 @@ var security = builder.Configuration.GetSection(SecurityOptions.Section).Get<Sec
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = security.MaxRequestBodyBytes);
 
 var app = builder.Build();
+security = app.Services.GetRequiredService<IOptions<SecurityOptions>>().Value;
 app.Logger.LogInformation("Tmux Mobile starting in {Environment}", app.Environment.EnvironmentName);
 if (useInsecureHttpCookies)
     app.Logger.LogWarning(
@@ -183,6 +191,7 @@ if (auth.UnsafeAllowWeakApiKeyForTest)
     app.Logger.LogWarning(
         "UNSAFE TEST MODE: the minimum API key length is reduced to eight characters for this test instance.");
 if (forwarded.Enabled) app.UseForwardedHeaders();
+if (!app.Environment.IsDevelopment()) app.UseHsts();
 app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 {
     var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
@@ -194,6 +203,15 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 }));
 app.Use(async (context, next) =>
 {
+    if (security.ExternalHttpsTermination && !context.Request.IsHttps &&
+        !context.Request.Path.Equals("/health/live", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.StatusCode = StatusCodes.Status426UpgradeRequired;
+        context.Response.Headers.Upgrade = "TLS/1.2, HTTP/1.1";
+        await Results.Problem("This backend accepts application traffic only through the configured HTTPS terminator.",
+            statusCode: StatusCodes.Status426UpgradeRequired).ExecuteAsync(context);
+        return;
+    }
     if (context.Request.ContentLength > security.MaxRequestBodyBytes)
     {
         context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
@@ -207,7 +225,12 @@ app.Use(async (context, next) =>
     context.Response.Headers["Referrer-Policy"] = "no-referrer";
     context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
     context.Response.Headers["Content-Security-Policy"] =
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+    if (context.Request.Path.StartsWithSegments("/api"))
+    {
+        context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers.Pragma = "no-cache";
+    }
     await next();
 });
 var webSocketOptions = new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(20) };
