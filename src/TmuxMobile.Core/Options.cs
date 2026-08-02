@@ -39,6 +39,8 @@ public sealed class SecurityOptions
     [Range(1, 100)] public int MaxTerminalConnections { get; init; } = 4;
     [Range(1, 10)] public int MaxTerminalConnectionsPerUser { get; init; } = 2;
     [Range(1, 1440)] public int TerminalIdleTimeoutMinutes { get; init; } = 30;
+    [Range(1, 1000)] public int MaxTerminalInputMessagesPerSecond { get; init; } = 64;
+    [Range(1024, 1_048_576)] public int MaxTerminalInputBytesPerSecond { get; init; } = 262_144;
 }
 
 public sealed class StatusOptions

@@ -90,6 +90,9 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Read", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "read"));
     options.AddPolicy("Interact", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "interact"));
     options.AddPolicy("Admin", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "admin"));
+    options.AddPolicy("Readiness", policy => policy.RequireAssertion(context =>
+        context.User.HasClaim("permission", "read") ||
+        context.Resource is HttpContext http && IsLoopback(http.Connection.RemoteIpAddress)));
     options.FallbackPolicy = options.GetPolicy("Read");
 });
 builder.Services.AddAntiforgery(options =>
@@ -108,21 +111,28 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
-            context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        RateLimitPartition.GetFixedWindowLimiter(PartitionKey(context, includeIdentity: true),
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 120,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
-    options.AddFixedWindowLimiter("interact", limiter =>
-    {
-        limiter.PermitLimit = 30;
-        limiter.Window = TimeSpan.FromMinutes(1);
-        limiter.QueueLimit = 0;
-    });
+    options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(
+        PartitionKey(context, includeIdentity: false), _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+        }));
+    options.AddPolicy("interact", context => RateLimitPartition.GetFixedWindowLimiter(
+        PartitionKey(context, includeIdentity: true), _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+        }));
+    options.AddPolicy("health", context => RateLimitPartition.GetFixedWindowLimiter(
+        PartitionKey(context, includeIdentity: false), _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 12, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+        }));
 });
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
@@ -216,8 +226,8 @@ app.UseStaticFiles(new StaticFileOptions
             context.Context.Response.Headers.CacheControl = "no-cache";
     }
 });
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapPost("/api/auth/login", async (
@@ -244,7 +254,7 @@ app.MapPost("/api/auth/login", async (
         new AuthenticationProperties { IsPersistent = true });
     await auditLogger.WriteAsync("auth.login", "owner", "local", true, context.RequestAborted);
     return Results.NoContent();
-}).AllowAnonymous().RequireRateLimiting("interact");
+}).AllowAnonymous().RequireRateLimiting("login");
 
 app.MapPost("/api/auth/logout", async (HttpContext context, IAntiforgery antiforgery) =>
 {
@@ -354,11 +364,11 @@ app.Map("/ws/terminal/{sessionId}", async (HttpContext context, string sessionId
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = registration => registration.Tags.Contains("live")
-}).AllowAnonymous();
+}).AllowAnonymous().RequireRateLimiting("health");
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = registration => registration.Tags.Contains("ready")
-}).AllowAnonymous();
+}).RequireAuthorization("Readiness").RequireRateLimiting("health");
 app.UseSwagger(options => options.RouteTemplate = "openapi/{documentName}.json");
 app.MapFallbackToFile("index.html").AllowAnonymous();
 
@@ -367,5 +377,16 @@ app.Run();
 
 static string UserId(ClaimsPrincipal user) =>
     user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+
+static string PartitionKey(HttpContext context, bool includeIdentity)
+{
+    var address = context.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
+    var identity = includeIdentity
+        ? context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous"
+        : "anonymous";
+    return $"{identity}|{address}";
+}
+
+static bool IsLoopback(IPAddress? address) => address is not null && IPAddress.IsLoopback(address);
 
 public partial class Program;

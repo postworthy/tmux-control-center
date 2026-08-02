@@ -62,6 +62,27 @@ public sealed class ApiTests
     }
 
     [Fact]
+    public async Task AnonymousHealthCanOnlyUseLiveness()
+    {
+        await using var factory = new TmuxFactory(authenticated: false);
+        var client = factory.CreateClient();
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health/live")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/health/ready")).StatusCode);
+    }
+
+    [Fact]
+    public async Task LoginAttemptsHaveIndependentRemotePartitionLimit()
+    {
+        await using var factory = new TmuxFactory(authenticated: false);
+        var client = factory.CreateClient();
+        for (var attempt = 0; attempt < 10; attempt++)
+            Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/login",
+                new { apiKey = "invalid-access-key" })).StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, (await client.PostAsJsonAsync("/api/auth/login",
+            new { apiKey = "invalid-access-key" })).StatusCode);
+    }
+
+    [Fact]
     public async Task AnonymousAppShellCanLoadEveryLinkedAsset()
     {
         await using var factory = new TmuxFactory(authenticated: false);
@@ -205,6 +226,28 @@ public sealed class ApiTests
         Assert.Equal(0, factory.LastPtyInputLength);
     }
 
+    [Fact]
+    public async Task TerminalInputMessageRateLimitRejectsBurst()
+    {
+        await using var factory = new TmuxFactory(authenticated: true, new Dictionary<string, string?>
+        {
+            ["Security:MaxTerminalInputMessagesPerSecond"] = "4",
+            ["Security:MaxTerminalInputBytesPerSecond"] = "1024"
+        });
+        var client = factory.Server.CreateWebSocketClient();
+        using var socket = await client.ConnectAsync(
+            new Uri($"ws://localhost/ws/terminal/{TmuxFactory.Session.Id}"), CancellationToken.None);
+        var buffer = new byte[64];
+        await socket.ReceiveAsync(buffer, CancellationToken.None);
+        for (var index = 0; index < 5; index++)
+            await socket.SendAsync("x"u8.ToArray(), WebSocketMessageType.Binary, true, CancellationToken.None);
+
+        var result = await socket.ReceiveAsync(buffer, CancellationToken.None);
+        Assert.Equal(WebSocketMessageType.Close, result.MessageType);
+        Assert.Equal(WebSocketCloseStatus.PolicyViolation, socket.CloseStatus);
+        Assert.Equal(4, factory.LastPtyInputLength);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
         for (var attempt = 0; attempt < 100 && !condition(); attempt++)
@@ -215,7 +258,8 @@ public sealed class ApiTests
     private sealed record CsrfResponse(string Token);
 }
 
-public sealed class TmuxFactory(bool authenticated) : WebApplicationFactory<Program>
+public sealed class TmuxFactory(bool authenticated,
+    IReadOnlyDictionary<string, string?>? overrides = null) : WebApplicationFactory<Program>
 {
     private readonly FakeTmuxService fakeTmux = new();
     private readonly FakePseudoTerminalFactory fakePty = new();
@@ -234,7 +278,7 @@ public sealed class TmuxFactory(bool authenticated) : WebApplicationFactory<Prog
         builder.UseEnvironment(authenticated ? "Development" : "Production");
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
-            configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            var values = new Dictionary<string, string?>
             {
                 ["Authentication:Mode"] = authenticated ? "Development" : "ApiKey",
                 ["Authentication:AllowDevelopmentBypass"] = authenticated ? "true" : "false",
@@ -242,7 +286,10 @@ public sealed class TmuxFactory(bool authenticated) : WebApplicationFactory<Prog
                 ["Security:AllowedOrigins:0"] = authenticated ? "http://localhost" : "https://localhost",
                 ["Security:ExternalHttpsTermination"] = authenticated ? "false" : "true",
                 ["Audit:Destination"] = Path.Combine(Path.GetTempPath(), "tmux-mobile-tests-audit.jsonl")
-            });
+            };
+            if (overrides is not null)
+                foreach (var pair in overrides) values[pair.Key] = pair.Value;
+            configuration.AddInMemoryCollection(values);
         });
         builder.ConfigureTestServices(services =>
         {

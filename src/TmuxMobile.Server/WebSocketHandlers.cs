@@ -157,6 +157,9 @@ public sealed class WebSocketHandlers(
         CancellationToken cancellationToken)
     {
         var buffer = new byte[maxMessageBytes];
+        var inputRate = new TerminalInputRateState(
+            securityOptions.Value.MaxTerminalInputMessagesPerSecond,
+            securityOptions.Value.MaxTerminalInputBytesPerSecond);
         while (!cancellationToken.IsCancellationRequested)
         {
             WebSocketReceiveResult result;
@@ -169,6 +172,14 @@ public sealed class WebSocketHandlers(
             if (!result.EndOfMessage)
             {
                 await socket.CloseAsync(WebSocketCloseStatus.MessageTooBig, "Message too large", CancellationToken.None);
+                break;
+            }
+            if (!inputRate.TryConsume(result.Count))
+            {
+                logger.LogWarning("Terminal input rate limit exceeded for {User} on {SessionId}", user, sessionId);
+                await audit.WriteAsync("terminal.input.rate-limit", user, sessionId, false, CancellationToken.None);
+                await CloseQuietlyAsync(socket, WebSocketCloseStatus.PolicyViolation,
+                    "Terminal input rate limit exceeded");
                 break;
             }
             idle.CancelAfter(idleTimeout);
@@ -304,6 +315,26 @@ public sealed class WebSocketHandlers(
             lastRefill = now;
             if (tokens < 1) return false;
             tokens--;
+            return true;
+        }
+    }
+
+    private sealed class TerminalInputRateState(int messagesPerSecond, int bytesPerSecond)
+    {
+        private double messageTokens = messagesPerSecond;
+        private double byteTokens = bytesPerSecond;
+        private long lastRefill = Stopwatch.GetTimestamp();
+
+        public bool TryConsume(int bytes)
+        {
+            var now = Stopwatch.GetTimestamp();
+            var elapsed = Stopwatch.GetElapsedTime(lastRefill, now).TotalSeconds;
+            messageTokens = Math.Min(messagesPerSecond, messageTokens + elapsed * messagesPerSecond);
+            byteTokens = Math.Min(bytesPerSecond, byteTokens + elapsed * bytesPerSecond);
+            lastRefill = now;
+            if (messageTokens < 1 || byteTokens < bytes) return false;
+            messageTokens--;
+            byteTokens -= bytes;
             return true;
         }
     }

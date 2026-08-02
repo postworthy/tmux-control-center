@@ -27,7 +27,8 @@ services:
       Authentication__UnsafeTestProfileAcknowledgement: "TAILNET_TEST_ONLY"
       Security__AllowedOrigins__0: "${TMUX_MOBILE_SERVE_ORIGIN:?Set the exact Tailscale Serve HTTPS origin}"
       Security__ExternalHttpsTermination: "true"
-      ForwardedHeaders__Enabled: "false"
+      ForwardedHeaders__Enabled: "true"
+      ForwardedHeaders__KnownProxies__0: "${TAILSCALE_IP:?Set the exact host Tailscale IPv4 address}"
       Tmux__ExecutablePath: /usr/bin/tmux
       Tmux__SocketName: "${TMUX_SOCKET_NAME:-}"
       DataProtection__KeysDirectory: /state/keys

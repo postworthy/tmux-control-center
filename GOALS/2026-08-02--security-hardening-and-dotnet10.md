@@ -39,9 +39,12 @@ tmux workloads.
   content-free and permission-protected, and audit failure cannot misreport an
   already-applied action as a retryable action failure.
   - Evidence: pending
-- [ ] AC5 — Login, authenticated HTTP, terminal connection/input, and anonymous
+- [x] AC5 — Login, authenticated HTTP, terminal connection/input, and anonymous
   health limits use explicit tested partitions after correct middleware order.
-  - Evidence: pending
+  - Evidence: authentication now precedes rate limiting; global and interaction
+    partitions include identity plus remote IP, login/health use independent
+    remote partitions, terminal input has configurable message/byte buckets,
+    and integration tests prove the login and terminal burst boundaries.
 - [x] AC6 — Production startup rejects unsafe origin, Host, proxy, HTTP, and
   authentication combinations with actionable errors.
   - Evidence: 25 server integration tests pass, including malformed/path/
@@ -51,9 +54,11 @@ tmux workloads.
 - [ ] AC7 — Browser-facing HTTPS has HSTS, narrowed CSP, and authenticated API
   `no-store` headers while the xterm/PWA remains functional.
   - Evidence: pending
-- [ ] AC8 — Anonymous liveness is inexpensive and process-executing readiness is
+- [x] AC8 — Anonymous liveness is inexpensive and process-executing readiness is
   local or explicitly authorized.
-  - Evidence: pending
+  - Evidence: anonymous liveness returns 200 without a tmux query; anonymous
+    remote readiness returns 401 before execution; the Readiness policy permits
+    loopback or an authenticated read claim and both health routes are bounded.
 - [ ] AC9 — Docker remains bound only to the configured Tailscale IP; the live
   HTTPS Serve origin works and ordinary tailnet clients cannot use the direct
   backend HTTP port after the approved rollout.
@@ -91,8 +96,8 @@ tmux workloads.
 | --- | --- | --- | --- |
 | 1. .NET 10 thin slice | completed | AC1 passes with no .NET 8 target/image | clean build/test/publish/image/audits |
 | 2. Auth/config | completed | AC2 and AC6 pass | negative startup matrix |
-| 3. Limits/health | in_progress | AC5 and AC8 pass | HTTP/WebSocket integration |
-| 4. PTY lifecycle | pending | AC3 passes | fake and isolated real tmux |
+| 3. Limits/health | completed | AC5 and AC8 pass | HTTP/WebSocket integration |
+| 4. PTY lifecycle | in_progress | AC3 passes | fake and isolated real tmux |
 | 5. Audit integrity | pending | AC4 passes | injected sink/action outcomes |
 | 6. Browser/deploy | pending | AC7 and local AC9 pass | headers/PWA/Compose/proxy |
 | 7. Deploy/review | pending | AC9-AC11 pass live | canonical/live/rollback/review |
@@ -112,6 +117,11 @@ tmux workloads.
   origin/Host/listener/proxy validation, and required the explicit
   `TAILNET_TEST_ONLY` acknowledgement for unsafe HTTP or weak-key profiles.
   Focused startup/configuration tests and all Compose renders pass.
+- 2026-08-02: moved authentication before rate limiting, separated global,
+  login, interaction, and health partitions, added terminal message/byte token
+  buckets, and restricted readiness to loopback or authenticated readers. All
+  28 server integration tests pass, including login/terminal bursts and remote
+  health authorization.
 
 ## Evidence
 
@@ -143,8 +153,8 @@ tmux workloads.
 
 ## Next Action
 
-- Reorder and partition HTTP rate limiting, add bounded terminal input
-  throughput, and restrict process-executing readiness for AC5 and AC8.
+- Make Linux PTY cleanup process-group aware with bounded HUP/TERM/KILL
+  escalation and prove isolated tmux-session survival for AC3.
 
 ## Pause Conditions
 
