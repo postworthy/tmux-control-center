@@ -7,7 +7,7 @@ RUN npm --prefix src/TmuxMobile.Web ci
 COPY src/TmuxMobile.Web src/TmuxMobile.Web
 RUN npm --prefix src/TmuxMobile.Web run build
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim AS server-build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS server-build
 WORKDIR /source
 COPY . .
 RUN dotnet restore TmuxMobile.sln
@@ -17,7 +17,7 @@ RUN dotnet publish src/TmuxMobile.Server/TmuxMobile.Server.csproj \
     --no-restore \
     --output /publish
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS runtime
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends ca-certificates curl tmux \
     && rm -rf /var/lib/apt/lists/*

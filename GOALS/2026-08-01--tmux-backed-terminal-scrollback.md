@@ -1,6 +1,6 @@
 # Goal: tmux-Backed Terminal Scrollback Correction
 
-Status: active
+Status: paused
 Owner: Human Partner and AI Agent
 Risk: T2
 Updated: 2026-08-01
@@ -158,3 +158,9 @@ output on the target iPhone.
 
 - Pause if correction requires arbitrary commands, tmux configuration changes,
   real-session test input, or expanded network/security authority.
+
+## Outcomes
+
+- 2026-08-02: paused with AC6 still open when the owner prioritized the approved
+  C011 security-hardening and active-deployment goal. The deployed correction,
+  review, and pending device-acceptance evidence remain intact.

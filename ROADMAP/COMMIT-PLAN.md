@@ -82,7 +82,7 @@ Status: completed
 
 ## C009 — tmux-backed terminal scrollback correction
 
-Status: active
+Status: paused — deployed; final explicit device acceptance remains open
 
 - Replace ineffective xterm-local history navigation with bounded tmux copy-mode
   controls.
@@ -102,6 +102,20 @@ Status: completed
 - Preserve old local history only in an ignored permission-restricted bundle and
   remove its branch refs from the working repository.
 - Planned commit: `docs(review): record sanitized initial publication`
+
+## C011 — Security hardening and .NET 10 LTS migration
+
+Status: active
+
+- Migrate and verify the complete application/container/test stack on .NET 10
+  LTS before making security behavior changes.
+- Resolve security-review findings 2-10 across fail-closed authentication,
+  PTY cleanup, audits, rate limits, configuration, headers, health, and the
+  Tailscale Serve backend boundary.
+- Preserve the temporary access key, application contracts, exact Tailscale-IP
+  host bind, and tmux workloads; deploy and review the verified result.
+- Planned commits: staged under
+  `PROPOSALS/2026-08-02--security-hardening-and-dotnet10.md`.
 
 ## Later
 

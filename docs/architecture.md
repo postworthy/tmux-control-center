@@ -65,7 +65,8 @@ The service worker caches only application-shell GETs. Requests under `/api`, `/
 
 ## Deliberate compromises
 
-- .NET 8 LTS is targeted because it is the stable SDK installed in this development environment.
+- .NET 10 LTS is the server, test, and container target. Runtime migration is
+  kept behavior-neutral and verified before security behavior changes.
 - The single-user API-key bootstrap is smaller than adding an external identity provider, while keeping authorization boundaries ready for replacement.
 - Linux `forkpty` avoids a third-party native PTY dependency, at the cost of Linux/glibc specificity.
 - tmux format output is delimiter-based. tmux-local names and titles are treated as untrusted display text, but pathological embedded delimiter/newline values can make a record fail closed with a parse error.

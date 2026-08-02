@@ -1,6 +1,6 @@
 # Project Status
 
-Updated: 2026-08-01
+Updated: 2026-08-02
 
 ## Current
 
@@ -38,8 +38,10 @@ Updated: 2026-08-01
 
 ## Next
 
-- Have the owner fully reopen the deployed PWA and confirm Older/Latest are the
-  first two bottom-bar controls on the physical iPhone.
+- Complete the behavior-neutral .NET 10 LTS thin slice for active C011, then
+  execute its ordered security-hardening and deployment units.
+- C009 device acceptance is preserved as paused follow-up evidence while C011 is
+  the one active goal.
 
 ## Known Limitations
 

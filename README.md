@@ -20,7 +20,7 @@ explicitly configured Tailscale IP.
 
 ## Development
 
-Requirements: Linux, .NET 8 SDK, Node.js 20+, npm, and tmux 3.2+.
+Requirements: Linux, .NET 10 SDK, Node.js 20+, npm, and tmux 3.2+.
 
 ```bash
 npm --prefix src/TmuxMobile.Web ci

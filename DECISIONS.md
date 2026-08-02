@@ -4,7 +4,7 @@
 
 Date: 2026-07-30
 
-The application remains ASP.NET Core 8 plus React/TypeScript and npm. Tempo is
+The application remains ASP.NET Core plus React/TypeScript and npm. Tempo is
 adopted through its portable profile and must not replace the product toolchain.
 
 ## D002 — Keep tmux and PTY access local
@@ -61,3 +61,12 @@ in repository configuration. Because the destination is public, no ref may be
 pushed until a full-history secret review passes and no reachable commit names a
 usable credential. Initial push scope remains an explicit owner-controlled
 publication boundary.
+
+## D008 — Use .NET 10 LTS as the supported server runtime
+
+Date: 2026-08-02
+
+All server, infrastructure, core, test, publish, and production-container targets
+use .NET 10 LTS. Runtime migration is completed and verified as a behavior-neutral
+thin slice before C011 security behavior changes, and the last reviewed .NET 8
+image remains the rollback artifact until live validation completes.
