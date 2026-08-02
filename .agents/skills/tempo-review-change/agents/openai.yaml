@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Tempo Review Change'
+  short_description: 'Review scope evidence risk and rollback readiness'
+  default_prompt: 'Use $tempo-review-change to review this change against its approved scope and evidence.'

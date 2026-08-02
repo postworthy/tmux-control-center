@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": ".",
+    "outDir": ".test-dist",
+    "skipLibCheck": true
+  },
+  "include": ["src/terminalInput.ts", "src/terminalScroll.ts", "tests/**/*.test.ts"]
+}

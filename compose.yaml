@@ -1,0 +1,70 @@
+name: tmux-mobile
+
+services:
+  app:
+    image: "tmux-mobile:${TMUX_MOBILE_IMAGE_TAG:-local}"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    user: "${TMUX_MOBILE_UID:?Set TMUX_MOBILE_UID to the tmux owner's numeric UID}:${TMUX_MOBILE_GID:?Set TMUX_MOBILE_GID to the tmux owner's numeric GID}"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    ports:
+      - "${TAILSCALE_IP:?Set TAILSCALE_IP to this host's Tailscale IPv4 address}:${TMUX_MOBILE_HTTPS_PORT:-443}:5443"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Urls: https://0.0.0.0:5443
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /run/tls/tls.crt
+      ASPNETCORE_Kestrel__Certificates__Default__KeyPath: /run/tls/tls.key
+      AllowedHosts: "${TMUX_MOBILE_HOST:?Set TMUX_MOBILE_HOST to the certificate's MagicDNS hostname}"
+      Authentication__Mode: ApiKey
+      Authentication__ApiKey: "${TMUX_MOBILE_API_KEY:?Set TMUX_MOBILE_API_KEY to at least 32 random bytes}"
+      Security__AllowedOrigins__0: "${TMUX_MOBILE_ORIGIN:?Set TMUX_MOBILE_ORIGIN to the exact public HTTPS origin}"
+      ForwardedHeaders__Enabled: "false"
+      Tmux__ExecutablePath: /usr/bin/tmux
+      Tmux__SocketName: "${TMUX_SOCKET_NAME:-}"
+      DataProtection__KeysDirectory: /state/keys
+      Audit__Destination: /state/audit/audit.jsonl
+    volumes:
+      - type: bind
+        source: "${TMUX_SOCKET_DIR:?Set TMUX_SOCKET_DIR to the host tmux socket directory}"
+        target: "/tmp/tmux-${TMUX_MOBILE_UID:?Set TMUX_MOBILE_UID}"
+      - type: bind
+        source: "${TMUX_MOBILE_KEYS_DIR:?Set TMUX_MOBILE_KEYS_DIR to a protected writable host directory}"
+        target: /state/keys
+      - type: bind
+        source: "${TMUX_MOBILE_AUDIT_DIR:?Set TMUX_MOBILE_AUDIT_DIR to a protected writable host directory}"
+        target: /state/audit
+      - type: bind
+        source: "${TMUX_MOBILE_TLS_CERT:?Set TMUX_MOBILE_TLS_CERT to the certificate PEM file}"
+        target: /run/tls/tls.crt
+        read_only: true
+      - type: bind
+        source: "${TMUX_MOBILE_TLS_KEY:?Set TMUX_MOBILE_TLS_KEY to the private-key PEM file}"
+        target: /run/tls/tls.key
+        read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,mode=1777
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - --fail
+        - --silent
+        - --show-error
+        - --cacert
+        - /run/tls/tls.crt
+        - --resolve
+        - "${TMUX_MOBILE_HOST:?Set TMUX_MOBILE_HOST}:5443:127.0.0.1"
+        - "https://${TMUX_MOBILE_HOST:?Set TMUX_MOBILE_HOST}:5443/health/live"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    stop_grace_period: 20s

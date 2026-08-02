@@ -1,0 +1,369 @@
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json.Serialization;
+using System.Net;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
+using TmuxMobile.Core;
+using TmuxMobile.Infrastructure;
+using TmuxMobile.Server;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOptions<TmuxOptions>().BindConfiguration(TmuxOptions.Section)
+    .ValidateDataAnnotations().ValidateOnStart();
+builder.Services.AddOptions<AuthOptions>().BindConfiguration(AuthOptions.Section)
+    .ValidateDataAnnotations().ValidateOnStart();
+builder.Services.AddOptions<SecurityOptions>().BindConfiguration(SecurityOptions.Section)
+    .ValidateDataAnnotations().ValidateOnStart();
+builder.Services.AddOptions<StatusOptions>().BindConfiguration(StatusOptions.Section)
+    .ValidateDataAnnotations().ValidateOnStart();
+builder.Services.AddOptions<AuditOptions>().BindConfiguration(AuditOptions.Section)
+    .ValidateDataAnnotations().ValidateOnStart();
+builder.Services.AddOptions<DataProtectionSettings>().BindConfiguration(DataProtectionSettings.Section)
+    .ValidateDataAnnotations().ValidateOnStart();
+builder.Services.AddOptions<ForwardedHeaderSettings>().BindConfiguration(ForwardedHeaderSettings.Section);
+builder.Services.AddSingleton<SecurityConfigurationValidator>();
+builder.Services.AddSingleton<IValidateOptions<AuthOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
+builder.Services.AddSingleton<IValidateOptions<SecurityOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
+builder.Services.AddSingleton<IValidateOptions<TmuxOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
+
+var auth = builder.Configuration.GetSection(AuthOptions.Section).Get<AuthOptions>() ?? new();
+var dataProtection = builder.Configuration.GetSection(DataProtectionSettings.Section)
+    .Get<DataProtectionSettings>() ?? new();
+var keyDirectory = Path.IsPathFullyQualified(dataProtection.KeysDirectory)
+    ? dataProtection.KeysDirectory
+    : Path.Combine(builder.Environment.ContentRootPath, dataProtection.KeysDirectory);
+Directory.CreateDirectory(keyDirectory);
+var auditSettings = builder.Configuration.GetSection(AuditOptions.Section).Get<AuditOptions>() ?? new();
+var auditPath = Path.IsPathFullyQualified(auditSettings.Destination)
+    ? auditSettings.Destination
+    : Path.Combine(builder.Environment.ContentRootPath, auditSettings.Destination);
+Directory.CreateDirectory(Path.GetDirectoryName(auditPath)!);
+builder.Services.AddDataProtection()
+    .SetApplicationName("TmuxMobile")
+    .PersistKeysToFileSystem(new DirectoryInfo(keyDirectory));
+var useDevelopmentAuth = auth.Mode.Equals("Development", StringComparison.OrdinalIgnoreCase) ||
+                         auth.Mode.Equals("Disabled", StringComparison.OrdinalIgnoreCase);
+var useInsecureHttpCookies = auth.UnsafeAllowInsecureHttp;
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = useDevelopmentAuth ? "Development" : CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = useDevelopmentAuth ? "Development" : CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(options =>
+{
+    options.Cookie.Name = useInsecureHttpCookies ? "TmuxMobile-InsecureTest" : "__Host-TmuxMobile";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = useInsecureHttpCookies
+        ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return Task.CompletedTask;
+    };
+})
+.AddScheme<AuthenticationSchemeOptions, DevelopmentAuthenticationHandler>("Development", _ => { });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Read", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "read"));
+    options.AddPolicy("Interact", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "interact"));
+    options.AddPolicy("Admin", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "admin"));
+    options.FallbackPolicy = options.GetPolicy("Read");
+});
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+    options.Cookie.Name = useInsecureHttpCookies
+        ? "TmuxMobile-Csrf-InsecureTest"
+        : builder.Environment.IsDevelopment()
+            ? "TmuxMobile-Csrf-Dev" : "__Host-TmuxMobile-Csrf";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = useInsecureHttpCookies || builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+});
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+            context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 120,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+    options.AddFixedWindowLimiter("interact", limiter =>
+    {
+        limiter.PermitLimit = 30;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
+    });
+});
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(),
+        tags: ["live"])
+    .AddCheck<TmuxReadinessHealthCheck>("tmux", tags: ["ready"]);
+var forwarded = builder.Configuration.GetSection(ForwardedHeaderSettings.Section)
+    .Get<ForwardedHeaderSettings>() ?? new();
+if (forwarded.Enabled)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+        foreach (var proxy in forwarded.KnownProxies)
+        {
+            if (!IPAddress.TryParse(proxy, out var address))
+                throw new InvalidOperationException($"ForwardedHeaders known proxy '{proxy}' is not an IP address.");
+            options.KnownProxies.Add(address);
+        }
+    });
+}
+
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IProcessRunner, ProcessRunner>();
+builder.Services.AddSingleton<ISessionAnalyzer>(sp =>
+    new RuleBasedSessionAnalyzer(sp.GetRequiredService<IOptions<StatusOptions>>().Value));
+builder.Services.AddSingleton<TmuxService>();
+builder.Services.AddSingleton<ITmuxService>(sp => sp.GetRequiredService<TmuxService>());
+builder.Services.AddSingleton<ITmuxTargetResolver>(sp => sp.GetRequiredService<TmuxService>());
+builder.Services.AddSingleton<IPseudoTerminalFactory, LinuxPseudoTerminalFactory>();
+builder.Services.AddSingleton<InventoryStore>();
+builder.Services.AddSingleton<IInventoryStore>(sp => sp.GetRequiredService<InventoryStore>());
+builder.Services.AddHostedService<InventoryPollingService>();
+builder.Services.AddSingleton<IAuditLogger, JsonLineAuditLogger>();
+builder.Services.AddSingleton<TerminalConnectionLimiter>();
+builder.Services.AddSingleton<WebSocketHandlers>();
+
+var security = builder.Configuration.GetSection(SecurityOptions.Section).Get<SecurityOptions>() ?? new();
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = security.MaxRequestBodyBytes);
+
+var app = builder.Build();
+app.Logger.LogInformation("Tmux Mobile starting in {Environment}", app.Environment.EnvironmentName);
+if (useInsecureHttpCookies)
+    app.Logger.LogWarning(
+        "UNSAFE TEST MODE: authentication cookies may be sent over HTTP. Bind only to a trusted tailnet address.");
+if (auth.UnsafeAllowWeakApiKeyForTest)
+    app.Logger.LogWarning(
+        "UNSAFE TEST MODE: the minimum API key length is reduced to eight characters for this test instance.");
+if (forwarded.Enabled) app.UseForwardedHeaders();
+app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
+{
+    var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+    context.Response.StatusCode = exception is AntiforgeryValidationException
+        ? StatusCodes.Status400BadRequest : StatusCodes.Status500InternalServerError;
+    await Results.Problem(exception is AntiforgeryValidationException
+        ? "The CSRF token is missing or invalid."
+        : "The server could not complete the request.").ExecuteAsync(context);
+}));
+app.Use(async (context, next) =>
+{
+    if (context.Request.ContentLength > security.MaxRequestBodyBytes)
+    {
+        context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+        return;
+    }
+    await next();
+});
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    context.Response.Headers["Content-Security-Policy"] =
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+    await next();
+});
+var webSocketOptions = new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(20) };
+foreach (var origin in security.AllowedOrigins) webSocketOptions.AllowedOrigins.Add(origin);
+app.UseWebSockets(webSocketOptions);
+app.UseDefaultFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = context =>
+    {
+        if (context.File.Name is "service-worker.js" or "index.html")
+            context.Context.Response.Headers.CacheControl = "no-cache";
+    }
+});
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapPost("/api/auth/login", async (
+    LoginRequest request, HttpContext context, IOptions<AuthOptions> options, IAuditLogger auditLogger) =>
+{
+    var configured = options.Value.ApiKey ?? "";
+    var supplied = request.ApiKey ?? "";
+    var valid = configured.Length == supplied.Length &&
+                CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(configured),
+                    Encoding.UTF8.GetBytes(supplied));
+    if (!valid)
+    {
+        await auditLogger.WriteAsync("auth.login", "anonymous", "local", false, context.RequestAborted);
+        return Results.Unauthorized();
+    }
+    var claims = new[]
+    {
+        new Claim(ClaimTypes.NameIdentifier, "owner"),
+        new Claim(ClaimTypes.Name, "Owner"),
+        new Claim("permission", "read"), new Claim("permission", "interact"), new Claim("permission", "admin")
+    };
+    await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+        new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
+        new AuthenticationProperties { IsPersistent = true });
+    await auditLogger.WriteAsync("auth.login", "owner", "local", true, context.RequestAborted);
+    return Results.NoContent();
+}).AllowAnonymous().RequireRateLimiting("interact");
+
+app.MapPost("/api/auth/logout", async (HttpContext context, IAntiforgery antiforgery) =>
+{
+    await antiforgery.ValidateRequestAsync(context);
+    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.NoContent();
+}).RequireAuthorization("Read");
+
+app.MapGet("/api/auth/status", (ClaimsPrincipal user) => Results.Ok(new
+{
+    authenticated = user.Identity?.IsAuthenticated == true,
+    name = user.Identity?.Name
+})).RequireAuthorization("Read");
+app.MapGet("/api/auth/csrf", (HttpContext context, IAntiforgery antiforgery) =>
+    Results.Ok(new { token = antiforgery.GetAndStoreTokens(context).RequestToken }))
+    .RequireAuthorization("Read");
+app.MapGet("/api/config", (IOptions<TmuxOptions> options) => Results.Ok(new
+{
+    tmuxPrefix = options.Value.Prefix
+})).RequireAuthorization("Read");
+
+var sessions = app.MapGroup("/api/sessions").RequireAuthorization("Read");
+sessions.MapGet("/", async (ITmuxService tmux, CancellationToken cancellationToken) =>
+    Results.Ok(await tmux.GetSessionsAsync(cancellationToken)));
+sessions.MapGet("/{sessionId}", async (string sessionId, ITmuxService tmux, CancellationToken cancellationToken) =>
+    await tmux.GetSessionAsync(sessionId, cancellationToken) is { } session
+        ? Results.Ok(session) : Results.NotFound());
+sessions.MapGet("/{sessionId}/panes", async (string sessionId, ITmuxService tmux, CancellationToken cancellationToken) =>
+{
+    try { return Results.Ok(await tmux.GetPanesAsync(sessionId, cancellationToken)); }
+    catch (TmuxNotFoundException) { return Results.NotFound(); }
+});
+sessions.MapPost("/{sessionId}/rename", async (
+    string sessionId, RenameRequest request, HttpContext context, ITmuxService tmux,
+    IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+{
+    await antiforgery.ValidateRequestAsync(context);
+    try
+    {
+        await tmux.RenameSessionAsync(sessionId, request.Name, context.RequestAborted);
+        await auditLogger.WriteAsync("session.rename", UserId(context.User), sessionId, true, context.RequestAborted);
+        return Results.NoContent();
+    }
+    catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
+    catch (TmuxNotFoundException) { return Results.NotFound(); }
+}).RequireAuthorization("Interact").RequireRateLimiting("interact");
+
+var panes = app.MapGroup("/api/panes").RequireAuthorization("Read");
+panes.MapGet("/{paneId}/capture", async (
+    string paneId, int? lines, ITmuxService tmux, IOptions<TmuxOptions> options,
+    CancellationToken cancellationToken) =>
+{
+    var count = Math.Clamp(lines ?? 200, 1, options.Value.MaxCaptureLines);
+    try { return Results.Ok(new CaptureResponse(await tmux.CapturePaneAsync(paneId, count, cancellationToken), count)); }
+    catch (TmuxNotFoundException) { return Results.NotFound(); }
+});
+panes.MapPost("/{paneId}/keys", async (
+    string paneId, KeysRequest request, HttpContext context, ITmuxService tmux,
+    IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+{
+    await antiforgery.ValidateRequestAsync(context);
+    try
+    {
+        await tmux.SendKeysAsync(paneId, request.Keys, context.RequestAborted);
+        await auditLogger.WriteAsync("pane.keys", UserId(context.User), paneId, true, context.RequestAborted);
+        return Results.NoContent();
+    }
+    catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
+    catch (TmuxNotFoundException) { return Results.NotFound(); }
+}).RequireAuthorization("Interact").RequireRateLimiting("interact");
+panes.MapPost("/{paneId}/text", async (
+    string paneId, TextRequest request, HttpContext context, ITmuxService tmux,
+    IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+{
+    await antiforgery.ValidateRequestAsync(context);
+    try
+    {
+        await tmux.SendTextAsync(paneId, request.Text, context.RequestAborted);
+        await auditLogger.WriteAsync("pane.text", UserId(context.User), paneId, true, context.RequestAborted);
+        return Results.NoContent();
+    }
+    catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
+    catch (TmuxNotFoundException) { return Results.NotFound(); }
+}).RequireAuthorization("Interact").RequireRateLimiting("interact");
+panes.MapPost("/{paneId}/interrupt", async (
+    string paneId, HttpContext context, ITmuxService tmux, IAntiforgery antiforgery,
+    IAuditLogger auditLogger) =>
+{
+    await antiforgery.ValidateRequestAsync(context);
+    try
+    {
+        await tmux.InterruptPaneAsync(paneId, context.RequestAborted);
+        await auditLogger.WriteAsync("pane.interrupt", UserId(context.User), paneId, true, context.RequestAborted);
+        return Results.NoContent();
+    }
+    catch (TmuxNotFoundException) { return Results.NotFound(); }
+}).RequireAuthorization("Interact").RequireRateLimiting("interact");
+
+app.Map("/ws/inventory", async (HttpContext context, WebSocketHandlers handlers) =>
+{
+    if (!context.WebSockets.IsWebSocketRequest) { context.Response.StatusCode = 400; return; }
+    await handlers.InventoryAsync(context);
+}).RequireAuthorization("Read");
+app.Map("/ws/terminal/{sessionId}", async (HttpContext context, string sessionId, WebSocketHandlers handlers) =>
+    await handlers.TerminalAsync(context, sessionId)).RequireAuthorization("Interact");
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("live")
+}).AllowAnonymous();
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("ready")
+}).AllowAnonymous();
+app.UseSwagger(options => options.RouteTemplate = "openapi/{documentName}.json");
+app.MapFallbackToFile("index.html").AllowAnonymous();
+
+app.Lifetime.ApplicationStopped.Register(() => app.Logger.LogInformation("Tmux Mobile stopped"));
+app.Run();
+
+static string UserId(ClaimsPrincipal user) =>
+    user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+
+public partial class Program;

@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Tempo Onboard Project'
+  short_description: 'Turn an idea or existing repo into approved scope'
+  default_prompt: 'Use $tempo-onboard-project to guide discovery and produce an approved project brief.'

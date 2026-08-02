@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Tempo Plan Goal'
+  short_description: 'Create an approved resumable execution goal'
+  default_prompt: 'Use $tempo-plan-goal to turn this approved outcome into a resumable living goal.'

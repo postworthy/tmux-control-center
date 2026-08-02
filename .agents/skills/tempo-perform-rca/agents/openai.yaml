@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Tempo Perform RCA'
+  short_description: 'Diagnose a failed fix before another attempt'
+  default_prompt: 'Use $tempo-perform-rca to reproduce this failed fix and record an evidence-based RCA.'

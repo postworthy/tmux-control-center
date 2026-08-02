@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Tempo Execute Goal'
+  short_description: 'Execute and checkpoint an active Tempo goal'
+  default_prompt: 'Use $tempo-execute-goal to continue the active goal to evidence-backed completion.'

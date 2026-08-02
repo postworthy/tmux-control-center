@@ -1,0 +1,45 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.test-dist/
+
+# Local SDK/package caches
+.dotnet/
+.nuget/
+.npm-cache/
+
+# Server runtime state and local releases
+src/TmuxMobile.Server/logs/
+src/TmuxMobile.Server/data-protection/
+artifacts/
+deploy/docker/.env
+deploy/docker/state/
+deploy/docker/secrets/
+TestResults/
+coverage/
+coverage-*/
+
+# Local secrets and certificates
+.env
+.env.*
+!.env.example
+!deploy/docker/.env.missing-tailscale.example
+*.pfx
+*.pem
+*.key
+appsettings.Local.json
+
+# IDE, test, and operating-system files
+.idea/
+.vscode/
+.vs/
+.DS_Store
+Thumbs.db
+*.user
+*.suo
+*.tsbuildinfo
+*.trx
+*.coverage
+*.coveragexml
+*.log
+*.pid

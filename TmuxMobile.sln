@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FC3DBCAD-6143-449C-A01C-D18C702B2B63}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmuxMobile.Core", "src\TmuxMobile.Core\TmuxMobile.Core.csproj", "{0A4913E2-27B5-4722-BC21-7D644F663BF6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmuxMobile.Infrastructure", "src\TmuxMobile.Infrastructure\TmuxMobile.Infrastructure.csproj", "{B6C098CC-8FAF-415C-A83C-205A8F486F70}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmuxMobile.Server", "src\TmuxMobile.Server\TmuxMobile.Server.csproj", "{2E561BAE-2341-41D6-A5D7-15D6EB48057C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FD28DF61-D644-4719-8E1F-97A55450E88B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmuxMobile.Core.Tests", "tests\TmuxMobile.Core.Tests\TmuxMobile.Core.Tests.csproj", "{64021D13-3CB8-453F-AE67-C71DF3886CD5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmuxMobile.Infrastructure.Tests", "tests\TmuxMobile.Infrastructure.Tests\TmuxMobile.Infrastructure.Tests.csproj", "{45579AAC-983F-4A40-8339-6DBBBEE1E252}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmuxMobile.Server.IntegrationTests", "tests\TmuxMobile.Server.IntegrationTests\TmuxMobile.Server.IntegrationTests.csproj", "{666BD809-88BB-4312-B2EC-3B650E3E3FA7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0A4913E2-27B5-4722-BC21-7D644F663BF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A4913E2-27B5-4722-BC21-7D644F663BF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A4913E2-27B5-4722-BC21-7D644F663BF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A4913E2-27B5-4722-BC21-7D644F663BF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6C098CC-8FAF-415C-A83C-205A8F486F70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6C098CC-8FAF-415C-A83C-205A8F486F70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6C098CC-8FAF-415C-A83C-205A8F486F70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6C098CC-8FAF-415C-A83C-205A8F486F70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E561BAE-2341-41D6-A5D7-15D6EB48057C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E561BAE-2341-41D6-A5D7-15D6EB48057C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E561BAE-2341-41D6-A5D7-15D6EB48057C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E561BAE-2341-41D6-A5D7-15D6EB48057C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64021D13-3CB8-453F-AE67-C71DF3886CD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64021D13-3CB8-453F-AE67-C71DF3886CD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64021D13-3CB8-453F-AE67-C71DF3886CD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64021D13-3CB8-453F-AE67-C71DF3886CD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45579AAC-983F-4A40-8339-6DBBBEE1E252}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45579AAC-983F-4A40-8339-6DBBBEE1E252}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45579AAC-983F-4A40-8339-6DBBBEE1E252}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45579AAC-983F-4A40-8339-6DBBBEE1E252}.Release|Any CPU.Build.0 = Release|Any CPU
+		{666BD809-88BB-4312-B2EC-3B650E3E3FA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{666BD809-88BB-4312-B2EC-3B650E3E3FA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{666BD809-88BB-4312-B2EC-3B650E3E3FA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{666BD809-88BB-4312-B2EC-3B650E3E3FA7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0A4913E2-27B5-4722-BC21-7D644F663BF6} = {FC3DBCAD-6143-449C-A01C-D18C702B2B63}
+		{B6C098CC-8FAF-415C-A83C-205A8F486F70} = {FC3DBCAD-6143-449C-A01C-D18C702B2B63}
+		{2E561BAE-2341-41D6-A5D7-15D6EB48057C} = {FC3DBCAD-6143-449C-A01C-D18C702B2B63}
+		{64021D13-3CB8-453F-AE67-C71DF3886CD5} = {FD28DF61-D644-4719-8E1F-97A55450E88B}
+		{45579AAC-983F-4A40-8339-6DBBBEE1E252} = {FD28DF61-D644-4719-8E1F-97A55450E88B}
+		{666BD809-88BB-4312-B2EC-3B650E3E3FA7} = {FD28DF61-D644-4719-8E1F-97A55450E88B}
+	EndGlobalSection
+EndGlobal

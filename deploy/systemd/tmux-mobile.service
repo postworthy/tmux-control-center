@@ -1,0 +1,28 @@
+[Unit]
+Description=Tmux Mobile Control Center
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=tmuxuser
+Group=tmuxuser
+WorkingDirectory=/opt/tmux-mobile
+ExecStart=/usr/bin/dotnet /opt/tmux-mobile/TmuxMobile.Server.dll
+EnvironmentFile=/etc/tmux-mobile.env
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGINT
+NoNewPrivileges=true
+PrivateTmp=false
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/tmux-mobile /var/log/tmux-mobile
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+MemoryDenyWriteExecute=false
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
