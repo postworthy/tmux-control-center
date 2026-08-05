@@ -90,7 +90,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Await explicit deployment approval or owner-directed review for C013.
+- Await explicit approval before deploying the verified C013 image to the
+  existing tailnet test environment.
 - C012 physical testing remains pending: deliberate drags versus fast flicks,
   plus App Scroll Older/Latest, in Claude Code and mitmproxy.
 

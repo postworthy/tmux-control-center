@@ -68,6 +68,8 @@ rail state using the same stable order.
   `sha256:e1e79f...` pass. The clean runtime bundle contains the recency key and
   worker release `4fc71288e076c290`; execution pauses before the unapproved
   deployment boundary and owner acceptance.
+- 2026-08-04: committed the verified C013 implementation and contracts as
+  `8032623`.
 
 ## Evidence
 
@@ -107,8 +109,9 @@ rail state using the same stable order.
 
 ## Next Action
 
-- Commit the verified C013 feature and pause for explicit deployment approval or
-  owner-directed review.
+- With explicit owner approval, deploy the verified C013 image to the existing
+  tailnet test environment, repeat established health/security/asset checks, and
+  request physical-iPhone acceptance.
 
 ## Pause Conditions
 
