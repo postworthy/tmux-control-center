@@ -76,8 +76,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Commit the verified proportional-scroll and release-boundary correction, then
-  request approval before replacing the current tailnet test image.
+- Await explicit approval before replacing the current tailnet test image with
+  the verified proportional-scroll release.
 
 ## Known Limitations
 

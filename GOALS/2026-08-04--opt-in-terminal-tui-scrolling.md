@@ -1,6 +1,6 @@
 # Goal: Opt-in Terminal TUI Scrolling
 
-Status: active
+Status: paused
 Owner: Human Partner and AI Agent
 Risk: T1
 Updated: 2026-08-04
@@ -152,6 +152,9 @@ foreground TUIs such as Claude Code and mitmproxy.
   generated assets. Full runtime image `sha256:72e88f...` contains only current
   hashed bundles; its worker differs from the deployed image. Canonical
   verification passes after the packaging correction.
+- 2026-08-04: committed the verified proportional-scroll, dual-routed controls,
+  confirmed RCA, and release-boundary correction as `73f8984`. Execution pauses
+  at the explicit deployment boundary.
 - Revised canonical verification passes with 24 Core, 12 Infrastructure (four
   isolated tests skipped), 33 Server integration, frontend typecheck/tests, and
   Compose validation when run with the repository's local .NET 10 SDK.
@@ -196,8 +199,9 @@ foreground TUIs such as Claude Code and mitmproxy.
 
 ## Next Action
 
-- Commit the verified proportional-scroll and release-boundary correction, then
-  pause for explicit approval before replacing the deployed test image.
+- With explicit owner approval, tag and deploy the verified revised image to the
+  existing tailnet test environment, then repeat health/security/asset checks
+  and physical-iPhone acceptance.
 
 ## Pause Conditions
 
