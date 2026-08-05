@@ -1,0 +1,122 @@
+# Goal: Session Tiles Ordered by In-App Recency
+
+Status: paused
+Owner: Human Partner and AI Agent
+Risk: T1
+Updated: 2026-08-04
+Proposal: `PROPOSALS/2026-08-04--session-tile-recency.md`
+Review Boundary: merge from `feat/c013-session-recency` into `main`
+
+## Outcome
+
+Opening a session terminal from the main deck records device-local recency, and
+returning renders that session as the first tile with all deck navigation and
+rail state using the same stable order.
+
+## Non-Goals
+
+- Do not infer recency from tmux activity or external clients, synchronize
+  devices, add manual ordering, or change backend/tmux contracts.
+- Do not deploy, merge, push, publish, or modify C012 acceptance in this goal.
+
+## Acceptance Criteria
+
+- [x] AC1 — Terminal open promotes one opaque session ID to the MRU front without
+  duplicates and subsequent opens produce deterministic newest-first order.
+  - Evidence: pure frontend promotion tests pass.
+- [ ] AC2 — Returning from terminal renders the opened session as tile 1 and all
+  tile, navigation, selection, terminal lookup, and rail consumers agree.
+  - Evidence: source inspection and typecheck pass; owner acceptance pending.
+- [x] AC3 — Valid recency persists across inventory replacement and reload;
+  malformed/stale IDs fail safely and untouched/new sessions retain server order.
+  - Evidence: parsing, persistence, pruning, stable ordering, and unavailable
+    storage tests pass.
+- [x] AC4 — Backend, WebSocket, tmux, authentication, and network contracts are
+  unchanged; canonical verification and documentation pass.
+  - Evidence: diff review, docs, production image, and canonical gate pass.
+
+## Authority Envelope
+
+### May Continue Without Asking
+
+- Approved, local, reversible T0/T1 edits, tests, builds, documentation, commits,
+  and review artifacts required by C013.
+
+### Must Pause for Approval
+
+- Scope expansion, deployment, merge, push, publication, server persistence,
+  cross-device synchronization, backend/API/tmux changes, destructive actions,
+  compatibility breaks, or unclear security/privacy impact.
+
+## Work Units
+
+| Unit | Status | Exit criteria | Verification |
+| --- | --- | --- | --- |
+| 1. Ordering contract | completed | Pure helpers safely parse, promote, prune, and stably order IDs. | Frontend unit tests passed |
+| 2. Deck thin slice | completed | Opening and returning promotes tile 1; every order consumer agrees. | Typecheck and source inspection passed |
+| 3. Verification/docs | completed | Canonical gate, docs, rollback, and review agree. | `./scripts/verify.sh` and image build passed |
+
+## Progress
+
+- 2026-08-04: owner approved device-local recency ordering by opening a terminal
+  from the main deck; C012 remains separately paused for physical acceptance.
+- 2026-08-04: created `feat/c013-session-recency` from the verified C012 branch.
+- 2026-08-04: implemented safe device-local parsing/writes, duplicate-free MRU
+  promotion, stale-ID pruning, stable ordering, and consistent deck integration.
+  Focused unit tests and typecheck pass.
+- 2026-08-04: canonical verification and production image
+  `sha256:e1e79f...` pass. The clean runtime bundle contains the recency key and
+  worker release `4fc71288e076c290`; execution pauses before the unapproved
+  deployment boundary and owner acceptance.
+
+## Evidence
+
+- Frontend unit suite passes three files, including C013 promotion, ordering,
+  persistence, malformed/unavailable storage, immutability, and stale-ID cases.
+- Frontend typecheck passes.
+- Diff inspection confirms no server, API, WebSocket, tmux, authentication, or
+  deployment code changed.
+- Canonical `./scripts/verify.sh` passes with 24 Core, 12 Infrastructure (four
+  isolated tests skipped), 33 Server integration, all three frontend suites,
+  and Compose validation.
+- Production image `sha256:e1e79f...` builds with only the current main and
+  terminal bundles; the main bundle contains `tmux-mobile-session-recency` and
+  the worker is stamped `tmux-mobile-shell-4fc71288e076c290`.
+
+## Discoveries
+
+- App currently renders, navigates, and calculates rail position directly from
+  server snapshot order.
+- The deck is absent while terminal mode renders, so the promoted first tile
+  naturally mounts at scroll position zero on return.
+- Existing local storage already retains one opaque active-session ID; C013 adds
+  only an ordered list of opaque IDs and no session content.
+
+## Decisions
+
+- Define recency only as Terminal actions initiated inside this app.
+- Persist MRU IDs locally on the device; rank valid IDs first and append all
+  unranked live sessions in unchanged server order.
+- Derive every presentation/navigation consumer from one ordered array.
+
+## Retry State
+
+- Current attempt: 0
+- Maximum attempts per unchanged failure: 2
+- Last failure: none
+
+## Next Action
+
+- Commit the verified C013 feature and pause for explicit deployment approval or
+  owner-directed review.
+
+## Pause Conditions
+
+- Pause if correct ordering requires backend state, session content persistence,
+  external-client observation, or a compatibility/security boundary.
+
+## Outcomes
+
+- Local implementation, tests, documentation, production packaging, and
+  canonical verification are complete. Deployment, physical acceptance, review
+  decision, merge, and push remain outside the current authority.

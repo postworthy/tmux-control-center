@@ -137,6 +137,18 @@ Status: active correction after owner physical-iPhone feedback
   than a slow drag of comparable distance.
 - Planned commit: `feat(terminal): add opt-in TUI swipe scrolling`
 
+## C013 — Session tiles ordered by in-app recency
+
+Status: active
+
+- Record an opaque device-local MRU list when a session terminal is opened from
+  the main deck.
+- Put the opened session first on return while retaining stable server order for
+  sessions without an in-app recency record.
+- Apply the derived order consistently to tiles, navigation, selection, and the
+  session rail; tolerate malformed and stale local state.
+- Planned commit: `feat(sessions): order tiles by terminal recency`
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.

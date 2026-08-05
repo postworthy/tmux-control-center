@@ -12,7 +12,9 @@ Tailscale Serve, and publish only on an explicitly configured Tailscale IP.
 - Machine-delimited tmux inventory, opaque browser-facing identifiers, bounded ANSI-sanitized previews, and conservative rule-based status.
 - REST APIs, a shared inventory WebSocket, and a Linux `forkpty` terminal bridge attaching a real tmux client.
 - Cookie authentication bootstrapped by a deployment access key, CSRF validation, read/interact/admin policies, origin checks, rate and connection limits, security headers, and JSON-lines auditing.
-- React/TypeScript cards with vertical CSS snap, explicit navigation, state preservation, quick actions, details, realtime reconnect, and offline states.
+- React/TypeScript cards with vertical CSS snap, explicit navigation,
+  device-local terminal-open recency ordering, state preservation, quick
+  actions, details, realtime reconnect, and offline states.
 - Lazy-loaded xterm.js terminal with resize, disconnect/reconnect, tmux-backed
   touch/button history by default, explicit non-persistent distance- and
   velocity-scaled application/TUI scrolling for swipes and Older/Latest,

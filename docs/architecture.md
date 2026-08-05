@@ -66,7 +66,20 @@ Cookie mutations require an antiforgery header and same-site token cookie. There
 
 Cards use `100dvh`, safe-area insets, `scroll-snap-type: y mandatory`, and a non-scrollable faded preview so vertical touch movement belongs to the deck. The active opaque session ID is the only value stored in `localStorage`; terminal content, access keys, cookies, and API results are not stored there.
 
-Realtime snapshots replace records by ID without scrolling the deck. The active ID is restored after reload or resume if it still exists. Terminal mode is lazy-loaded, preserves the selected card, and exposes an explicit back control. One-finger vertical gestures navigate bounded tmux history by default; Older and Latest provide explicit access to the same history controls. The owner may temporarily enable Application Scroll to route distance- and velocity-scaled swipe movement plus Older/Latest as bounded mouse-wheel input to the foreground program. That mode is visibly indicated, never persisted, and resets off on connection loss or terminal exit.
+Realtime snapshots replace records by ID without scrolling the deck. The client
+keeps a device-local, duplicate-free MRU list of opaque session IDs updated only
+when Terminal is opened from a tile. Ranked live sessions lead the deck;
+unranked sessions retain snapshot order, and stale IDs are pruned. Tiles,
+previous/next navigation, active position, terminal lookup, and the session rail
+all consume this one derived order. The active ID is restored after reload or
+resume if it still exists. Terminal mode is lazy-loaded, preserves the selected
+card, and exposes an explicit back control. One-finger vertical gestures
+navigate bounded tmux history by default; Older and Latest provide explicit
+access to the same history controls. The owner may temporarily enable
+Application Scroll to route distance- and velocity-scaled swipe movement plus
+Older/Latest as bounded mouse-wheel input to the foreground program. That mode
+is visibly indicated, never persisted, and resets off on connection loss or
+terminal exit.
 
 The service worker caches only application-shell GETs. Requests under `/api`, `/ws`, and `/health` are never cached. Each production web build stamps the worker cache identity from the generated root asset graph, allowing the installed PWA to detect a release. Container packaging clears its temporary webroot before copying generated output so obsolete hashed application bundles are not retained. A waiting worker does not activate automatically; the UI announces an update.
 

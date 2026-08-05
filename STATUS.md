@@ -4,6 +4,13 @@ Updated: 2026-08-04
 
 ## Current
 
+- C013 is locally implemented on `feat/c013-session-recency`: opening a terminal from the
+  main deck will promote that session to the first tile on return using a safe,
+  device-local opaque-ID MRU order. Backend inventory order and tmux state remain
+  unchanged. Pure ordering/persistence tests, frontend typecheck, canonical
+  verification, production image build, and review inspection pass. Deployment
+  and owner acceptance remain pending.
+
 - C012 is deployed for owner testing from `feat/c012-opt-in-tui-scroll`. The
   thin slice keeps
   tmux-backed swipes as the default and adds a default-off, non-persistent App
@@ -83,7 +90,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Owner reloads the installed PWA and tests deliberate drags versus fast flicks,
+- Await explicit deployment approval or owner-directed review for C013.
+- C012 physical testing remains pending: deliberate drags versus fast flicks,
   plus App Scroll Older/Latest, in Claude Code and mitmproxy.
 
 ## Known Limitations

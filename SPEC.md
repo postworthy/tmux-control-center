@@ -44,6 +44,9 @@ Status: Approved
   an explicit, non-persistent terminal control that temporarily translates
   vertical swipe distance and velocity plus the Older/Latest controls into
   bounded, directionally equivalent mouse-wheel input for foreground TUIs.
+- FR14: order main session tiles by device-local in-app terminal recency so the
+  session most recently opened from a tile returns to the top of the deck while
+  untouched sessions retain stable server order.
 
 ## Constraints
 
@@ -79,6 +82,9 @@ Status: Approved
   distance- and velocity-scaled wheel input plus directionally equivalent
   Older/Latest wheel input to mouse-aware foreground programs and resets safely
   to off.
+- [ ] AC9: opening a session terminal promotes that session to the first main
+  tile on return, persists the device-local recency order safely across refresh
+  and reload, and keeps deck navigation and the session rail consistent.
 
 ## Canonical Verification
 
