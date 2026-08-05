@@ -163,6 +163,7 @@ input to foreground TUIs such as Claude Code and mitmproxy.
   monotonic gesture timestamps, deterministic 1x/2x/3x/4x bands, and a 72-event
   cap. Focused tests, typecheck, canonical verification, and clean production
   image `sha256:035f7f...` pass. Execution pauses before deployment.
+- 2026-08-04: committed the verified velocity refinement as `b1c7224`.
 - Revised canonical verification passes with 24 Core, 12 Infrastructure (four
   isolated tests skipped), 33 Server integration, frontend typecheck/tests, and
   Compose validation when run with the repository's local .NET 10 SDK.
@@ -218,8 +219,9 @@ input to foreground TUIs such as Claude Code and mitmproxy.
 
 ## Next Action
 
-- Commit the verified velocity revision, then await explicit approval before
-  replacing the currently deployed three-tick test image.
+- With explicit owner approval, deploy the verified velocity image to the
+  existing tailnet test environment and repeat health, asset, update, and
+  physical-iPhone checks.
 
 ## Pause Conditions
 

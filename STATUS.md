@@ -80,8 +80,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Commit the velocity-scaled refinement, then await explicit approval before
-  replacing the current tailnet test image.
+- Await explicit approval before replacing the current tailnet test image with
+  the verified velocity-scaled release.
 
 ## Known Limitations
 
