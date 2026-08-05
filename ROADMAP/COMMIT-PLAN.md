@@ -122,7 +122,7 @@ Status: completed
 
 ## C012 — Opt-in terminal TUI scrolling
 
-Status: paused at physical-device/deployment boundary
+Status: paused for owner physical-iPhone acceptance
 
 - Preserve tmux-backed swipe history as the default terminal behavior.
 - Add an explicit, non-persistent application-scroll toggle that translates

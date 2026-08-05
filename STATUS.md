@@ -4,12 +4,17 @@ Updated: 2026-08-04
 
 ## Current
 
-- C012 is active on `feat/c012-opt-in-tui-scroll`. The local thin slice keeps
+- C012 is deployed for owner testing from `feat/c012-opt-in-tui-scroll`. The
+  thin slice keeps
   tmux-backed swipes as the default and adds a default-off, non-persistent App
-  Scroll toggle for mouse-aware TUIs. Frontend unit/type checks, the .NET 10
+  Scroll toggle for mouse-aware TUIs. Image `tmux-mobile:c012-opt-in-tui-scroll`
+  is healthy in the existing tailnet Serve environment; HTTPS liveness/root,
+  readiness, served-bundle identity, tmux compatibility, and direct-backend 426
+  checks pass. `tmux-mobile:pre-c012-rollback` preserves the prior live image.
+  Frontend unit/type checks, the .NET 10
   container build, four isolated Linux PTY/tmux tests, negotiated xterm encoding
   probe, and canonical verification pass. Physical-iPhone acceptance and review
-  completion remain before any merge or deployment.
+  completion remain before any merge or push.
 
 - C011 is implemented and actively deployed from
   `security/c011-dotnet10-and-hardening` at
@@ -60,8 +65,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Obtain explicit approval to stage C012 in the existing tailnet environment,
-  then complete owner physical-iPhone acceptance and the review before any merge.
+- Owner tests default history plus App Scroll against Claude Code and mitmproxy
+  on iPhone, including reset after reconnect, before final review or merge.
 
 ## Known Limitations
 

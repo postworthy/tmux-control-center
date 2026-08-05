@@ -42,6 +42,11 @@ pass. No merge, push, publication, or deployment is authorized by this record.
 - Canonical `./scripts/verify.sh`: pass with 24 Core, 12 Infrastructure (four
   opt-in Linux tests skipped in this run), 33 Server integration, frontend
   typecheck and both unit suites, and safe Compose validation.
+- Owner-approved tailnet test deployment: previous image `sha256:d2b52a...` is
+  tagged `tmux-mobile:pre-c012-rollback`; deployed image `sha256:00eb6c...` is
+  healthy. HTTPS liveness/root and container readiness return 200, the served
+  terminal bundle contains `App Scroll`, tmux 3.4 enumerates current sessions,
+  direct backend root remains 426, and startup logs contain no new errors.
 
 ## Risk and Rollback
 

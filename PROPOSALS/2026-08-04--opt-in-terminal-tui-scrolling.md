@@ -39,7 +39,8 @@ Out of scope:
 - App-specific Claude Code or mitmproxy commands, key bindings, remote adapters,
   or arbitrary mouse/text payloads.
 - Changing tmux configuration, history limits, API authorization, network
-  exposure, deployment, or production state.
+  exposure, or production state. The owner separately approved replacement of
+  only the existing tailnet Serve test container on 2026-08-04.
 - Implementing click, drag-selection, hover, horizontal wheel, or general touch
   mouse emulation.
 

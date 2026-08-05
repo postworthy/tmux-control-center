@@ -46,9 +46,12 @@ mitmproxy.
     container. Existing history test observes positive `scroll_position`; new
     test observes `alternate_on=1`, `mouse_any_flag=1`, SGR mode, and forwarded
     wheel input. All sockets are uniquely named and no owner pane receives input.
-- [ ] AC6 — Documentation, rollback, review, and canonical verification agree
+- [x] AC6 — Documentation, rollback, review, and canonical verification agree
   with the implemented behavior and security posture.
-  - Evidence: pending docs inspection, Review Record, and `./scripts/verify.sh`.
+  - Evidence: docs and pending Review Record describe default versus enabled
+    input semantics; canonical verification passes; the previous live image is
+    preserved as `tmux-mobile:pre-c012-rollback` and post-deployment health,
+    readiness, HTTPS, bundle, tmux compatibility, and backend-denial checks pass.
 
 ## Authority Envelope
 
@@ -57,6 +60,9 @@ mitmproxy.
 - Approved, local, reversible T0/T1 edits, tests, builds, isolated tmux probes,
   documentation, commits, and review artifacts required by this goal.
 - Create and destroy only uniquely named isolated test tmux sockets/sessions.
+- Owner-approved deployment of the verified C012 image to the existing
+  `tmux-mobile-tailnet-serve` test environment, preserving the current image as
+  a rollback tag and verifying its established security/health boundaries.
 
 ### Must Pause for Approval
 
@@ -86,6 +92,12 @@ mitmproxy.
 - 2026-08-04: frontend unit/type checks, production container build, headless
   xterm encoding probe, four isolated Linux tests, and canonical verification
   pass. Execution paused before the unapproved deployment boundary.
+- 2026-08-04: owner explicitly approved deployment for physical-iPhone testing;
+  execution resumed against only the existing tailnet Serve test environment.
+- 2026-08-04: preserved live image `sha256:d2b52a...` as
+  `tmux-mobile:pre-c012-rollback`, built `tmux-mobile:c012-opt-in-tui-scroll`,
+  and recreated only the existing Compose app. New image `sha256:00eb6c...` is
+  healthy; execution paused for owner physical-iPhone acceptance.
 
 ## Evidence
 
@@ -102,6 +114,10 @@ mitmproxy.
   matched real TUI raw-mode behavior.
 - Exact canonical command passed with 24 Core, 12 Infrastructure (four isolated
   tests skipped there), 33 Server integration, and both frontend test files.
+- Live tailnet Serve deployment: HTTPS liveness and root return 200, the served
+  terminal bundle contains `App Scroll`, direct backend root remains 426,
+  container readiness returns 200, tmux 3.4 can enumerate 12 current sessions,
+  and startup logs show no new errors.
 
 ## Discoveries
 
@@ -133,8 +149,8 @@ mitmproxy.
 
 ## Next Action
 
-- Obtain explicit owner approval before deploying the verified C012 test build
-  to the existing tailnet environment for physical-iPhone acceptance.
+- Owner tests on iPhone: default tmux history, App Scroll with Claude Code and
+  mitmproxy, then disconnect/reconnect reset; report acceptance or exact failure.
 
 ## Pause Conditions
 
@@ -147,5 +163,7 @@ mitmproxy.
 
 - Local implementation, documentation, canonical verification, negotiated xterm
   encoding, and isolated real-tmux evidence are complete.
-- Physical-iPhone acceptance, final review decision, and any merge or deployment
-  remain pending at explicit owner-controlled boundaries.
+- The verified C012 image is healthy in the existing tailnet Serve test
+  environment with a validated pre-C012 rollback tag.
+- Physical-iPhone acceptance, final review decision, and any merge or push remain
+  pending at explicit owner-controlled boundaries.
