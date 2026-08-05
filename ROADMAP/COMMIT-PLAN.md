@@ -122,7 +122,7 @@ Status: completed
 
 ## C012 — Opt-in terminal TUI scrolling
 
-Status: paused for owner physical-iPhone acceptance
+Status: active correction after owner physical-iPhone feedback
 
 - Preserve tmux-backed swipe history as the default terminal behavior.
 - Add an explicit, non-persistent application-scroll toggle that translates
@@ -131,6 +131,8 @@ Status: paused for owner physical-iPhone acceptance
   accessible pressed-state feedback, and cover both routing modes.
 - Verify ordinary tmux history and mouse-aware alternate-screen behavior before
   physical-iPhone acceptance.
+- Scale application wheel ticks with swipe distance and route Older/Latest as
+  wheel-up/wheel-down bursts only while application scrolling is enabled.
 - Planned commit: `feat(terminal): add opt-in TUI swipe scrolling`
 
 ## Later

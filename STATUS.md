@@ -15,6 +15,17 @@ Updated: 2026-08-04
   container build, four isolated Linux PTY/tmux tests, negotiated xterm encoding
   probe, and canonical verification pass. Physical-iPhone acceptance and review
   completion remain before any merge or push.
+- The first C012 iPhone check did not show App Scroll. RCA establishes that the
+  deployed image has the new bundle, but the unchanged service worker cannot
+  prompt an already-open PWA to update and stale old hashed bundles remain
+  servable. Corrective work is paused pending a force-close/reopen diagnostic;
+  see `RCA/2026-08-04--deployed-terminal-control-not-visible.md`. Force-closing
+  and reopening made the button visible, confirming the diagnosis. The owner
+  then requested proportional swipe movement and application-mode routing for
+  Older/Latest. That local correction now passes focused tests, production image
+  build, and canonical verification. The confirmed release defect is also
+  corrected locally: the worker is release-stamped and the runtime image no
+  longer contains stale hashed bundles. The revised image is not yet deployed.
 
 - C011 is implemented and actively deployed from
   `security/c011-dotnet10-and-hardening` at
@@ -65,8 +76,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Owner tests default history plus App Scroll against Claude Code and mitmproxy
-  on iPhone, including reset after reconnect, before final review or merge.
+- Commit the verified proportional-scroll and release-boundary correction, then
+  request approval before replacing the current tailnet test image.
 
 ## Known Limitations
 

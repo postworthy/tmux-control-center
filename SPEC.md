@@ -42,7 +42,8 @@ Status: Approved
   target tmux server and mount only the required tmux socket directory and state.
 - FR13: keep tmux-backed terminal history navigation as the default and provide
   an explicit, non-persistent terminal control that temporarily translates
-  bounded vertical swipes into mouse-wheel input for foreground TUIs.
+  vertical swipe distance and the Older/Latest controls into bounded,
+  directionally equivalent mouse-wheel input for foreground TUIs.
 
 ## Constraints
 
@@ -73,9 +74,10 @@ Status: Approved
 - [x] AC6: the production image builds successfully.
 - [x] AC7: docs provide exact Compose setup and verification steps without
   suggesting `0.0.0.0` as a host bind.
-- [ ] AC8: terminal swipes continue to navigate tmux history by default, while
-  an explicitly enabled application-scroll mode routes bounded wheel input to
-  mouse-aware foreground programs and resets safely to off.
+- [ ] AC8: terminal swipes and Older/Latest continue to navigate tmux history by
+  default, while an explicitly enabled application-scroll mode routes bounded,
+  swipe-proportional wheel input and directionally equivalent Older/Latest
+  wheel input to mouse-aware foreground programs and resets safely to off.
 
 ## Canonical Verification
 

@@ -7,7 +7,7 @@ Related Issue/Context: Claude Code and mitmproxy own scroll navigation while in
 alternate-screen mouse mode, leaving local tmux history empty.
 Roadmap Item: C012
 Planned Branch: `feat/c012-opt-in-tui-scroll`
-Expected Commit Count: 2
+Expected Commit Count: 4
 
 ## Objective
 
@@ -23,13 +23,19 @@ In scope:
 - Default the toggle to off and never persist it across terminal views,
   disconnects, reconnects, reloads, or sessions.
 - While off, retain the current typed WebSocket tmux-history protocol unchanged.
-- While on, translate one completed vertical gesture into a bounded number of
-  synthetic wheel events over xterm so xterm and tmux negotiate and route the
-  mouse protocol.
+- While on, translate vertical swipe distance proportionally into a bounded
+  number of synthetic wheel events over xterm so xterm and tmux negotiate and
+  route the mouse protocol.
+- While on, route Older and Latest through the same application-wheel path as
+  fixed directionally equivalent wheel-up and wheel-down bursts; while off,
+  preserve their existing tmux-history commands exactly.
 - Preserve horizontal, tap, multi-touch, pinch, typing, clipboard, and terminal
   lifecycle behavior.
 - Add focused frontend coverage, isolated terminal/tmux evidence, documentation,
   and a Change Review.
+- Correct the confirmed deployment boundary by stamping each production service
+  worker from its generated asset graph and copying generated web assets into a
+  clean container webroot.
 
 Out of scope:
 
@@ -52,6 +58,9 @@ Out of scope:
 - `src/TmuxMobile.Web/src/terminalScroll.ts`
 - `src/TmuxMobile.Web/src/styles.css`
 - `src/TmuxMobile.Web/tests/terminalScroll.test.ts`
+- `src/TmuxMobile.Web/scripts/version-service-worker.mjs`
+- `src/TmuxMobile.Web/public/service-worker.js`
+- `Dockerfile`
 - `docs/architecture.md`
 - `docs/security.md`
 - `README.md`
@@ -66,14 +75,20 @@ Out of scope:
   default and reset state is off and whose enabled state is visibly and
   programmatically indicated.
 - [ ] With application scrolling on, a completed vertical swipe dispatches one
-  to three directionally correct wheel events through xterm at a valid terminal
-  coordinate and does not send a tmux-history request.
+  wheel event per 18 pixels of movement, capped at 24 directionally correct
+  events through xterm, and does not send a tmux-history request.
+- [ ] With application scrolling on, Older dispatches a fixed 12-event wheel-up
+  burst and Latest dispatches a fixed 12-event wheel-down burst through the
+  same xterm path; with the mode off, both retain their exact history behavior.
 - [ ] Tap, horizontal, multi-touch, pinch, typing, clipboard, reconnect, and
   terminal cleanup behavior remain unchanged.
 - [ ] An isolated real-tmux check proves ordinary panes retain tmux copy-mode
   scrolling while a mouse-aware alternate-screen pane receives wheel input.
 - [ ] Focused checks and `./scripts/verify.sh` pass; docs explain the explicit
   mode, security change, rollback, and limitations.
+- [ ] A production image contains only its current hashed application bundles,
+  and its service-worker bytes change with the generated root asset identity so
+  an installed PWA can detect the release.
 
 ## Verification Plan
 
@@ -121,9 +136,9 @@ Pass means:
 Work units (ordered):
 
 1. Routing contract and pure gesture model — Verify by frontend unit tests —
-   Exit criteria: one bounded gesture deterministically selects unchanged
-   history serialization or wheel-event descriptors — Risk: T1 — Dependencies:
-   xterm 6 wheel handling.
+   Exit criteria: gesture distance and toolbar actions deterministically select
+   unchanged history serialization or bounded wheel-event descriptors — Risk:
+   T1 — Dependencies: xterm 6 wheel handling.
 2. Thin-slice terminal UI — Verify by typecheck, build, DOM inspection, and an
    isolated xterm mouse-protocol probe — Exit criteria: accessible opt-in button
    switches routing, defaults off, and resets on disconnect — Risk: T1 —
@@ -148,7 +163,8 @@ Dependencies and unknowns:
 Intentional deferrals:
 
 - Automatic mouse-owner discovery in the UI.
-- Dedicated PageUp/PageDown application buttons.
+- Dedicated application-only PageUp/PageDown buttons; the existing
+  Older/Latest controls are dual-routed by the explicit mode.
 - Click, selection, hover, and remote-host integration.
 
 ## Rollback Plan
@@ -167,8 +183,9 @@ If this change causes regressions:
   Mitigation: explicit default-off toggle, no persistence, reset on connection
   loss, fixed wheel semantics, bounded events, visible pressed state, and docs.
 - Risk: synthetic wheel direction, magnitude, or coordinates differ on Safari.
-  Mitigation: pure routing tests, xterm protocol probe, bounded translation, and
-  required physical-iPhone acceptance before deployment.
+  Mitigation: pure routing tests, xterm protocol probe, a 24-event gesture cap,
+  fixed 12-event toolbar bursts, and required physical-iPhone acceptance before
+  deployment.
 - Risk: the TUI treats wheel input contextually.
   Mitigation: activation is explicit and the app does not claim that wheel input
   is read-only or equivalent to tmux history.
@@ -193,3 +210,6 @@ If this change causes regressions:
 - Approval status: approved
 - Approved at: 2026-08-04, through the explicit request to preserve current
   behavior and require a terminal button before enabling mouse-wheel translation.
+- Revised scope approved at: 2026-08-04, through the owner's request for wheel
+  movement proportional to swipe distance and dual routing of Older/Latest
+  while application scrolling is enabled.

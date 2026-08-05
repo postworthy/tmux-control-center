@@ -152,15 +152,21 @@ Validate this against the current tailnet policy schema before saving. Prefer a 
 4. Open Terminal; test text, Esc/Tab/arrows/Enter, Ctrl-C, Ctrl-D, prefix, and Ctrl/Alt one-shot input.
 5. Produce enough output for pane history, drag down to enter tmux history, drag
    up to move newer, then tap Latest and confirm live output resumes.
-6. Open a non-critical mouse-aware TUI, confirm swipes still use tmux history by
-   default, enable App Scroll, and confirm both swipe directions navigate the
-   TUI. Disconnect and reconnect; confirm App Scroll reset to off.
+6. Open a non-critical mouse-aware TUI, confirm swipes and Older/Latest still use
+   tmux history by default, enable App Scroll, and confirm longer swipes move
+   farther than shorter swipes while Older and Latest send wheel-up and
+   wheel-down input. Disconnect and reconnect; confirm App Scroll reset to off.
 7. Rotate the device and confirm the tmux pane resizes.
 8. Return and confirm the same card is visible.
 9. Disable connectivity, confirm disconnected state, restore it, and reconnect without reloading.
 10. Background for longer than one heartbeat, resume, then test sleep/wake and Wi-Fi/cellular changes.
 
 Do this against non-critical tmux sessions first.
+
+Production web builds stamp `service-worker.js` from the generated root asset
+identity. A running installed PWA should show the existing Update ready prompt
+after a new release; close active terminals and tap Apply. The runtime image is
+built from a clean generated webroot and must not retain obsolete hashed bundles.
 
 ## Health and logs
 

@@ -18,18 +18,26 @@ pass. No merge, push, publication, or deployment is authorized by this record.
 - [x] Application scrolling requires an explicit accessible pressed-state
   control and is never persisted.
 - [x] Disconnect, terminal entry, and terminal exit reset the mode to off.
-- [x] Enabled gestures emit only one to three negotiated wheel events; no
+- [x] Enabled gestures emit swipe-proportional negotiated wheel events capped at
+  24, and application-mode Older/Latest emit fixed 12-event bursts; no
   app-specific command, raw caller payload, backend route, or schema was added.
-- [x] Existing Older/Latest, typing, modifiers, paste, resize, reconnect, and
+- [x] Existing default Older/Latest, typing, modifiers, paste, resize, reconnect, and
   cleanup paths remain present.
 - [ ] Physical iPhone behavior is accepted for normal history, Claude Code, and
   one additional mouse-aware TUI such as mitmproxy.
 
 ## Evidence
 
-- Frontend `test:unit`: pass, including unchanged default JSON and bounded signed
-  application-wheel routing.
-- Frontend `typecheck`: pass.
+- Revised frontend `test:unit`: pass, including unchanged default JSON,
+  swipe-proportional capped routing, and dual-routed Older/Latest controls.
+- Revised frontend `typecheck`: pass.
+- Revised production `server-build` image: pass.
+- Revised full runtime image `sha256:72e88f...`: pass. It contains only the
+  current main/terminal asset graph, and its stamped worker digest
+  `b2498489...` differs from the live image's `4fba5613...`.
+- Revised canonical `./scripts/verify.sh`: pass with 24 Core, 12 Infrastructure
+  (four isolated tests skipped), 33 Server integration, frontend checks, and
+  safe Compose validation using the repository's provisioned .NET 10 SDK.
 - Temporary loopback-only headless-Chrome probe: installed xterm 6 accepts the
   synthetic line-mode wheel event and emits SGR wheel-up bytes
   `27,91,60,54,52,...,77`; the temporary page and server were removed.
@@ -54,6 +62,8 @@ pass. No merge, push, publication, or deployment is authorized by this record.
   foreground TUI. Default-off, explicit activation, visible state, bounded fixed
   wheel semantics, modifier isolation, and reset-on-loss mitigate this risk.
 - Synthetic WheelEvent acceptance still requires physical iOS Safari evidence.
+- The proportional and toolbar revision has not been deployed; the deployment
+  evidence above applies to the initial three-event C012 build only.
 - Rollback is a revert of the C012 commits followed by frontend tests and
   `./scripts/verify.sh`; the default path already matches the pre-C012 contract.
 

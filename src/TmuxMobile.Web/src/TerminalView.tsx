@@ -6,6 +6,7 @@ import { MAX_PASTE_BYTES, pasteByteLength, requiresPasteConfirmation, serializeT
 import {
   classifyTouchAxis,
   consumeTouchScroll,
+  routeScrollControl,
   routeTouchScroll,
   serializeHistoryRequest,
   type TerminalHistoryAction,
@@ -47,6 +48,31 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     socket.current.send(serializeHistoryRequest(action, pages));
     if (action === "older") setHistoryMode(true);
     if (action === "latest") setHistoryMode(false);
+  }, []);
+
+  const dispatchApplicationWheel = useCallback((wheelDeltaYs: number[], clientX?: number, clientY?: number) => {
+    const xterm = terminal.current;
+    const element = xterm?.element;
+    if (!xterm || !element) return;
+    const bounds = element.getBoundingClientRect();
+    const wheelX = clientX ?? bounds.left + bounds.width / 2;
+    const wheelY = clientY ?? bounds.top + bounds.height / 2;
+    dispatchingApplicationWheel.current = true;
+    try {
+      for (const deltaY of wheelDeltaYs) {
+        element.dispatchEvent(new WheelEvent("wheel", {
+          bubbles: true,
+          cancelable: true,
+          clientX: wheelX,
+          clientY: wheelY,
+          deltaMode: WheelEvent.DOM_DELTA_LINE,
+          deltaY
+        }));
+      }
+    } finally {
+      dispatchingApplicationWheel.current = false;
+    }
+    xterm.focus();
   }, []);
 
   const connect = useCallback(() => {
@@ -159,23 +185,8 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
         if (route?.kind === "history" && socket.current?.readyState === WebSocket.OPEN) {
           socket.current.send(route.message);
           if (touch.lines < 0) setHistoryMode(true);
-        } else if (route?.kind === "application") {
-          dispatchingApplicationWheel.current = true;
-          try {
-            for (const deltaY of route.wheelDeltaYs) {
-              xterm.element?.dispatchEvent(new WheelEvent("wheel", {
-                bubbles: true,
-                cancelable: true,
-                clientX: touch.lastX,
-                clientY: touch.lastY,
-                deltaMode: WheelEvent.DOM_DELTA_LINE,
-                deltaY
-              }));
-            }
-          } finally {
-            dispatchingApplicationWheel.current = false;
-          }
-        }
+        } else if (route?.kind === "application")
+          dispatchApplicationWheel(route.wheelDeltaYs, touch.lastX, touch.lastY);
       }
       touch = null;
     };
@@ -202,7 +213,7 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       xterm.dispose();
       terminal.current = null;
     };
-  }, [connect, resetApplicationScroll, send]);
+  }, [connect, dispatchApplicationWheel, resetApplicationScroll, send]);
 
   const key = (value: string) => { send(value); terminal.current?.focus(); };
   const toggle = (name: "control" | "alt") => {
@@ -259,8 +270,13 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       setPasteStatus("Clipboard access was unavailable. Paste into the text field manually.");
     }
   };
-  const scrollOlder = () => requestHistory("older");
-  const scrollLatest = () => requestHistory("latest");
+  const routeScrollButton = (action: "older" | "latest") => {
+    const route = routeScrollControl(action, applicationScroll.current);
+    if (route.kind === "history") requestHistory(action);
+    else dispatchApplicationWheel(route.wheelDeltaYs);
+  };
+  const scrollOlder = () => routeScrollButton("older");
+  const scrollLatest = () => routeScrollButton("latest");
   const toggleApplicationScroll = () => {
     const enabled = !applicationScroll.current;
     applicationScroll.current = enabled;
@@ -296,9 +312,13 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
           Application scrolling enabled. Swipes now send mouse wheel input to the foreground program.
         </span>}
         <div className="shortcut-bar" role="toolbar" aria-label="Terminal shortcut keys">
-          <button onClick={scrollOlder} aria-label="Scroll one page into older terminal output">Older</button>
-          <button onClick={scrollLatest} disabled={!historyMode}
-            aria-label="Jump to latest terminal output">Latest</button>
+          <button onClick={scrollOlder} aria-label={applicationScrollEnabled
+            ? "Send wheel-up input to the foreground application"
+            : "Scroll one page into older terminal output"}>Older</button>
+          <button onClick={scrollLatest} disabled={!applicationScrollEnabled && !historyMode}
+            aria-label={applicationScrollEnabled
+              ? "Send wheel-down input to the foreground application"
+              : "Jump to latest terminal output"}>Latest</button>
           <button className={applicationScrollEnabled ? "active" : ""}
             aria-pressed={applicationScrollEnabled}
             aria-label="Route terminal swipes as mouse wheel input to the foreground application"
