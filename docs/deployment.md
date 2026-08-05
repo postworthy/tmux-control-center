@@ -154,7 +154,8 @@ Validate this against the current tailnet policy schema before saving. Prefer a 
    up to move newer, then tap Latest and confirm live output resumes.
 6. Open a non-critical mouse-aware TUI, confirm swipes and Older/Latest still use
    tmux history by default, enable App Scroll, and confirm longer swipes move
-   farther than shorter swipes while Older and Latest send wheel-up and
+   farther than shorter swipes and fast flicks move farther than deliberate
+   drags of comparable distance, while Older and Latest send wheel-up and
    wheel-down input. Disconnect and reconnect; confirm App Scroll reset to off.
 7. Rotate the device and confirm the tmux pane resizes.
 8. Return and confirm the same card is visible.

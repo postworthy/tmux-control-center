@@ -14,8 +14,8 @@ Tailscale Serve, and publish only on an explicitly configured Tailscale IP.
 - Cookie authentication bootstrapped by a deployment access key, CSRF validation, read/interact/admin policies, origin checks, rate and connection limits, security headers, and JSON-lines auditing.
 - React/TypeScript cards with vertical CSS snap, explicit navigation, state preservation, quick actions, details, realtime reconnect, and offline states.
 - Lazy-loaded xterm.js terminal with resize, disconnect/reconnect, tmux-backed
-  touch/button history by default, explicit non-persistent proportional
-  application/TUI scrolling for swipes and Older/Latest,
+  touch/button history by default, explicit non-persistent distance- and
+  velocity-scaled application/TUI scrolling for swipes and Older/Latest,
   one-shot Ctrl/Alt, mobile shortcut keys, and guarded clipboard paste with a
   Safari fallback.
 - Manifest, icons, service worker, offline shell, systemd/nginx examples, and Tailscale guidance.

@@ -25,7 +25,11 @@ Updated: 2026-08-04
   Older/Latest. That local correction now passes focused tests, production image
   build, and canonical verification. The confirmed release defect is also
   corrected locally: the worker is release-stamped and the runtime image no
-  longer contains stale hashed bundles. The revised image is not yet deployed.
+  longer contains stale hashed bundles. The revised image was not deployed; the
+  owner has now requested a further velocity multiplier so fast flicks move
+  materially farther than deliberate drags. That refinement now passes focused
+  tests, canonical verification, and production image inspection, and remains
+  undeployed pending explicit approval.
 
 - C011 is implemented and actively deployed from
   `security/c011-dotnet10-and-hardening` at
@@ -76,8 +80,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Await explicit approval before replacing the current tailnet test image with
-  the verified proportional-scroll release.
+- Commit the velocity-scaled refinement, then await explicit approval before
+  replacing the current tailnet test image.
 
 ## Known Limitations
 

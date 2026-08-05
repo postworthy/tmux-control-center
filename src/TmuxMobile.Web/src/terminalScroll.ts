@@ -3,8 +3,11 @@ export const TOUCH_SCROLL_LINE_PIXELS = 18;
 export const MAX_HISTORY_SCROLL_PAGES = 3;
 export const TOUCH_LINES_PER_HISTORY_PAGE = 20;
 export const APPLICATION_WHEEL_DELTA_LINES = 1;
-export const MAX_APPLICATION_WHEEL_EVENTS = 24;
+export const MAX_APPLICATION_WHEEL_EVENTS = 72;
 export const APPLICATION_CONTROL_WHEEL_EVENTS = 12;
+export const APPLICATION_MEDIUM_SWIPE_VELOCITY = 0.5;
+export const APPLICATION_FAST_SWIPE_VELOCITY = 1;
+export const APPLICATION_VERY_FAST_SWIPE_VELOCITY = 1.5;
 
 export type TouchAxis = "pending" | "horizontal" | "vertical";
 export type TerminalHistoryAction = "older" | "newer" | "latest";
@@ -33,17 +36,29 @@ export function historyRequestFromScrollLines(lines: number): string | null {
   return serializeHistoryRequest(lines < 0 ? "older" : "newer", pages);
 }
 
-export function routeTouchScroll(lines: number, applicationScroll: boolean): TouchScrollRoute | null {
+export function applicationWheelMultiplier(velocityPixelsPerMillisecond: number): number {
+  if (!Number.isFinite(velocityPixelsPerMillisecond) || velocityPixelsPerMillisecond <= 0) return 1;
+  if (velocityPixelsPerMillisecond >= APPLICATION_VERY_FAST_SWIPE_VELOCITY) return 4;
+  if (velocityPixelsPerMillisecond >= APPLICATION_FAST_SWIPE_VELOCITY) return 3;
+  if (velocityPixelsPerMillisecond >= APPLICATION_MEDIUM_SWIPE_VELOCITY) return 2;
+  return 1;
+}
+
+export function routeTouchScroll(
+  lines: number,
+  applicationScroll: boolean,
+  velocityPixelsPerMillisecond = 0
+): TouchScrollRoute | null {
   if (!Number.isFinite(lines) || lines === 0) return null;
   if (!applicationScroll) {
     return { kind: "history", message: historyRequestFromScrollLines(lines)! };
   }
 
   const deltaY = lines < 0 ? -APPLICATION_WHEEL_DELTA_LINES : APPLICATION_WHEEL_DELTA_LINES;
+  const eventCount = Math.abs(Math.trunc(lines)) * applicationWheelMultiplier(velocityPixelsPerMillisecond);
   return {
     kind: "application",
-    wheelDeltaYs: Array(Math.min(MAX_APPLICATION_WHEEL_EVENTS, Math.max(1, Math.abs(Math.trunc(lines)))))
-      .fill(deltaY)
+    wheelDeltaYs: Array(Math.min(MAX_APPLICATION_WHEEL_EVENTS, Math.max(1, eventCount))).fill(deltaY)
   };
 }
 

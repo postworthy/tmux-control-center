@@ -23,9 +23,9 @@ In scope:
 - Default the toggle to off and never persist it across terminal views,
   disconnects, reconnects, reloads, or sessions.
 - While off, retain the current typed WebSocket tmux-history protocol unchanged.
-- While on, translate vertical swipe distance proportionally into a bounded
-  number of synthetic wheel events over xterm so xterm and tmux negotiate and
-  route the mouse protocol.
+- While on, translate vertical swipe distance proportionally into synthetic
+  wheel events, apply a bounded multiplier derived from swipe velocity, and send
+  them over xterm so xterm and tmux negotiate and route the mouse protocol.
 - While on, route Older and Latest through the same application-wheel path as
   fixed directionally equivalent wheel-up and wheel-down bursts; while off,
   preserve their existing tmux-history commands exactly.
@@ -74,9 +74,10 @@ Out of scope:
 - [ ] The terminal toolbar exposes an accessible application-scroll toggle whose
   default and reset state is off and whose enabled state is visibly and
   programmatically indicated.
-- [ ] With application scrolling on, a completed vertical swipe dispatches one
-  wheel event per 18 pixels of movement, capped at 24 directionally correct
-  events through xterm, and does not send a tmux-history request.
+- [ ] With application scrolling on, a completed vertical swipe starts at one
+  wheel event per 18 pixels, applies deterministic 1x–4x velocity bands, caps at
+  72 directionally correct events through xterm, and does not send a
+  tmux-history request.
 - [ ] With application scrolling on, Older dispatches a fixed 12-event wheel-up
   burst and Latest dispatches a fixed 12-event wheel-down burst through the
   same xterm path; with the mode off, both retain their exact history behavior.
@@ -182,10 +183,10 @@ If this change causes regressions:
   read-only tmux-history operation.
   Mitigation: explicit default-off toggle, no persistence, reset on connection
   loss, fixed wheel semantics, bounded events, visible pressed state, and docs.
-- Risk: synthetic wheel direction, magnitude, or coordinates differ on Safari.
-  Mitigation: pure routing tests, xterm protocol probe, a 24-event gesture cap,
-  fixed 12-event toolbar bursts, and required physical-iPhone acceptance before
-  deployment.
+- Risk: synthetic wheel direction, magnitude, velocity timing, or coordinates
+  differ on Safari. Mitigation: pure routing tests, monotonic event timestamps,
+  xterm protocol probe, a 72-event gesture cap, fixed 12-event toolbar bursts,
+  and required physical-iPhone acceptance before deployment.
 - Risk: the TUI treats wheel input contextually.
   Mitigation: activation is explicit and the app does not claim that wheel input
   is read-only or equivalent to tmux history.
@@ -213,3 +214,6 @@ If this change causes regressions:
 - Revised scope approved at: 2026-08-04, through the owner's request for wheel
   movement proportional to swipe distance and dual routing of Older/Latest
   while application scrolling is enabled.
+- Velocity revision approved at: 2026-08-04, through the owner's request that
+  swipe speed or force apply a scroll-speed multiplier. Velocity was selected
+  because iPhone touch pressure is not consistently available to Safari PWAs.

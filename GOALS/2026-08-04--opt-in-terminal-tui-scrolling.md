@@ -11,8 +11,8 @@ Review Boundary: merge from `feat/c012-opt-in-tui-scroll` into `main`
 
 Terminal swipes and Older/Latest continue to navigate local tmux history by
 default, while an accessible, non-persistent terminal button lets the owner
-explicitly route swipe-proportional and toolbar-directed mouse-wheel input to
-foreground TUIs such as Claude Code and mitmproxy.
+explicitly route distance- and velocity-scaled plus toolbar-directed mouse-wheel
+input to foreground TUIs such as Claude Code and mitmproxy.
 
 ## Non-Goals
 
@@ -31,11 +31,11 @@ foreground TUIs such as Claude Code and mitmproxy.
   - Evidence: source/build inspection finds a default-false ref/state,
     `aria-pressed`, visible active styling, and resets at terminal initialization,
     disconnect, and exit; typecheck and production build pass.
-- [ ] AC3 — Enabled vertical swipes dispatch one wheel event per 18 pixels of
-  movement up to a 24-event cap, with correct direction and no tmux-history
-  request.
-  - Evidence: revised frontend routing tests pass for proportional direction,
-    magnitude, and cap; physical-iPhone check remains pending.
+- [ ] AC3 — Enabled vertical swipes start at one wheel event per 18 pixels,
+  apply deterministic 1x–4x velocity bands, and dispatch no more than 72 events
+  with correct direction and no tmux-history request.
+  - Evidence: revised velocity routing tests and production build pass;
+    physical-iPhone check remains pending.
 - [ ] AC7 — Enabled Older/Latest dispatch fixed 12-event wheel-up/wheel-down
   bursts through the same xterm path, while disabled behavior remains exact.
   - Evidence: focused routing tests, typecheck, and production build pass;
@@ -85,8 +85,8 @@ foreground TUIs such as Claude Code and mitmproxy.
 
 | Unit | Status | Exit criteria | Verification |
 | --- | --- | --- | --- |
-| 1. Routing contract | completed | Pure bounded model selects unchanged history messages or proportional/fixed wheel descriptors. | Revised frontend unit tests passed |
-| 2. Thin-slice UI | completed | Default-off accessible toggle switches swipe and toolbar routing and resets safely. | Typecheck and production build passed |
+| 1. Routing contract | completed | Pure bounded model selects unchanged history messages or velocity-scaled/fixed wheel descriptors. | Revised frontend unit tests passed |
+| 2. Thin-slice UI | completed | Touch timing feeds velocity-scaled routing without changing default or toolbar behavior. | Typecheck and production build passed |
 | 3. Release boundary | completed | Production service worker identity changes and runtime image contains only current bundles. | Two-revision image inspection passed |
 | 4. Cross-boundary evidence | pending | Isolated xterm/tmux probes observe both owners; docs and review complete. | Local evidence passed; physical iPhone pending |
 
@@ -155,6 +155,14 @@ foreground TUIs such as Claude Code and mitmproxy.
 - 2026-08-04: committed the verified proportional-scroll, dual-routed controls,
   confirmed RCA, and release-boundary correction as `73f8984`. Execution pauses
   at the explicit deployment boundary.
+- 2026-08-04: owner clarified that application swipes need a speed/force-style
+  multiplier. The proposed proportional revision was never deployed, so this is
+  a contract refinement rather than a failed-runtime correction. The goal
+  resumed locally with velocity selected over unreliable iPhone touch pressure.
+- 2026-08-04: implemented average-velocity measurement from touch travel and
+  monotonic gesture timestamps, deterministic 1x/2x/3x/4x bands, and a 72-event
+  cap. Focused tests, typecheck, canonical verification, and clean production
+  image `sha256:035f7f...` pass. Execution pauses before deployment.
 - Revised canonical verification passes with 24 Core, 12 Infrastructure (four
   isolated tests skipped), 33 Server integration, frontend typecheck/tests, and
   Compose validation when run with the repository's local .NET 10 SDK.
@@ -163,6 +171,17 @@ foreground TUIs such as Claude Code and mitmproxy.
   forms). Its stamped worker cache is
   `tmux-mobile-shell-15e34998b5097601`, with digest `b2498489...`, versus the
   deployed worker's `4fba5613...` digest.
+- Velocity tests prove exact thresholds at 0.5, 1.0, and 1.5 pixels per
+  millisecond; a five-line deliberate drag emits five ticks, the same-distance
+  very-fast flick emits twenty, invalid timing falls back to 1x, and both normal
+  and multiplied paths cap at 72.
+- Velocity production image `sha256:035f7f...` contains only
+  `index-BnrbwrGM.js` and `TerminalView-Tgc5GWth.js` as application JavaScript
+  (plus compressed forms), with worker cache
+  `tmux-mobile-shell-a499c702c0092a50`.
+- Post-velocity canonical verification passes with 24 Core, 12 Infrastructure
+  (four isolated tests skipped), 33 Server integration, frontend checks, and
+  Compose validation.
 
 ## Discoveries
 
@@ -185,9 +204,9 @@ foreground TUIs such as Claude Code and mitmproxy.
   off.
 - Use xterm's negotiated mouse encoder rather than hand-built escape sequences,
   process names, pane titles, or remote-program discovery.
-- Scale application scrolling at one wheel event per 18 pixels, capped at 24
-  events per gesture; use fixed 12-event bursts for application-mode
-  Older/Latest controls.
+- Scale application scrolling from one wheel event per 18 pixels with 1x–4x
+  velocity bands and a 72-event cap; use fixed 12-event bursts for
+  application-mode Older/Latest controls.
 
 ## Retry State
 
@@ -199,9 +218,8 @@ foreground TUIs such as Claude Code and mitmproxy.
 
 ## Next Action
 
-- With explicit owner approval, tag and deploy the verified revised image to the
-  existing tailnet test environment, then repeat health/security/asset checks
-  and physical-iPhone acceptance.
+- Commit the verified velocity revision, then await explicit approval before
+  replacing the currently deployed three-tick test image.
 
 ## Pause Conditions
 

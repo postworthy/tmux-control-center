@@ -18,8 +18,9 @@ pass. No merge, push, publication, or deployment is authorized by this record.
 - [x] Application scrolling requires an explicit accessible pressed-state
   control and is never persisted.
 - [x] Disconnect, terminal entry, and terminal exit reset the mode to off.
-- [x] Enabled gestures emit swipe-proportional negotiated wheel events capped at
-  24, and application-mode Older/Latest emit fixed 12-event bursts; no
+- [x] Enabled gestures emit distance- and velocity-scaled negotiated wheel
+  events capped at 72, and application-mode Older/Latest emit fixed 12-event
+  bursts; no
   app-specific command, raw caller payload, backend route, or schema was added.
 - [x] Existing default Older/Latest, typing, modifiers, paste, resize, reconnect, and
   cleanup paths remain present.
@@ -28,9 +29,15 @@ pass. No merge, push, publication, or deployment is authorized by this record.
 
 ## Evidence
 
-- Revised frontend `test:unit`: pass, including unchanged default JSON,
-  swipe-proportional capped routing, and dual-routed Older/Latest controls.
-- Revised frontend `typecheck`: pass.
+- Velocity-revised frontend `test:unit`: pass, including unchanged default JSON,
+  exact 1x–4x thresholds, 72-event cap, and dual-routed Older/Latest controls.
+- Velocity-revised frontend `typecheck`: pass.
+- Velocity-revised production image `sha256:035f7f...`: pass, containing only
+  the current application bundle graph and stamped worker cache
+  `tmux-mobile-shell-a499c702c0092a50`.
+- Post-velocity canonical `./scripts/verify.sh`: pass with 24 Core, 12
+  Infrastructure (four isolated tests skipped), 33 Server integration, frontend
+  checks, and safe Compose validation.
 - Revised production `server-build` image: pass.
 - Revised full runtime image `sha256:72e88f...`: pass. It contains only the
   current main/terminal asset graph, and its stamped worker digest

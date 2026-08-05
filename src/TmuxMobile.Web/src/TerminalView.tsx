@@ -145,6 +145,8 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       axis: TouchAxis;
       remainderPixels: number;
       lines: number;
+      distancePixels: number;
+      startTime: number;
     } | null = null;
     const touchStart = (event: TouchEvent) => {
       if (event.touches.length !== 1) {
@@ -159,7 +161,9 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
         lastY: point.clientY,
         axis: "pending",
         remainderPixels: 0,
-        lines: 0
+        lines: 0,
+        distancePixels: 0,
+        startTime: event.timeStamp
       };
     };
     const touchMove = (event: TouchEvent) => {
@@ -173,15 +177,23 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       if (touch.axis !== "vertical") return;
 
       event.preventDefault();
-      const consumed = consumeTouchScroll(touch.remainderPixels, point.clientY - touch.lastY);
+      const fingerDeltaY = point.clientY - touch.lastY;
+      const consumed = consumeTouchScroll(touch.remainderPixels, fingerDeltaY);
       touch.lastX = point.clientX;
       touch.lastY = point.clientY;
       touch.remainderPixels = consumed.remainderPixels;
       touch.lines += consumed.lines;
+      touch.distancePixels += Math.abs(fingerDeltaY);
     };
-    const touchEnd = () => {
+    const touchEnd = (event: TouchEvent) => {
       if (touch?.axis === "vertical") {
-        const route = routeTouchScroll(touch.lines, applicationScroll.current);
+        const elapsedMilliseconds = Math.max(1, event.timeStamp - touch.startTime);
+        const velocityPixelsPerMillisecond = touch.distancePixels / elapsedMilliseconds;
+        const route = routeTouchScroll(
+          touch.lines,
+          applicationScroll.current,
+          velocityPixelsPerMillisecond
+        );
         if (route?.kind === "history" && socket.current?.readyState === WebSocket.OPEN) {
           socket.current.send(route.message);
           if (touch.lines < 0) setHistoryMode(true);

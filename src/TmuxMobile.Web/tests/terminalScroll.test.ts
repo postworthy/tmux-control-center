@@ -1,4 +1,5 @@
 import {
+  applicationWheelMultiplier,
   classifyTouchAxis,
   consumeTouchScroll,
   historyRequestFromScrollLines,
@@ -54,9 +55,29 @@ assert(applicationNewer?.kind === "application" &&
   applicationNewer.wheelDeltaYs.length === 12 && applicationNewer.wheelDeltaYs[0] === 1,
 "Enabled upward swipes must scale wheel-down events with swipe distance.");
 
+assert(applicationWheelMultiplier(0.49) === 1 && applicationWheelMultiplier(0.5) === 2,
+  "Medium swipe velocity must start at 0.5 pixels per millisecond.");
+assert(applicationWheelMultiplier(0.99) === 2 && applicationWheelMultiplier(1) === 3,
+  "Fast swipe velocity must start at 1 pixel per millisecond.");
+assert(applicationWheelMultiplier(1.49) === 3 && applicationWheelMultiplier(1.5) === 4,
+  "Very fast swipe velocity must start at 1.5 pixels per millisecond.");
+assert(applicationWheelMultiplier(Number.NaN) === 1 && applicationWheelMultiplier(-1) === 1,
+  "Invalid velocity must fall back to the precise 1x multiplier.");
+
+const fastApplicationSwipe = routeTouchScroll(-5, true, 1.5);
+assert(fastApplicationSwipe?.kind === "application" &&
+  fastApplicationSwipe.wheelDeltaYs.length === 20 &&
+  fastApplicationSwipe.wheelDeltaYs.every((deltaY) => deltaY === -1),
+  "A very fast swipe must move four times farther than the same deliberate drag.");
+
 const applicationCapped = routeTouchScroll(-999, true);
-assert(applicationCapped?.kind === "application" && applicationCapped.wheelDeltaYs.length === 24,
-  "Application swipes must retain a bounded 24-event maximum.");
+assert(applicationCapped?.kind === "application" && applicationCapped.wheelDeltaYs.length === 72,
+  "Application swipes must retain a bounded 72-event maximum.");
+
+const fastApplicationCapped = routeTouchScroll(30, true, 2);
+assert(fastApplicationCapped?.kind === "application" &&
+  fastApplicationCapped.wheelDeltaYs.length === 72,
+  "The velocity multiplier must not bypass the application event cap.");
 
 const defaultOlderControl = routeScrollControl("older", false);
 assert(defaultOlderControl.kind === "history" &&

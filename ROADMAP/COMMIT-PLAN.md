@@ -133,6 +133,8 @@ Status: active correction after owner physical-iPhone feedback
   physical-iPhone acceptance.
 - Scale application wheel ticks with swipe distance and route Older/Latest as
   wheel-up/wheel-down bursts only while application scrolling is enabled.
+- Apply a bounded velocity multiplier so a fast flick moves materially farther
+  than a slow drag of comparable distance.
 - Planned commit: `feat(terminal): add opt-in TUI swipe scrolling`
 
 ## Later

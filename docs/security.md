@@ -30,9 +30,10 @@ This service controls terminals owned by its Linux account and must be treated a
   writes bytes into the PTY input stream. A per-connection token bucket closes
   burst senders before they can amplify tmux process creation.
 - Application Scroll is an explicit default-off terminal control. While enabled,
-  vertical swipes create one wheel event per 18 pixels up to 24 events, and
-  Older/Latest create fixed 12-event wheel-up/wheel-down bursts through xterm's
-  negotiated mouse protocol. Those events are foreground
+  vertical swipes start at one wheel event per 18 pixels, apply a 1x–4x average
+  velocity multiplier, and cap at 72 events. Older/Latest create fixed 12-event
+  wheel-up/wheel-down bursts through xterm's negotiated mouse protocol. Those
+  events are foreground
   application input and may have context-dependent effects; the mode is visibly
   indicated, is not stored, and resets on terminal entry, exit, or connection
   loss. It adds no WebSocket message that accepts caller-supplied escape
