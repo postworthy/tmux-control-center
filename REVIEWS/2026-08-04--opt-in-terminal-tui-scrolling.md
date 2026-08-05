@@ -69,8 +69,13 @@ pass. No merge, push, publication, or deployment is authorized by this record.
   foreground TUI. Default-off, explicit activation, visible state, bounded fixed
   wheel semantics, modifier isolation, and reset-on-loss mitigate this risk.
 - Synthetic WheelEvent acceptance still requires physical iOS Safari evidence.
-- The proportional and toolbar revision has not been deployed; the deployment
-  evidence above applies to the initial three-event C012 build only.
+- The earlier deployment evidence above applies to the initial three-event C012
+  build and is superseded by the velocity deployment below.
+- Superseding owner-approved velocity deployment: prior live image is preserved
+  as `tmux-mobile:pre-c012-velocity-rollback`; live image `sha256:035f7f...` is
+  healthy on the unchanged exact-IP binding. HTTPS liveness/root, readiness,
+  root/terminal/worker asset identity, tmux compatibility across 12 sessions,
+  and direct-backend 426 checks pass. Physical behavior remains pending.
 - Rollback is a revert of the C012 commits followed by frontend tests and
   `./scripts/verify.sh`; the default path already matches the pre-C012 contract.
 

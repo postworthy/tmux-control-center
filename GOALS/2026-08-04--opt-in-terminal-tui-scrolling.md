@@ -88,7 +88,7 @@ input to foreground TUIs such as Claude Code and mitmproxy.
 | 1. Routing contract | completed | Pure bounded model selects unchanged history messages or velocity-scaled/fixed wheel descriptors. | Revised frontend unit tests passed |
 | 2. Thin-slice UI | completed | Touch timing feeds velocity-scaled routing without changing default or toolbar behavior. | Typecheck and production build passed |
 | 3. Release boundary | completed | Production service worker identity changes and runtime image contains only current bundles. | Two-revision image inspection passed |
-| 4. Cross-boundary evidence | pending | Isolated xterm/tmux probes observe both owners; docs and review complete. | Local evidence passed; physical iPhone pending |
+| 4. Cross-boundary evidence | in_progress | Isolated xterm/tmux probes observe both owners; docs and review complete. | Velocity deployment passed; physical iPhone pending |
 
 ## Progress
 
@@ -164,6 +164,11 @@ input to foreground TUIs such as Claude Code and mitmproxy.
   cap. Focused tests, typecheck, canonical verification, and clean production
   image `sha256:035f7f...` pass. Execution pauses before deployment.
 - 2026-08-04: committed the verified velocity refinement as `b1c7224`.
+- 2026-08-04: owner explicitly approved the velocity deployment. Preserved the
+  prior live image as `tmux-mobile:pre-c012-velocity-rollback`, tagged verified
+  image `sha256:035f7f...` as `tmux-mobile:c012-velocity-scroll`, and recreated
+  only the existing tailnet Serve app. Post-deployment boundaries pass;
+  execution pauses for physical-iPhone acceptance.
 - Revised canonical verification passes with 24 Core, 12 Infrastructure (four
   isolated tests skipped), 33 Server integration, frontend typecheck/tests, and
   Compose validation when run with the repository's local .NET 10 SDK.
@@ -183,6 +188,13 @@ input to foreground TUIs such as Claude Code and mitmproxy.
 - Post-velocity canonical verification passes with 24 Core, 12 Infrastructure
   (four isolated tests skipped), 33 Server integration, frontend checks, and
   Compose validation.
+- Live velocity deployment: container is healthy on exact bind
+  `100.85.13.102:8780`; HTTPS liveness and root return 200; direct backend root
+  returns 426; internal readiness returns Healthy; tmux enumerates all 12
+  sessions; root references `index-BnrbwrGM.js`; the terminal bundle contains
+  App Scroll; and the worker advertises
+  `tmux-mobile-shell-a499c702c0092a50`. Logs contain no new errors and only the
+  existing explicitly acknowledged weak test-key warning.
 
 ## Discoveries
 
@@ -219,9 +231,9 @@ input to foreground TUIs such as Claude Code and mitmproxy.
 
 ## Next Action
 
-- With explicit owner approval, deploy the verified velocity image to the
-  existing tailnet test environment and repeat health, asset, update, and
-  physical-iPhone checks.
+- Owner fully closes and reopens the installed PWA (or returns to sessions and
+  applies the update), then tests slow drags versus fast flicks plus
+  application-mode Older/Latest in Claude Code and mitmproxy.
 
 ## Pause Conditions
 
@@ -238,6 +250,8 @@ input to foreground TUIs such as Claude Code and mitmproxy.
   environment with a validated pre-C012 rollback tag.
 - Physical-iPhone acceptance, final review decision, and any merge or push remain
   pending at explicit owner-controlled boundaries.
+- The velocity image is now the healthy live test deployment, with the prior
+  three-tick C012 image retained as an immediate rollback tag.
 - Physical testing exposed a release-lifecycle defect not covered by the live
   network bundle check; `RCA/2026-08-04--deployed-terminal-control-not-visible.md`
   records the evidence and corrective boundary.

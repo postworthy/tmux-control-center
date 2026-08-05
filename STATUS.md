@@ -28,8 +28,11 @@ Updated: 2026-08-04
   longer contains stale hashed bundles. The revised image was not deployed; the
   owner has now requested a further velocity multiplier so fast flicks move
   materially farther than deliberate drags. That refinement now passes focused
-  tests, canonical verification, and production image inspection, and remains
-  undeployed pending explicit approval.
+  tests, canonical verification, and production image inspection and is live as
+  image `sha256:035f7f...`. HTTPS, readiness, exact-IP binding, current asset and
+  worker identity, tmux compatibility, and direct-backend denial checks pass.
+  The prior three-tick image is preserved as
+  `tmux-mobile:pre-c012-velocity-rollback`; physical acceptance is pending.
 
 - C011 is implemented and actively deployed from
   `security/c011-dotnet10-and-hardening` at
@@ -80,8 +83,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Await explicit approval before replacing the current tailnet test image with
-  the verified velocity-scaled release.
+- Owner reloads the installed PWA and tests deliberate drags versus fast flicks,
+  plus App Scroll Older/Latest, in Claude Code and mitmproxy.
 
 ## Known Limitations
 
