@@ -13,7 +13,10 @@ Tailscale Serve, and publish only on an explicitly configured Tailscale IP.
 - REST APIs, a shared inventory WebSocket, and a Linux `forkpty` terminal bridge attaching a real tmux client.
 - Cookie authentication bootstrapped by a deployment access key, CSRF validation, read/interact/admin policies, origin checks, rate and connection limits, security headers, and JSON-lines auditing.
 - React/TypeScript cards with vertical CSS snap, explicit navigation, state preservation, quick actions, details, realtime reconnect, and offline states.
-- Lazy-loaded xterm.js terminal with resize, disconnect/reconnect, tmux-backed touch history navigation, one-shot Ctrl/Alt, mobile shortcut keys, and guarded clipboard paste with a Safari fallback.
+- Lazy-loaded xterm.js terminal with resize, disconnect/reconnect, tmux-backed
+  touch history by default, explicit non-persistent application/TUI scrolling,
+  one-shot Ctrl/Alt, mobile shortcut keys, and guarded clipboard paste with a
+  Safari fallback.
 - Manifest, icons, service worker, offline shell, systemd/nginx examples, and Tailscale guidance.
 - Unit, HTTP integration, WebSocket authorization, and isolated real-tmux PTY lifecycle tests.
 - Repo-local Tempo skills, contracts, goals, verification, and review records.
@@ -81,7 +84,12 @@ curl --fail http://127.0.0.1:5179/health/live
 curl --fail http://127.0.0.1:5179/health/ready
 ```
 
-The opt-in Linux PTY test creates a unique `tmux -L tmux-mobile-test-...` server, attaches through a PTY, disconnects, verifies the isolated session survived, and destroys only that dedicated server. It never addresses the user's default tmux socket. It is opt-in because forking inside a multi-project VSTest host is nondeterministic; run it as the isolated command above.
+The opt-in Linux PTY tests create unique `tmux -L tmux-mobile-...` servers,
+attach through PTYs, verify session survival and mouse-wheel forwarding to an
+alternate-screen program, and destroy only those dedicated servers. They never
+address the user's default tmux socket. They are opt-in because forking inside a
+multi-project VSTest host is nondeterministic; run them as the isolated command
+above.
 
 ## Documentation
 

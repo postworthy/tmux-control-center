@@ -26,9 +26,16 @@ This service controls terminals owned by its Linux account and must be treated a
   is chunked below the WebSocket message limit.
 - Terminal history messages accept only older, newer, or latest plus a bounded
   page count. The server re-resolves the opaque session ID and builds fixed
-  tmux copy-mode argument arrays; history gestures never carry shell/tmux text
-  and never write bytes into the PTY input stream. A per-connection token bucket
-  closes burst senders before they can amplify tmux process creation.
+  tmux copy-mode argument arrays. This remains the default swipe path and never
+  writes bytes into the PTY input stream. A per-connection token bucket closes
+  burst senders before they can amplify tmux process creation.
+- Application Scroll is an explicit default-off terminal control. While enabled,
+  one completed vertical swipe creates at most three fixed-direction wheel
+  events through xterm's negotiated mouse protocol. Those events are foreground
+  application input and may have context-dependent effects; the mode is visibly
+  indicated, is not stored, and resets on terminal entry, exit, or connection
+  loss. It adds no WebSocket message that accepts caller-supplied escape
+  sequences, text, or mouse coordinates.
 - Service worker exclusions prevent caching APIs, health responses, captured output, or socket traffic.
 - Startup validation rejects disabled authentication and the legacy bypass in all environments, short/missing API keys, wildcard or non-origin values, insecure production origins, mismatched Hosts, unsafe proxy/listener combinations, relative tmux paths, invalid socket names, and invalid prefixes.
 
