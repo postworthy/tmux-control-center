@@ -3,7 +3,7 @@
 Status: paused
 Owner: Human Partner and AI Agent
 Risk: T1
-Updated: 2026-08-04
+Updated: 2026-08-05
 Proposal: `PROPOSALS/2026-08-04--session-tile-recency.md`
 Review Boundary: merge from `feat/c013-session-recency` into `main`
 
@@ -17,7 +17,8 @@ rail state using the same stable order.
 
 - Do not infer recency from tmux activity or external clients, synchronize
   devices, add manual ordering, or change backend/tmux contracts.
-- Do not deploy, merge, push, publish, or modify C012 acceptance in this goal.
+- Do not merge, push, publish, or modify C012 acceptance in this goal. Deployment
+  is limited to the separately owner-approved existing tailnet test app.
 
 ## Acceptance Criteria
 
@@ -41,6 +42,9 @@ rail state using the same stable order.
 
 - Approved, local, reversible T0/T1 edits, tests, builds, documentation, commits,
   and review artifacts required by C013.
+- Owner-approved deployment of the verified C013 image to the existing tailnet
+  test app, preserving the current image as a rollback tag and repeating its
+  established security/health checks.
 
 ### Must Pause for Approval
 
@@ -70,6 +74,11 @@ rail state using the same stable order.
   deployment boundary and owner acceptance.
 - 2026-08-04: committed the verified C013 implementation and contracts as
   `8032623`.
+- 2026-08-05: owner explicitly approved deployment. Preserved live velocity
+  image `sha256:035f7f...` as `tmux-mobile:pre-c013-recency-rollback`, tagged
+  verified C013 image `sha256:e1e79f...` as
+  `tmux-mobile:c013-session-recency`, and recreated only the existing app.
+  Post-deployment checks pass; execution pauses for physical acceptance.
 
 ## Evidence
 
@@ -84,6 +93,14 @@ rail state using the same stable order.
 - Production image `sha256:e1e79f...` builds with only the current main and
   terminal bundles; the main bundle contains `tmux-mobile-session-recency` and
   the worker is stamped `tmux-mobile-shell-4fc71288e076c290`.
+- Live C013 deployment is healthy on unchanged exact bind
+  `100.85.13.102:8780`; HTTPS liveness/root return 200, direct backend root
+  returns 426, internal readiness returns Healthy, and tmux enumerates all 13
+  current sessions. Root references `index-DD9u1j3o.js`, whose live bytes contain
+  `tmux-mobile-session-recency`; the live terminal bundle still contains App
+  Scroll and the worker advertises `tmux-mobile-shell-4fc71288e076c290`.
+- Startup logs contain no new errors and only the existing explicitly
+  acknowledged weak test-key warning.
 
 ## Discoveries
 
@@ -109,9 +126,8 @@ rail state using the same stable order.
 
 ## Next Action
 
-- With explicit owner approval, deploy the verified C013 image to the existing
-  tailnet test environment, repeat established health/security/asset checks, and
-  request physical-iPhone acceptance.
+- Owner applies/reloads the PWA update, opens a non-first session terminal, and
+  confirms that returning places it first and that the order survives reload.
 
 ## Pause Conditions
 
@@ -121,5 +137,6 @@ rail state using the same stable order.
 ## Outcomes
 
 - Local implementation, tests, documentation, production packaging, and
-  canonical verification are complete. Deployment, physical acceptance, review
-  decision, merge, and push remain outside the current authority.
+  canonical verification are complete. The verified image is healthy in the
+  existing tailnet test environment with the prior image retained for rollback.
+  Physical acceptance, review decision, merge, and push remain pending.

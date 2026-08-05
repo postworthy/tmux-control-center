@@ -33,8 +33,9 @@ Out of scope:
   time, or access from clients outside this app.
 - Synchronizing order across devices or storing recency on the server.
 - Drag-and-drop/manual ordering, favorites, timestamps in the UI, or API changes.
-- Deployment, merge, push, publication, or changing the paused C012 acceptance
-  state.
+- Merge, push, publication, or changing the paused C012 acceptance state.
+- Deployment was initially out of scope; the owner separately approved replacing
+  only the existing tailnet test app with the verified C013 image on 2026-08-05.
 
 ## Expected Files Touched
 

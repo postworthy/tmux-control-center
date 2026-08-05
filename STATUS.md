@@ -8,8 +8,12 @@ Updated: 2026-08-04
   main deck will promote that session to the first tile on return using a safe,
   device-local opaque-ID MRU order. Backend inventory order and tmux state remain
   unchanged. Pure ordering/persistence tests, frontend typecheck, canonical
-  verification, production image build, and review inspection pass. Deployment
-  and owner acceptance remain pending.
+  verification, production image build, and review inspection pass. Verified
+  image `sha256:e1e79f...` is now healthy in the existing tailnet test
+  environment; HTTPS, readiness, exact-IP binding, current asset identity, tmux
+  compatibility, and direct-backend denial checks pass. The prior velocity image
+  is preserved as `tmux-mobile:pre-c013-recency-rollback`; owner acceptance
+  remains pending.
 
 - C012 is deployed for owner testing from `feat/c012-opt-in-tui-scroll`. The
   thin slice keeps
@@ -90,8 +94,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Await explicit approval before deploying the verified C013 image to the
-  existing tailnet test environment.
+- Owner reloads/applies the PWA update, opens a non-first session terminal, and
+  confirms it becomes tile 1 on return and remains first after reload.
 - C012 physical testing remains pending: deliberate drags versus fast flicks,
   plus App Scroll Older/Latest, in Claude Code and mitmproxy.
 

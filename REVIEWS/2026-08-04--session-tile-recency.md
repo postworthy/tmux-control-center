@@ -10,7 +10,8 @@ Related Proposal: `PROPOSALS/2026-08-04--session-tile-recency.md`
 
 Pending owner acceptance. Local implementation, canonical verification,
 production packaging, and diff review pass. No merge, deployment, push, or
-publication is authorized by this record.
+publication is authorized by this record; the owner separately authorized the
+test deployment on 2026-08-05.
 
 ## Scope and Compatibility
 
@@ -38,6 +39,11 @@ publication is authorized by this record.
   and Compose validation.
 - Production image `sha256:e1e79f...`: pass; the clean main bundle contains the
   recency storage key and the service worker is release-stamped.
+- Owner-approved tailnet test deployment: pass. The prior image is preserved as
+  `tmux-mobile:pre-c013-recency-rollback`; live image `sha256:e1e79f...` is
+  healthy on the unchanged exact-IP bind. HTTPS liveness/root, readiness,
+  current main/terminal/worker asset identity, compatibility across 13 tmux
+  sessions, and direct-backend 426 checks pass.
 
 ## Risk and Rollback
 
