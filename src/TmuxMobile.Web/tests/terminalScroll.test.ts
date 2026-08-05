@@ -2,6 +2,7 @@ import {
   classifyTouchAxis,
   consumeTouchScroll,
   historyRequestFromScrollLines,
+  routeTouchScroll,
   serializeHistoryRequest
 } from "../src/terminalScroll.js";
 
@@ -35,5 +36,24 @@ assert(historyRequestFromScrollLines(-999) === '{"type":"history","action":"olde
   "History movement must be clamped before serialization.");
 assert(serializeHistoryRequest("latest") === '{"type":"history","action":"latest"}',
   "Latest must be a fixed command without caller-controlled data.");
+
+const defaultRoute = routeTouchScroll(-999, false);
+assert(defaultRoute?.kind === "history" &&
+  defaultRoute.message === '{"type":"history","action":"older","pages":3}',
+"Default swipe routing must retain the existing bounded tmux history message.");
+
+const applicationOlder = routeTouchScroll(-45, true);
+assert(applicationOlder?.kind === "application" &&
+  applicationOlder.wheelDeltaYs.length === 3 &&
+  applicationOlder.wheelDeltaYs.every((deltaY) => deltaY === -1),
+"Enabled downward swipes must produce at most three wheel-up events for older TUI content.");
+
+const applicationNewer = routeTouchScroll(12, true);
+assert(applicationNewer?.kind === "application" &&
+  applicationNewer.wheelDeltaYs.length === 1 && applicationNewer.wheelDeltaYs[0] === 1,
+"Enabled upward swipes must produce one wheel-down event for newer TUI content.");
+
+assert(routeTouchScroll(0, true) === null && routeTouchScroll(Number.NaN, true) === null,
+  "Tap and invalid movement must never produce application input.");
 
 console.log("terminal touch scroll tests passed");

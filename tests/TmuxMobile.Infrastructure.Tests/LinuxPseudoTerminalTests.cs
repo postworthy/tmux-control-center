@@ -50,6 +50,64 @@ public sealed class LinuxPseudoTerminalTests
 
     [LinuxIntegrationFact]
     [Trait("Category", "LinuxIntegration")]
+    public async Task MouseAwareAlternateScreenReceivesWheelEventThroughAttachedTmuxClient()
+    {
+        if (!OperatingSystem.IsLinux() || !File.Exists("/usr/bin/tmux")) return;
+        var socket = $"tmux-mobile-mouse-{Guid.NewGuid():N}";
+        var outputPath = Path.Combine(Path.GetTempPath(), $"tmux-mobile-mouse-{Guid.NewGuid():N}.bin");
+        var runner = new ProcessRunner(NullLogger<ProcessRunner>.Instance);
+        var token = CancellationToken.None;
+        try
+        {
+            var command = $"stty raw -echo; printf '\\033[?1049h\\033[?1003h\\033[?1006hMOUSE_READY\\r\\n'; cat > '{outputPath}'";
+            var created = await RunTmux(runner, socket,
+                ["new-session", "-d", "-s", "mouse-test", command], token);
+            Assert.Equal(0, created.ExitCode);
+            var mouseEnabled = await RunTmux(runner, socket, ["set-option", "-g", "mouse", "on"], token);
+            Assert.Equal(0, mouseEnabled.ExitCode);
+
+            var factory = new LinuxPseudoTerminalFactory(NullLoggerFactory.Instance);
+            await using var pty = await factory.StartAsync("/usr/bin/tmux",
+                ["-L", socket, "attach-session", "-t", "mouse-test"], new TerminalSize(80, 24),
+                new Dictionary<string, string> { ["TERM"] = "xterm-256color" }, token);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var buffer = new byte[8192];
+            var terminalOutput = new StringBuilder();
+            while (!terminalOutput.ToString().Contains("MOUSE_READY", StringComparison.Ordinal))
+            {
+                var read = await pty.Output.ReadAsync(buffer, timeout.Token);
+                if (read == 0) break;
+                terminalOutput.Append(Encoding.UTF8.GetString(buffer, 0, read));
+            }
+            Assert.Contains("MOUSE_READY", terminalOutput.ToString());
+
+            var mouseMode = await RunTmux(runner, socket,
+                ["display-message", "-p", "-t", "mouse-test:", "#{alternate_on}:#{mouse_any_flag}:#{mouse_sgr_flag}"],
+                token);
+            Assert.Equal("1:1:1", mouseMode.StandardOutput.Trim());
+
+            await pty.Input.WriteAsync(Encoding.ASCII.GetBytes("\u001b[<64;10;10M"), token);
+            await pty.Input.FlushAsync(token);
+            for (var attempt = 0; attempt < 100 && (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0); attempt++)
+                await Task.Delay(10, token);
+
+            Assert.True(File.Exists(outputPath), "The isolated mouse-aware pane must record forwarded input.");
+            var forwarded = Encoding.ASCII.GetString(await File.ReadAllBytesAsync(outputPath, token));
+            Assert.Contains("\u001b[<64;", forwarded);
+
+            var paneMode = await RunTmux(runner, socket,
+                ["display-message", "-p", "-t", "mouse-test:", "#{pane_in_mode}:#{history_size}"], token);
+            Assert.StartsWith("0:", paneMode.StandardOutput.Trim());
+        }
+        finally
+        {
+            await RunTmux(runner, socket, ["kill-server"], CancellationToken.None);
+            if (File.Exists(outputPath)) File.Delete(outputPath);
+        }
+    }
+
+    [LinuxIntegrationFact]
+    [Trait("Category", "LinuxIntegration")]
     public async Task DisposalKillsStubbornPtyProcessGroup()
     {
         if (!File.Exists("/bin/bash") || !File.Exists("/usr/bin/pgrep")) return;

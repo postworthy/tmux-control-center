@@ -1,7 +1,7 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 1.0
-Last updated: 2026-07-30
+Version: 1.1
+Last updated: 2026-08-04
 Status: Approved
 
 ## Product Objective
@@ -40,6 +40,9 @@ Status: Approved
   bind; never publish the host port on a wildcard address.
 - FR12: run the container as the same numeric non-root UID/GID that owns the
   target tmux server and mount only the required tmux socket directory and state.
+- FR13: keep tmux-backed terminal history navigation as the default and provide
+  an explicit, non-persistent terminal control that temporarily translates
+  bounded vertical swipes into mouse-wheel input for foreground TUIs.
 
 ## Constraints
 
@@ -70,6 +73,9 @@ Status: Approved
 - [x] AC6: the production image builds successfully.
 - [x] AC7: docs provide exact Compose setup and verification steps without
   suggesting `0.0.0.0` as a host bind.
+- [ ] AC8: terminal swipes continue to navigate tmux history by default, while
+  an explicitly enabled application-scroll mode routes bounded wheel input to
+  mouse-aware foreground programs and resets safely to off.
 
 ## Canonical Verification
 

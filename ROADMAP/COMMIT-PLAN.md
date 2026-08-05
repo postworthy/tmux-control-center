@@ -120,6 +120,19 @@ Status: completed
 - Implementation, active deployment, and Change Review are complete. The
   owner-controlled merge/push boundary remains outside C011 execution.
 
+## C012 — Opt-in terminal TUI scrolling
+
+Status: paused at physical-device/deployment boundary
+
+- Preserve tmux-backed swipe history as the default terminal behavior.
+- Add an explicit, non-persistent application-scroll toggle that translates
+  bounded vertical swipes into negotiated xterm mouse-wheel input.
+- Reset application-scroll mode on terminal exit and connection loss, retain
+  accessible pressed-state feedback, and cover both routing modes.
+- Verify ordinary tmux history and mouse-aware alternate-screen behavior before
+  physical-iPhone acceptance.
+- Planned commit: `feat(terminal): add opt-in TUI swipe scrolling`
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.
