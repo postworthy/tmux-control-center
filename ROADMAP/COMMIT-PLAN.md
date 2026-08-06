@@ -149,6 +149,18 @@ Status: active
   session rail; tolerate malformed and stale local state.
 - Planned commit: `feat(sessions): order tiles by terminal recency`
 
+## C014 — Coalesce application-scroll input bursts
+
+Status: active
+
+- Buffer the negotiated xterm wheel reports emitted by one synthetic gesture and
+  send them once through the existing bounded terminal-input serializer.
+- Preserve the 1x–4x velocity model, 72-event cap, byte order, modifier behavior,
+  server limiter, and all default scrolling behavior.
+- Add a maximum-gesture regression proving one WebSocket message instead of a
+  limiter-exhausting burst.
+- Planned commit: `fix(terminal): coalesce application scroll input`
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.

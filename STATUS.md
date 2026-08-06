@@ -4,6 +4,16 @@ Updated: 2026-08-04
 
 ## Current
 
+- C014 is active on `fix/c014-app-scroll-burst`. The owner reported repeated terminal disconnects during C012 App Scroll. Live
+  logs confirm three `Terminal input rate limit exceeded` closures: a 72-event
+  velocity gesture was amplified into 72 WebSocket input messages, exceeding the
+  server's intentional 64-message burst bucket. Approved corrective scope now
+  coalesces one gesture into one bounded input send without weakening the
+  limiter. Focused regression, typecheck, canonical verification, production
+  image `sha256:6ac99e...`, docs, and review inspection pass; the correction is
+  not yet deployed. See
+  `RCA/2026-08-05--application-scroll-input-burst-disconnect.md`.
+
 - C013 is locally implemented on `feat/c013-session-recency`: opening a terminal from the
   main deck will promote that session to the first tile on return using a safe,
   device-local opaque-ID MRU order. Backend inventory order and tmux state remain
@@ -94,8 +104,10 @@ Updated: 2026-08-04
 
 ## Next
 
-- Owner reloads/applies the PWA update, opens a non-first session terminal, and
-  confirms it becomes tile 1 on return and remains first after reload.
+- Await explicit approval before replacing the live C013 test image with the
+  verified C014 correction.
+- C013 physical acceptance remains pending: confirm an opened terminal becomes
+  tile 1 on return and remains first after reload.
 - C012 physical testing remains pending: deliberate drags versus fast flicks,
   plus App Scroll Older/Latest, in Claude Code and mitmproxy.
 

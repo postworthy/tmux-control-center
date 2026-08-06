@@ -47,6 +47,9 @@ Status: Approved
 - FR14: order main session tiles by device-local in-app terminal recency so the
   session most recently opened from a tile returns to the top of the deck while
   untouched sessions retain stable server order.
+- FR15: coalesce all negotiated application-wheel reports produced by one touch
+  gesture into bounded terminal input serialization so velocity scrolling cannot
+  exhaust the per-connection WebSocket message bucket.
 
 ## Constraints
 
@@ -85,6 +88,9 @@ Status: Approved
 - [ ] AC9: opening a session terminal promotes that session to the first main
   tile on return, persists the device-local recency order safely across refresh
   and reload, and keeps deck navigation and the session rail consistent.
+- [ ] AC10: a maximum application-scroll gesture preserves every ordered xterm
+  wheel report while producing one bounded terminal input message and no
+  rate-limit disconnect.
 
 ## Canonical Verification
 

@@ -2,7 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { MAX_PASTE_BYTES, pasteByteLength, requiresPasteConfirmation, serializeTerminalInput } from "./terminalInput";
+import {
+  coalesceTerminalInput,
+  MAX_PASTE_BYTES,
+  pasteByteLength,
+  requiresPasteConfirmation,
+  serializeTerminalInput
+} from "./terminalInput";
 import {
   classifyTouchAxis,
   consumeTouchScroll,
@@ -26,6 +32,7 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
   const modifiers = useRef({ control: false, alt: false });
   const applicationScroll = useRef(false);
   const dispatchingApplicationWheel = useRef(false);
+  const applicationWheelInput = useRef<string[]>([]);
   const [modifierState, setModifierState] = useState({ control: false, alt: false });
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteDraft, setPasteDraft] = useState("");
@@ -57,6 +64,7 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     const bounds = element.getBoundingClientRect();
     const wheelX = clientX ?? bounds.left + bounds.width / 2;
     const wheelY = clientY ?? bounds.top + bounds.height / 2;
+    applicationWheelInput.current = [];
     dispatchingApplicationWheel.current = true;
     try {
       for (const deltaY of wheelDeltaYs) {
@@ -71,9 +79,12 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       }
     } finally {
       dispatchingApplicationWheel.current = false;
+      const input = coalesceTerminalInput(applicationWheelInput.current);
+      applicationWheelInput.current = [];
+      send(input);
     }
     xterm.focus();
-  }, []);
+  }, [send]);
 
   const connect = useCallback(() => {
     if (socket.current?.readyState === WebSocket.OPEN ||
@@ -116,7 +127,7 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     fit.current = fitAddon;
     const input = xterm.onData((value) => {
       if (dispatchingApplicationWheel.current) {
-        send(value);
+        applicationWheelInput.current.push(value);
         return;
       }
       let data = value;
