@@ -161,6 +161,16 @@ Status: active
   limiter-exhausting burst.
 - Planned commit: `fix(terminal): coalesce application scroll input`
 
+## C015 — Keep application scrolling focus-neutral
+
+Status: active
+
+- Remove xterm textarea focus from wheel-only dispatch and the App Scroll toggle.
+- Preserve focus for reconnect, typing shortcuts, modifiers, and paste.
+- Verify swipes and application-mode Older/Latest scroll without opening the iOS
+  keyboard or regressing C014 connection stability.
+- Planned commit: `fix(terminal): keep app scroll focus neutral`
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.

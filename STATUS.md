@@ -4,7 +4,17 @@ Updated: 2026-08-04
 
 ## Current
 
-- C014 is active on `fix/c014-app-scroll-burst`. The owner reported repeated terminal disconnects during C012 App Scroll. Live
+- C015 is active on `fix/c015-app-scroll-keyboard-focus` after the owner reported that every App Scroll swipe and
+  application-mode Older/Latest opens the iPhone keyboard. Both paths explicitly
+  call xterm focus, which focuses its hidden textarea and summons iOS keyboard
+  input. Approved correction removes focus only from wheel interactions and
+  includes redeployment to the existing test app. The two focus calls are now
+  removed locally; frontend tests, typecheck, and full focus-caller inspection
+  pass. Canonical verification and clean production image `sha256:2bc9c5...`
+  also pass; redeployment is next. See
+  `RCA/2026-08-05--application-scroll-opens-keyboard.md`.
+
+- C014 is deployed pending physical acceptance. The owner reported repeated terminal disconnects during C012 App Scroll. Live
   logs confirm three `Terminal input rate limit exceeded` closures: a 72-event
   velocity gesture was amplified into 72 WebSocket input messages, exceeding the
   server's intentional 64-message burst bucket. Approved corrective scope now
@@ -108,9 +118,7 @@ Updated: 2026-08-04
 
 ## Next
 
-- Owner reloads/applies the PWA update and performs repeated long fast App Scroll
-  gestures in Claude Code and mitmproxy; then verify connection stability and
-  absence of new rate-limit logs.
+- Commit and redeploy verified C015 image `sha256:2bc9c5...`.
 - C013 physical acceptance remains pending: confirm an opened terminal becomes
   tile 1 on return and remains first after reload.
 - C012 physical testing remains pending: deliberate drags versus fast flicks,

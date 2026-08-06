@@ -83,7 +83,6 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       applicationWheelInput.current = [];
       send(input);
     }
-    xterm.focus();
   }, [send]);
 
   const connect = useCallback(() => {
@@ -304,7 +303,6 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     const enabled = !applicationScroll.current;
     applicationScroll.current = enabled;
     setApplicationScrollEnabled(enabled);
-    terminal.current?.focus();
   };
   const leaveTerminal = () => {
     resetApplicationScroll();

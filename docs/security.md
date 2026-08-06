@@ -40,7 +40,8 @@ This service controls terminals owned by its Linux account and must be treated a
   bounded input send, so a maximum gesture cannot exhaust the connection's
   64-message bucket; server message and byte limiters remain unchanged. It adds
   no WebSocket message that accepts caller-supplied escape
-  sequences, text, or mouse coordinates.
+  sequences, text, or mouse coordinates. Wheel-only interactions never focus
+  xterm's hidden keyboard textarea; reconnect and typing controls retain focus.
 - Service worker exclusions prevent caching APIs, health responses, captured output, or socket traffic.
 - Startup validation rejects disabled authentication and the legacy bypass in all environments, short/missing API keys, wildcard or non-origin values, insecure production origins, mismatched Hosts, unsafe proxy/listener combinations, relative tmux paths, invalid socket names, and invalid prefixes.
 

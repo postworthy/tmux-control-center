@@ -50,6 +50,8 @@ Status: Approved
 - FR15: coalesce all negotiated application-wheel reports produced by one touch
   gesture into bounded terminal input serialization so velocity scrolling cannot
   exhaust the per-connection WebSocket message bucket.
+- FR16: keep App Scroll gestures, its toggle, and application-mode Older/Latest
+  focus-neutral so wheel-only interactions never summon the software keyboard.
 
 ## Constraints
 
@@ -91,6 +93,9 @@ Status: Approved
 - [ ] AC10: a maximum application-scroll gesture preserves every ordered xterm
   wheel report while producing one bounded terminal input message and no
   rate-limit disconnect.
+- [ ] AC11: dismissing the iPhone keyboard and using App Scroll in either
+  direction or through Older/Latest leaves the keyboard closed while scrolling
+  remains functional and connected.
 
 ## Canonical Verification
 
