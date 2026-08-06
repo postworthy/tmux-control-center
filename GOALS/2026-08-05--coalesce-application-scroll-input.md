@@ -73,6 +73,8 @@ intentional burst limiter no longer disconnects normal application scrolling.
   `sha256:6ac99e...` pass. The image retains C013 recency and C012 velocity
   behavior and carries worker release `62ae5cab06ed4b01`; execution pauses at
   the deployment boundary.
+- 2026-08-05: committed the RCA-backed correction and verification records as
+  `e3e9e4a`.
 
 ## Evidence
 
@@ -110,8 +112,9 @@ intentional burst limiter no longer disconnects normal application scrolling.
 
 ## Next Action
 
-- Commit the verified RCA/C014 correction, then await explicit approval before
-  replacing the live C013 test image.
+- With explicit owner approval, preserve the live C013 image, deploy verified
+  C014 image `sha256:6ac99e...`, repeat established boundaries, and request
+  repeated maximum-gesture physical acceptance.
 
 ## Pause Conditions
 

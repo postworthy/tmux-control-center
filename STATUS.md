@@ -104,8 +104,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Await explicit approval before replacing the live C013 test image with the
-  verified C014 correction.
+- Await explicit approval before deploying verified C014 image
+  `sha256:6ac99e...` over the live C013 test image.
 - C013 physical acceptance remains pending: confirm an opened terminal becomes
   tile 1 on return and remains first after reload.
 - C012 physical testing remains pending: deliberate drags versus fast flicks,
