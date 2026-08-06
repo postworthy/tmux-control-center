@@ -11,7 +11,11 @@ Updated: 2026-08-04
   coalesces one gesture into one bounded input send without weakening the
   limiter. Focused regression, typecheck, canonical verification, production
   image `sha256:6ac99e...`, docs, and review inspection pass; the correction is
-  not yet deployed. See
+  now live and healthy in the existing tailnet test environment. HTTPS,
+  readiness, exact-IP binding, current asset identity, compatibility across 13
+  tmux sessions, and direct-backend denial checks pass; no post-restart
+  rate-limit warning is present before physical testing. C013 is preserved as
+  `tmux-mobile:pre-c014-scroll-rollback`. See
   `RCA/2026-08-05--application-scroll-input-burst-disconnect.md`.
 
 - C013 is locally implemented on `feat/c013-session-recency`: opening a terminal from the
@@ -104,8 +108,9 @@ Updated: 2026-08-04
 
 ## Next
 
-- Await explicit approval before deploying verified C014 image
-  `sha256:6ac99e...` over the live C013 test image.
+- Owner reloads/applies the PWA update and performs repeated long fast App Scroll
+  gestures in Claude Code and mitmproxy; then verify connection stability and
+  absence of new rate-limit logs.
 - C013 physical acceptance remains pending: confirm an opened terminal becomes
   tile 1 on return and remains first after reload.
 - C012 physical testing remains pending: deliberate drags versus fast flicks,

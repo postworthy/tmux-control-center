@@ -31,7 +31,9 @@ Out of scope:
 - Raising, disabling, or otherwise weakening server input rate limits.
 - Reducing scroll distance, changing velocity bands, hand-encoding mouse reports,
   backend/API/WebSocket schema changes, or app-specific behavior.
-- Deployment, merge, push, publication, or unrelated C012/C013 acceptance.
+- Merge, push, publication, or unrelated C012/C013 acceptance.
+- Deployment was initially out of scope; the owner separately approved replacing
+  only the existing tailnet test app with verified C014 on 2026-08-05.
 
 ## Expected Files Touched
 

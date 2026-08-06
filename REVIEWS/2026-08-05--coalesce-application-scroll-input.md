@@ -11,7 +11,8 @@ Related RCA: `RCA/2026-08-05--application-scroll-input-burst-disconnect.md`
 
 Pending physical regression acceptance. Canonical verification, production
 build, and local diff review pass. No merge, deployment, push, or publication is
-authorized by this record.
+authorized by this record; the owner separately authorized the test deployment
+on 2026-08-05.
 
 ## Scope and Compatibility
 
@@ -41,6 +42,12 @@ authorized by this record.
 - Production image `sha256:6ac99e...`: pass with only the current application
   bundles and worker cache `tmux-mobile-shell-62ae5cab06ed4b01`; C013 recency and
   App Scroll markers remain present.
+- Owner-approved tailnet test deployment: pass. C013 is preserved as
+  `tmux-mobile:pre-c014-scroll-rollback`; live image `sha256:6ac99e...` is healthy
+  on the unchanged exact-IP bind. HTTPS liveness/root, readiness, current
+  root/terminal/worker identity, compatibility across 13 tmux sessions, and
+  direct-backend 426 checks pass. No post-restart rate-limit warning is present
+  before the physical maximum-gesture test.
 
 ## Risk and Rollback
 

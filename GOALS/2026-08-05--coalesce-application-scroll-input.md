@@ -16,7 +16,8 @@ intentional burst limiter no longer disconnects normal application scrolling.
 ## Non-Goals
 
 - Do not weaken server limits, reduce velocity behavior, hand-encode mouse input,
-  change schemas, deploy, merge, push, publish, or absorb unrelated work.
+  change schemas, merge, push, publish, or absorb unrelated work. Deployment is
+  limited to the separately owner-approved existing tailnet test app.
 
 ## Acceptance Criteria
 
@@ -42,6 +43,8 @@ intentional burst limiter no longer disconnects normal application scrolling.
 
 - Approved, local, reversible T0/T1 edits, tests, builds, docs, commits, and
   review artifacts required by C014.
+- Owner-approved deployment of verified C014 to the existing tailnet test app,
+  preserving the live image as rollback and repeating established boundaries.
 
 ### Must Pause for Approval
 
@@ -75,6 +78,11 @@ intentional burst limiter no longer disconnects normal application scrolling.
   the deployment boundary.
 - 2026-08-05: committed the RCA-backed correction and verification records as
   `e3e9e4a`.
+- 2026-08-05: owner explicitly approved deployment. Preserved C013 image
+  `sha256:e1e79f...` as `tmux-mobile:pre-c014-scroll-rollback`, tagged verified
+  C014 image `sha256:6ac99e...` as `tmux-mobile:c014-scroll-coalescing`, and
+  recreated only the existing app. Post-deployment checks pass; physical maximum
+  gesture acceptance remains pending.
 
 ## Evidence
 
@@ -91,6 +99,12 @@ intentional burst limiter no longer disconnects normal application scrolling.
   `index-6tEgo_5-.js` and `TerminalView-RY0by5to.js` application bundles plus
   compressed forms. It retains the C013 recency marker and App Scroll and stamps
   worker cache `tmux-mobile-shell-62ae5cab06ed4b01`.
+- Live C014 deployment is healthy on unchanged exact bind
+  `100.85.13.102:8780`; HTTPS liveness/root return 200, direct backend root
+  returns 426, readiness returns Healthy, and all 13 current tmux sessions are
+  visible. Live root/terminal/worker identities match the verified image, C013
+  recency and App Scroll markers remain, and the post-restart log baseline has
+  no rate-limit warning or new error.
 
 ## Discoveries
 
@@ -112,9 +126,9 @@ intentional burst limiter no longer disconnects normal application scrolling.
 
 ## Next Action
 
-- With explicit owner approval, preserve the live C013 image, deploy verified
-  C014 image `sha256:6ac99e...`, repeat established boundaries, and request
-  repeated maximum-gesture physical acceptance.
+- Owner applies/reloads the PWA update, performs repeated long fast App Scroll
+  gestures in Claude Code and mitmproxy, and reports whether the terminal remains
+  connected; then inspect live logs for absence of new rate-limit events.
 
 ## Pause Conditions
 
@@ -124,5 +138,6 @@ intentional burst limiter no longer disconnects normal application scrolling.
 ## Outcomes
 
 - RCA, local correction, focused/canonical verification, production packaging,
-  docs, and review evidence are complete. Deployment, physical regression
-  acceptance, merge, and push remain pending.
+  docs, and review evidence are complete. Verified C014 is healthy in the
+  existing tailnet test environment with C013 preserved for rollback. Physical
+  regression acceptance, merge, and push remain pending.
