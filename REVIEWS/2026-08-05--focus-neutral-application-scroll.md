@@ -38,6 +38,11 @@ merge, push, or publication is authorized by this record.
 - Production image `sha256:2bc9c5...`: pass with only current application
   bundles, retained C013/C014 markers, and worker cache
   `tmux-mobile-shell-f3ef9d969ed07f10`.
+- Owner-approved tailnet deployment: pass. C014 is preserved as
+  `tmux-mobile:pre-c015-focus-rollback`; live image `sha256:2bc9c5...` is healthy
+  on the unchanged exact-IP bind. HTTPS liveness/root, readiness, current asset
+  identity, compatibility across 13 tmux sessions, and direct-backend 426 checks
+  pass; no startup rate-limit warning or new error is present.
 
 ## Risk and Rollback
 
@@ -48,5 +53,5 @@ merge, push, or publication is authorized by this record.
 
 ## Findings
 
-- Blocking: deployment checks and physical acceptance.
+- Blocking: physical acceptance.
 - Non-blocking: none recorded.

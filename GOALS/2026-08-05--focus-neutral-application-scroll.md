@@ -65,6 +65,11 @@ focusing xterm's textarea, opening the iPhone keyboard, or disconnecting.
 - 2026-08-05: canonical verification and clean production image
   `sha256:2bc9c5...` pass. The image retains C013 recency and C014 App Scroll
   coalescing and carries worker release `f3ef9d969ed07f10`.
+- 2026-08-05: committed C015 as `47cc75e`, preserved live C014 image
+  `sha256:6ac99e...` as `tmux-mobile:pre-c015-focus-rollback`, tagged C015 image
+  `sha256:2bc9c5...` as `tmux-mobile:c015-focus-neutral`, and recreated only the
+  existing app. Post-deployment checks pass; physical keyboard acceptance is
+  pending.
 
 ## Evidence
 
@@ -79,6 +84,11 @@ focusing xterm's textarea, opening the iPhone keyboard, or disconnecting.
   `index-lZ3iXJV5.js` and `TerminalView-DZDci13l.js` application bundles plus
   compressed forms, with recency/App Scroll markers and worker cache
   `tmux-mobile-shell-f3ef9d969ed07f10`.
+- Live C015 deployment is healthy on unchanged exact bind
+  `100.85.13.102:8780`; HTTPS liveness/root return 200, direct backend root
+  returns 426, readiness returns Healthy, and all 13 tmux sessions are visible.
+  Root/terminal/worker identity matches C015, C013 recency and App Scroll markers
+  remain, and startup logs contain no new errors or rate-limit warning.
 
 ## Discoveries
 
@@ -100,8 +110,9 @@ focusing xterm's textarea, opening the iPhone keyboard, or disconnecting.
 
 ## Next Action
 
-- Commit the verified C015 correction, preserve live C014, and deploy image
-  `sha256:2bc9c5...` to the existing test app.
+- Owner applies/reloads the PWA update, dismisses the keyboard, and verifies both
+  App Scroll directions plus application-mode Older/Latest keep it closed and
+  keep the terminal connected; then inspect logs for rate-limit absence.
 
 ## Pause Conditions
 
@@ -110,4 +121,6 @@ focusing xterm's textarea, opening the iPhone keyboard, or disconnecting.
 
 ## Outcomes
 
-- Pending.
+- RCA, local correction, canonical verification, production packaging, and live
+  deployment checks are complete. C015 is healthy with C014 preserved for
+  rollback; physical acceptance, final review, merge, and push remain pending.

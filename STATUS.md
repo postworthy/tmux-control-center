@@ -11,7 +11,10 @@ Updated: 2026-08-04
   includes redeployment to the existing test app. The two focus calls are now
   removed locally; frontend tests, typecheck, and full focus-caller inspection
   pass. Canonical verification and clean production image `sha256:2bc9c5...`
-  also pass; redeployment is next. See
+  also pass. C015 is now live and healthy; HTTPS, readiness, exact-IP binding,
+  current asset identity, compatibility across 13 tmux sessions, and
+  direct-backend denial checks pass. C014 is preserved as
+  `tmux-mobile:pre-c015-focus-rollback`; physical acceptance is pending. See
   `RCA/2026-08-05--application-scroll-opens-keyboard.md`.
 
 - C014 is deployed pending physical acceptance. The owner reported repeated terminal disconnects during C012 App Scroll. Live
@@ -118,7 +121,8 @@ Updated: 2026-08-04
 
 ## Next
 
-- Commit and redeploy verified C015 image `sha256:2bc9c5...`.
+- Owner reloads/applies C015, dismisses the keyboard, and verifies both App Scroll
+  directions and application-mode Older/Latest keep it closed and connected.
 - C013 physical acceptance remains pending: confirm an opened terminal becomes
   tile 1 on return and remains first after reload.
 - C012 physical testing remains pending: deliberate drags versus fast flicks,
