@@ -1,6 +1,6 @@
 # Project Status
 
-Updated: 2026-08-06
+Updated: 2026-08-07
 
 ## Current
 
@@ -15,7 +15,8 @@ Updated: 2026-08-06
   the long-lived app unchanged; RCA was recorded before correction. The final
   image now reports host-matched tmux 3.4 with complete linkage, the real
   isolated socket query and cleanup pass, focused/skill/canonical checks pass,
-  and Change Review is next.
+  and Change Review reports ready with explicit fresh-host/live follow-ups.
+  Merge and push remain owner-controlled.
 
 - C015 is active on `fix/c015-app-scroll-keyboard-focus` after the owner reported that every App Scroll swipe and
   application-mode Older/Latest opens the iPhone keyboard. Both paths explicitly

@@ -1,6 +1,6 @@
 # Goal: First-Run Install Skill and Tmux Compatibility Gate
 
-Status: active
+Status: completed
 Owner: Human Partner and AI Agent
 Risk: T1 repository work; invoked host/deployment actions retain T2/T3 pauses
 Updated: 2026-08-07
@@ -61,7 +61,7 @@ server, and guides an approved Tailscale-only start through reachability checks.
 | 1. Configuration thin slice | completed | Preflight and safe env/key generation pass focused tests. | Focused suite passes |
 | 2. Compatibility gate | completed | Host-matched image and isolated probe pass without default-session access. | Image/ldd/real probe pass |
 | 3. Skill workflow | completed | Initialized skill validates and covers the complete guarded flow. | Skill validation and inspection pass |
-| 4. Verification/review | in_progress | Canonical verification and review evidence pass. | Canonical passes; review pending |
+| 4. Verification/review | completed | Canonical verification and review evidence pass. | Canonical and Change Review pass |
 
 ## Progress
 
@@ -92,6 +92,9 @@ server, and guides an approved Tailscale-only start through reachability checks.
   secret non-output, modes, overwrite refusal, compatibility success, and Docker
   failure cleanup. Final real probe passes and leaves no probe socket; canonical
   verification passes.
+- 2026-08-07: Change Review found no blockers and classified C016 ready with
+  fresh-host and live-deployment follow-ups. Full-history Gitleaks found no
+  leaks; merge/push remain outside current authority.
 
 ## Discoveries
 
@@ -118,8 +121,8 @@ server, and guides an approved Tailscale-only start through reachability checks.
 
 ## Next Action
 
-- Commit the verified C016 implementation, then perform the Change Review over
-  its exact commit and diff.
+- Await owner authorization for merge/push or invoke `$setup-tmux-mobile` from
+  the independent fresh host for the recorded follow-up.
 
 ## Pause Conditions
 
@@ -130,5 +133,5 @@ server, and guides an approved Tailscale-only start through reachability checks.
 ## Outcomes
 
 - Implementation, skill validation, focused/canonical checks, host-matched image,
-  RCA correction, and isolated real compatibility evidence are complete. Change
-  Review remains before the local review boundary.
+  RCA correction, isolated real compatibility evidence, secret scan, and Change
+  Review are complete. C016 is ready with approval-gated fresh-host/live follow-ups.

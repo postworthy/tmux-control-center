@@ -173,7 +173,7 @@ Status: active
 
 ## C016 — First-run host setup skill and tmux compatibility
 
-Status: active
+Status: completed locally; ready with approval-gated follow-ups
 
 - Add a repository-local skill for first-clone Linux setup and deployment.
 - Diagnose tmux, Docker Compose, and Tailscale; install only tmux with explicit
