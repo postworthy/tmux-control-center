@@ -9,8 +9,11 @@ Related RCA: `RCA/2026-08-05--application-scroll-opens-keyboard.md`
 
 ## Decision
 
-Pending canonical/image/deployment checks and physical iPhone acceptance. No
-merge, push, or publication is authorized by this record.
+Ready with an explicit follow-up for physical iPhone acceptance. Canonical,
+image, deployment, compatibility, and publication-hygiene checks pass. The
+owner explicitly authorized commit, push, and merge to `main` on 2026-08-06;
+that authorization permits crossing the Review Boundary while AC4 remains
+truthfully open.
 
 ## Scope and Compatibility
 
@@ -53,5 +56,6 @@ merge, push, or publication is authorized by this record.
 
 ## Findings
 
-- Blocking: physical acceptance.
-- Non-blocking: none recorded.
+- Blocking: none.
+- Non-blocking: confirm on the physical iPhone that App Scroll swipes and
+  application-mode Older/Latest keep the keyboard closed and connection stable.

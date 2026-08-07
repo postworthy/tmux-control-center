@@ -1,6 +1,6 @@
 # Project Status
 
-Updated: 2026-08-04
+Updated: 2026-08-06
 
 ## Current
 
@@ -14,7 +14,10 @@ Updated: 2026-08-04
   also pass. C015 is now live and healthy; HTTPS, readiness, exact-IP binding,
   current asset identity, compatibility across 13 tmux sessions, and
   direct-backend denial checks pass. C014 is preserved as
-  `tmux-mobile:pre-c015-focus-rollback`; physical acceptance is pending. See
+  `tmux-mobile:pre-c015-focus-rollback`. Canonical verification, commit-trailer
+  inspection, diff checks, and a full-history Gitleaks scan pass. The C012-C015
+  stack is approved for the owner-authorized merge and push with physical C015
+  acceptance retained as an explicit follow-up. See
   `RCA/2026-08-05--application-scroll-opens-keyboard.md`.
 
 - C014 is deployed pending physical acceptance. The owner reported repeated terminal disconnects during C012 App Scroll. Live

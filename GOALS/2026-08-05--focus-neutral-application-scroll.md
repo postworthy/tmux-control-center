@@ -1,9 +1,9 @@
 # Goal: Focus-Neutral Application Scroll
 
-Status: active
+Status: paused
 Owner: Human Partner and AI Agent
 Risk: T1
-Updated: 2026-08-05
+Updated: 2026-08-06
 Proposal: `PROPOSALS/2026-08-05--focus-neutral-application-scroll.md`
 Review Boundary: merge from `fix/c015-app-scroll-keyboard-focus` into `main`
 
@@ -50,7 +50,7 @@ focusing xterm's textarea, opening the iPhone keyboard, or disconnecting.
 | --- | --- | --- | --- |
 | 1. Focus correction | completed | Wheel dispatcher and toggle are focus-neutral; typing focus remains. | Source inspection and typecheck passed |
 | 2. Compatibility | completed | C012–C014 and canonical checks pass unchanged. | Frontend and canonical checks passed |
-| 3. Deploy/accept | in_progress | Verified image is healthy; physical wheel actions keep keyboard closed. | Image passed; deployment pending |
+| 3. Deploy/accept | paused | Verified image is healthy; physical wheel actions keep keyboard closed. | Deployment passed; physical acceptance pending |
 
 ## Progress
 
@@ -70,6 +70,10 @@ focusing xterm's textarea, opening the iPhone keyboard, or disconnecting.
   `sha256:2bc9c5...` as `tmux-mobile:c015-focus-neutral`, and recreated only the
   existing app. Post-deployment checks pass; physical keyboard acceptance is
   pending.
+- 2026-08-06: canonical verification passed again, all 16 outgoing commits
+  passed trailer/diff inspection, and Gitleaks found no secrets across all 27
+  repository commits. The owner explicitly authorized merge and push; review is
+  ready with physical iPhone acceptance retained as a follow-up.
 
 ## Evidence
 
@@ -121,6 +125,6 @@ focusing xterm's textarea, opening the iPhone keyboard, or disconnecting.
 
 ## Outcomes
 
-- RCA, local correction, canonical verification, production packaging, and live
-  deployment checks are complete. C015 is healthy with C014 preserved for
-  rollback; physical acceptance, final review, merge, and push remain pending.
+- RCA, correction, canonical verification, production packaging, live
+  deployment, and final review checks are complete. C015 is healthy with C014
+  preserved for rollback; physical acceptance remains an explicit follow-up.
