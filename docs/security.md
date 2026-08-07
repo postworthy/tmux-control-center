@@ -104,6 +104,13 @@ that the image's tmux client can talk to the host server after host or image
 upgrades. A protocol mismatch is a readiness failure, not a reason to grant the
 container broader host access.
 
+The first-run workflow pins the image build to the sanitized host release token
+and proves compatibility against a uniquely named disposable server. Every
+probe command carries explicit `tmux -L`; it never queries the owner's default
+server. Generated Compose configuration and the login-key handoff are ignored,
+mode `0600`, written atomically, and never printed by the helper. Agents must not
+read either secret-bearing file; the owner reveals the key directly when needed.
+
 ### Temporary HTTP smoke mode
 
 `compose.http-test.yaml` is only for pre-TLS tailnet testing. It requires the

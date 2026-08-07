@@ -20,6 +20,13 @@ docker compose -f compose.tailscale-serve.yaml --env-file deploy/docker/.env bui
 docker compose -f compose.tailscale-serve.yaml --env-file deploy/docker/.env up -d
 ```
 
+For a fresh clone, prefer the repository-local `$setup-tmux-mobile` skill. It
+generates the ignored environment and private login-key handoff, pins the image
+to the exact host `tmux -V` release, and runs a uniquely named disposable-socket
+compatibility probe before any long-lived start. It diagnoses but does not
+silently install Docker/Compose or Tailscale, and it requires confirmation before
+privileged, Serve, secret-display, or deployment actions.
+
 The container runs with the tmux owner's numeric UID/GID and mounts that user's
 specific tmux socket directory. It does not run its own tmux server. Its
 read-only root filesystem receives only writable data-protection/audit mounts
@@ -28,10 +35,11 @@ data-protection operations; the specific host tmux socket directory is mounted
 over its matching subdirectory. `TAILSCALE_IP` has no default: omitting it stops
 Compose configuration instead of exposing the port on every host interface.
 
-The image installs the distribution tmux client. Confirm compatibility with the
-host tmux server using a disposable session before relying on critical
-workloads. See the Compose guide for exact TLS, health, upgrade, and rollback
-commands.
+The image compiles the official upstream tmux release selected by the required
+`TMUX_VERSION` build argument. Set it to the sanitized release token reported by
+the host, then require the first-run helper's isolated socket probe before
+starting the service. See the Compose guide for the exact gate, TLS, health,
+upgrade, and rollback commands.
 
 The systemd unit deliberately leaves `PrivateTmp=false`: tmux normally stores its per-user server socket under `/tmp`, and a private mount namespace would make that socket invisible. Other filesystem hardening remains enabled.
 

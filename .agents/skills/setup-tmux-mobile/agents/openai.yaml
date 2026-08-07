@@ -1,0 +1,4 @@
+interface:
+  display_name: "Set Up Tmux Mobile"
+  short_description: "Prepare a safe first-run Tailscale deployment"
+  default_prompt: "Use $setup-tmux-mobile to configure this Linux host and validate a first tmux-mobile deployment."

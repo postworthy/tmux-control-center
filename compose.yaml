@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        TMUX_VERSION: "${TMUX_VERSION:?Set TMUX_VERSION to the host tmux release}"
     restart: unless-stopped
     init: true
     user: "${TMUX_MOBILE_UID:?Set TMUX_MOBILE_UID to the tmux owner's numeric UID}:${TMUX_MOBILE_GID:?Set TMUX_MOBILE_GID to the tmux owner's numeric GID}"
