@@ -48,7 +48,7 @@ Disposal sends HUP/TERM and finally KILL only to the attach-client process group
 then reaps its leader; tmux's server and session remain alive. Real
 isolated-socket and stubborn-descendant tests verify this behavior.
 
-The bridge has global and per-identity leases, bounded client messages, one send lock for PTY output and heartbeat frames, and explicit cleanup. Because an attached tmux client—not xterm's alternate buffer—owns authoritative pane history, typed terminal history messages resolve the safe session target and invoke fixed `copy-mode` and `send-keys -X` argument arrays. One completed vertical gesture produces one bounded operation; Latest and disconnect cancel copy mode entered by the connection. The abstraction permits replacing `forkpty` without changing routes or frontend protocol.
+The bridge has global and per-identity leases, bounded client messages, one send lock for PTY output and heartbeat frames, and explicit cleanup. Because an attached tmux client—not xterm's alternate buffer—owns authoritative pane history, the default terminal gesture uses typed history messages that resolve the safe session target and invoke fixed `copy-mode` and `send-keys -X` argument arrays. An explicit default-off Application Scroll control instead starts at one wheel event per 18 pixels of vertical swipe movement and applies a deterministic 1x–4x multiplier from average gesture velocity, capped at 72 events, through xterm's negotiated mouse protocol. This lets deliberate drags remain precise while fast flicks travel farther in a mouse-aware foreground TUI. Xterm's ordered reports from one synthetic gesture are buffered only during that dispatch and sent together through the existing bounded input serializer, preventing one gesture from amplifying into a rate-limit-exhausting WebSocket message burst. Wheel dispatch, the App Scroll toggle, and application-mode Older/Latest are focus-neutral, so they do not focus xterm's hidden keyboard textarea; connection and typing-oriented controls retain intentional focus. In that mode Older and Latest use the same path as fixed 12-event wheel-up and wheel-down bursts; while off they retain their tmux-history behavior. The control is browser-memory-only and resets on terminal entry, exit, and connection loss. Latest and disconnect cancel copy mode entered by the connection only while application scrolling is off. The abstraction permits replacing `forkpty` without changing routes or frontend protocol.
 
 ## Authentication and authorization
 
@@ -66,9 +66,22 @@ Cookie mutations require an antiforgery header and same-site token cookie. There
 
 Cards use `100dvh`, safe-area insets, `scroll-snap-type: y mandatory`, and a non-scrollable faded preview so vertical touch movement belongs to the deck. The active opaque session ID is the only value stored in `localStorage`; terminal content, access keys, cookies, and API results are not stored there.
 
-Realtime snapshots replace records by ID without scrolling the deck. The active ID is restored after reload or resume if it still exists. Terminal mode is lazy-loaded, preserves the selected card, and exposes an explicit back control. One-finger vertical gestures scroll only the bounded browser-side xterm buffer; Older and Latest controls provide the same navigation without gestures and never write to the PTY.
+Realtime snapshots replace records by ID without scrolling the deck. The client
+keeps a device-local, duplicate-free MRU list of opaque session IDs updated only
+when Terminal is opened from a tile. Ranked live sessions lead the deck;
+unranked sessions retain snapshot order, and stale IDs are pruned. Tiles,
+previous/next navigation, active position, terminal lookup, and the session rail
+all consume this one derived order. The active ID is restored after reload or
+resume if it still exists. Terminal mode is lazy-loaded, preserves the selected
+card, and exposes an explicit back control. One-finger vertical gestures
+navigate bounded tmux history by default; Older and Latest provide explicit
+access to the same history controls. The owner may temporarily enable
+Application Scroll to route distance- and velocity-scaled swipe movement plus
+Older/Latest as bounded mouse-wheel input to the foreground program. That mode
+is visibly indicated, never persisted, and resets off on connection loss or
+terminal exit.
 
-The service worker caches only application-shell GETs. Requests under `/api`, `/ws`, and `/health` are never cached. A waiting worker does not activate automatically; the UI announces an update.
+The service worker caches only application-shell GETs. Requests under `/api`, `/ws`, and `/health` are never cached. Each production web build stamps the worker cache identity from the generated root asset graph, allowing the installed PWA to detect a release. Container packaging clears its temporary webroot before copying generated output so obsolete hashed application bundles are not retained. A waiting worker does not activate automatically; the UI announces an update.
 
 ## Deliberate compromises
 

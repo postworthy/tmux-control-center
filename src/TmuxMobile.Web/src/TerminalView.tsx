@@ -2,11 +2,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { MAX_PASTE_BYTES, pasteByteLength, requiresPasteConfirmation, serializeTerminalInput } from "./terminalInput";
+import {
+  coalesceTerminalInput,
+  MAX_PASTE_BYTES,
+  pasteByteLength,
+  requiresPasteConfirmation,
+  serializeTerminalInput
+} from "./terminalInput";
 import {
   classifyTouchAxis,
   consumeTouchScroll,
-  historyRequestFromScrollLines,
+  routeScrollControl,
+  routeTouchScroll,
   serializeHistoryRequest,
   type TerminalHistoryAction,
   type TouchAxis
@@ -23,11 +30,20 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
   const socket = useRef<WebSocket | null>(null);
   const [connection, setConnection] = useState<ConnectionState>("connecting");
   const modifiers = useRef({ control: false, alt: false });
+  const applicationScroll = useRef(false);
+  const dispatchingApplicationWheel = useRef(false);
+  const applicationWheelInput = useRef<string[]>([]);
   const [modifierState, setModifierState] = useState({ control: false, alt: false });
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteDraft, setPasteDraft] = useState("");
   const [pasteStatus, setPasteStatus] = useState("");
   const [historyMode, setHistoryMode] = useState(false);
+  const [applicationScrollEnabled, setApplicationScrollEnabled] = useState(false);
+
+  const resetApplicationScroll = useCallback(() => {
+    applicationScroll.current = false;
+    setApplicationScrollEnabled(false);
+  }, []);
 
   const send = useCallback((data: string) => {
     if (socket.current?.readyState !== WebSocket.OPEN) return;
@@ -40,6 +56,34 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     if (action === "older") setHistoryMode(true);
     if (action === "latest") setHistoryMode(false);
   }, []);
+
+  const dispatchApplicationWheel = useCallback((wheelDeltaYs: number[], clientX?: number, clientY?: number) => {
+    const xterm = terminal.current;
+    const element = xterm?.element;
+    if (!xterm || !element) return;
+    const bounds = element.getBoundingClientRect();
+    const wheelX = clientX ?? bounds.left + bounds.width / 2;
+    const wheelY = clientY ?? bounds.top + bounds.height / 2;
+    applicationWheelInput.current = [];
+    dispatchingApplicationWheel.current = true;
+    try {
+      for (const deltaY of wheelDeltaYs) {
+        element.dispatchEvent(new WheelEvent("wheel", {
+          bubbles: true,
+          cancelable: true,
+          clientX: wheelX,
+          clientY: wheelY,
+          deltaMode: WheelEvent.DOM_DELTA_LINE,
+          deltaY
+        }));
+      }
+    } finally {
+      dispatchingApplicationWheel.current = false;
+      const input = coalesceTerminalInput(applicationWheelInput.current);
+      applicationWheelInput.current = [];
+      send(input);
+    }
+  }, [send]);
 
   const connect = useCallback(() => {
     if (socket.current?.readyState === WebSocket.OPEN ||
@@ -62,10 +106,11 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     ws.onclose = () => {
       if (socket.current === ws) socket.current = null;
       setHistoryMode(false);
+      resetApplicationScroll();
       setConnection("disconnected");
     };
     ws.onerror = () => ws.close();
-  }, [session.id]);
+  }, [resetApplicationScroll, session.id]);
 
   useEffect(() => {
     const xterm = new Terminal({
@@ -80,6 +125,10 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     terminal.current = xterm;
     fit.current = fitAddon;
     const input = xterm.onData((value) => {
+      if (dispatchingApplicationWheel.current) {
+        applicationWheelInput.current.push(value);
+        return;
+      }
       let data = value;
       if (modifiers.current.control && value.length === 1) {
         const code = value.toUpperCase().charCodeAt(0);
@@ -101,10 +150,13 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     let touch: {
       startX: number;
       startY: number;
+      lastX: number;
       lastY: number;
       axis: TouchAxis;
       remainderPixels: number;
       lines: number;
+      distancePixels: number;
+      startTime: number;
     } | null = null;
     const touchStart = (event: TouchEvent) => {
       if (event.touches.length !== 1) {
@@ -115,10 +167,13 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       touch = {
         startX: point.clientX,
         startY: point.clientY,
+        lastX: point.clientX,
         lastY: point.clientY,
         axis: "pending",
         remainderPixels: 0,
-        lines: 0
+        lines: 0,
+        distancePixels: 0,
+        startTime: event.timeStamp
       };
     };
     const touchMove = (event: TouchEvent) => {
@@ -132,23 +187,34 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       if (touch.axis !== "vertical") return;
 
       event.preventDefault();
-      const consumed = consumeTouchScroll(touch.remainderPixels, point.clientY - touch.lastY);
+      const fingerDeltaY = point.clientY - touch.lastY;
+      const consumed = consumeTouchScroll(touch.remainderPixels, fingerDeltaY);
+      touch.lastX = point.clientX;
       touch.lastY = point.clientY;
       touch.remainderPixels = consumed.remainderPixels;
       touch.lines += consumed.lines;
+      touch.distancePixels += Math.abs(fingerDeltaY);
     };
-    const touchEnd = () => {
+    const touchEnd = (event: TouchEvent) => {
       if (touch?.axis === "vertical") {
-        const message = historyRequestFromScrollLines(touch.lines);
-        if (message && socket.current?.readyState === WebSocket.OPEN) {
-          socket.current.send(message);
+        const elapsedMilliseconds = Math.max(1, event.timeStamp - touch.startTime);
+        const velocityPixelsPerMillisecond = touch.distancePixels / elapsedMilliseconds;
+        const route = routeTouchScroll(
+          touch.lines,
+          applicationScroll.current,
+          velocityPixelsPerMillisecond
+        );
+        if (route?.kind === "history" && socket.current?.readyState === WebSocket.OPEN) {
+          socket.current.send(route.message);
           if (touch.lines < 0) setHistoryMode(true);
-        }
+        } else if (route?.kind === "application")
+          dispatchApplicationWheel(route.wheelDeltaYs, touch.lastX, touch.lastY);
       }
       touch = null;
     };
     const touchCancel = () => { touch = null; };
     const terminalViewport = container.current!;
+    resetApplicationScroll();
     terminalViewport.addEventListener("touchstart", touchStart, { passive: true });
     terminalViewport.addEventListener("touchmove", touchMove, { passive: false });
     terminalViewport.addEventListener("touchend", touchEnd);
@@ -169,7 +235,7 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       xterm.dispose();
       terminal.current = null;
     };
-  }, [connect, send]);
+  }, [connect, dispatchApplicationWheel, resetApplicationScroll, send]);
 
   const key = (value: string) => { send(value); terminal.current?.focus(); };
   const toggle = (name: "control" | "alt") => {
@@ -226,9 +292,20 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       setPasteStatus("Clipboard access was unavailable. Paste into the text field manually.");
     }
   };
-  const scrollOlder = () => requestHistory("older");
-  const scrollLatest = () => requestHistory("latest");
+  const routeScrollButton = (action: "older" | "latest") => {
+    const route = routeScrollControl(action, applicationScroll.current);
+    if (route.kind === "history") requestHistory(action);
+    else dispatchApplicationWheel(route.wheelDeltaYs);
+  };
+  const scrollOlder = () => routeScrollButton("older");
+  const scrollLatest = () => routeScrollButton("latest");
+  const toggleApplicationScroll = () => {
+    const enabled = !applicationScroll.current;
+    applicationScroll.current = enabled;
+    setApplicationScrollEnabled(enabled);
+  };
   const leaveTerminal = () => {
+    resetApplicationScroll();
     if (historyMode) requestHistory("latest");
     onBack();
   };
@@ -246,14 +323,28 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
         </div>
       )}
       <div className="terminal-viewport" ref={container}
-        aria-label={`Interactive terminal for ${session.name}. Swipe down for older output and up for newer output.`} />
+        aria-label={`Interactive terminal for ${session.name}. ${applicationScrollEnabled
+          ? "Application scrolling is enabled; swipes send mouse wheel input to the foreground program."
+          : "Swipe down for older tmux output and up for newer tmux output."}`} />
       <div className="terminal-controls">
         {pasteStatus && <p className="paste-status" role="status">{pasteStatus}</p>}
         {historyMode && <span className="visually-hidden" role="status">Viewing tmux history.</span>}
+        {applicationScrollEnabled && <span className="visually-hidden" role="status">
+          Application scrolling enabled. Swipes now send mouse wheel input to the foreground program.
+        </span>}
         <div className="shortcut-bar" role="toolbar" aria-label="Terminal shortcut keys">
-          <button onClick={scrollOlder} aria-label="Scroll one page into older terminal output">Older</button>
-          <button onClick={scrollLatest} disabled={!historyMode}
-            aria-label="Jump to latest terminal output">Latest</button>
+          <button onClick={scrollOlder} aria-label={applicationScrollEnabled
+            ? "Send wheel-up input to the foreground application"
+            : "Scroll one page into older terminal output"}>Older</button>
+          <button onClick={scrollLatest} disabled={!applicationScrollEnabled && !historyMode}
+            aria-label={applicationScrollEnabled
+              ? "Send wheel-down input to the foreground application"
+              : "Jump to latest terminal output"}>Latest</button>
+          <button className={applicationScrollEnabled ? "active" : ""}
+            aria-pressed={applicationScrollEnabled}
+            aria-label="Route terminal swipes as mouse wheel input to the foreground application"
+            disabled={connection !== "connected"}
+            onClick={toggleApplicationScroll}>App Scroll</button>
           <button onClick={() => key("\u001b")}>Esc</button>
           <button onClick={() => key("\t")}>Tab</button>
           <button className={modifierState.control ? "active" : ""} aria-pressed={modifierState.control}

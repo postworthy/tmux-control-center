@@ -1,8 +1,79 @@
 # Project Status
 
-Updated: 2026-08-02
+Updated: 2026-08-06
 
 ## Current
+
+- C015 is active on `fix/c015-app-scroll-keyboard-focus` after the owner reported that every App Scroll swipe and
+  application-mode Older/Latest opens the iPhone keyboard. Both paths explicitly
+  call xterm focus, which focuses its hidden textarea and summons iOS keyboard
+  input. Approved correction removes focus only from wheel interactions and
+  includes redeployment to the existing test app. The two focus calls are now
+  removed locally; frontend tests, typecheck, and full focus-caller inspection
+  pass. Canonical verification and clean production image `sha256:2bc9c5...`
+  also pass. C015 is now live and healthy; HTTPS, readiness, exact-IP binding,
+  current asset identity, compatibility across 13 tmux sessions, and
+  direct-backend denial checks pass. C014 is preserved as
+  `tmux-mobile:pre-c015-focus-rollback`. Canonical verification, commit-trailer
+  inspection, diff checks, and a full-history Gitleaks scan pass. The C012-C015
+  stack is approved for the owner-authorized merge and push with physical C015
+  acceptance retained as an explicit follow-up. See
+  `RCA/2026-08-05--application-scroll-opens-keyboard.md`.
+
+- C014 is deployed pending physical acceptance. The owner reported repeated terminal disconnects during C012 App Scroll. Live
+  logs confirm three `Terminal input rate limit exceeded` closures: a 72-event
+  velocity gesture was amplified into 72 WebSocket input messages, exceeding the
+  server's intentional 64-message burst bucket. Approved corrective scope now
+  coalesces one gesture into one bounded input send without weakening the
+  limiter. Focused regression, typecheck, canonical verification, production
+  image `sha256:6ac99e...`, docs, and review inspection pass; the correction is
+  now live and healthy in the existing tailnet test environment. HTTPS,
+  readiness, exact-IP binding, current asset identity, compatibility across 13
+  tmux sessions, and direct-backend denial checks pass; no post-restart
+  rate-limit warning is present before physical testing. C013 is preserved as
+  `tmux-mobile:pre-c014-scroll-rollback`. See
+  `RCA/2026-08-05--application-scroll-input-burst-disconnect.md`.
+
+- C013 is locally implemented on `feat/c013-session-recency`: opening a terminal from the
+  main deck will promote that session to the first tile on return using a safe,
+  device-local opaque-ID MRU order. Backend inventory order and tmux state remain
+  unchanged. Pure ordering/persistence tests, frontend typecheck, canonical
+  verification, production image build, and review inspection pass. Verified
+  image `sha256:e1e79f...` is now healthy in the existing tailnet test
+  environment; HTTPS, readiness, exact-IP binding, current asset identity, tmux
+  compatibility, and direct-backend denial checks pass. The prior velocity image
+  is preserved as `tmux-mobile:pre-c013-recency-rollback`; owner acceptance
+  remains pending.
+
+- C012 is deployed for owner testing from `feat/c012-opt-in-tui-scroll`. The
+  thin slice keeps
+  tmux-backed swipes as the default and adds a default-off, non-persistent App
+  Scroll toggle for mouse-aware TUIs. Image `tmux-mobile:c012-opt-in-tui-scroll`
+  is healthy in the existing tailnet Serve environment; HTTPS liveness/root,
+  readiness, served-bundle identity, tmux compatibility, and direct-backend 426
+  checks pass. `tmux-mobile:pre-c012-rollback` preserves the prior live image.
+  Frontend unit/type checks, the .NET 10
+  container build, four isolated Linux PTY/tmux tests, negotiated xterm encoding
+  probe, and canonical verification pass. Physical-iPhone acceptance and review
+  completion remain before any merge or push.
+- The first C012 iPhone check did not show App Scroll. RCA establishes that the
+  deployed image has the new bundle, but the unchanged service worker cannot
+  prompt an already-open PWA to update and stale old hashed bundles remain
+  servable. Corrective work is paused pending a force-close/reopen diagnostic;
+  see `RCA/2026-08-04--deployed-terminal-control-not-visible.md`. Force-closing
+  and reopening made the button visible, confirming the diagnosis. The owner
+  then requested proportional swipe movement and application-mode routing for
+  Older/Latest. That local correction now passes focused tests, production image
+  build, and canonical verification. The confirmed release defect is also
+  corrected locally: the worker is release-stamped and the runtime image no
+  longer contains stale hashed bundles. The revised image was not deployed; the
+  owner has now requested a further velocity multiplier so fast flicks move
+  materially farther than deliberate drags. That refinement now passes focused
+  tests, canonical verification, and production image inspection and is live as
+  image `sha256:035f7f...`. HTTPS, readiness, exact-IP binding, current asset and
+  worker identity, tmux compatibility, and direct-backend denial checks pass.
+  The prior three-tick image is preserved as
+  `tmux-mobile:pre-c012-velocity-rollback`; physical acceptance is pending.
 
 - C011 is implemented and actively deployed from
   `security/c011-dotnet10-and-hardening` at
@@ -53,7 +124,12 @@ Updated: 2026-08-02
 
 ## Next
 
-- Obtain owner approval before merging or pushing the completed C011 branch.
+- Owner reloads/applies C015, dismisses the keyboard, and verifies both App Scroll
+  directions and application-mode Older/Latest keep it closed and connected.
+- C013 physical acceptance remains pending: confirm an opened terminal becomes
+  tile 1 on return and remains first after reload.
+- C012 physical testing remains pending: deliberate drags versus fast flicks,
+  plus App Scroll Older/Latest, in Claude Code and mitmproxy.
 
 ## Known Limitations
 

@@ -1,8 +1,12 @@
-const INPUT_MESSAGE_LIMIT_BYTES = 12_000;
+export const INPUT_MESSAGE_LIMIT_BYTES = 12_000;
 const INPUT_ENVELOPE_BYTES = utf8Length(JSON.stringify({ type: "input", data: "" }));
 
 export const MAX_PASTE_BYTES = 131_072;
 export const PASTE_CONFIRM_BYTES = 1_024;
+
+export function coalesceTerminalInput(chunks: readonly string[]): string {
+  return chunks.join("");
+}
 
 export function serializeTerminalInput(data: string): string[] {
   if (!data) return [];

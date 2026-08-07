@@ -120,6 +120,57 @@ Status: completed
 - Implementation, active deployment, and Change Review are complete. The
   owner-controlled merge/push boundary remains outside C011 execution.
 
+## C012 — Opt-in terminal TUI scrolling
+
+Status: active correction after owner physical-iPhone feedback
+
+- Preserve tmux-backed swipe history as the default terminal behavior.
+- Add an explicit, non-persistent application-scroll toggle that translates
+  bounded vertical swipes into negotiated xterm mouse-wheel input.
+- Reset application-scroll mode on terminal exit and connection loss, retain
+  accessible pressed-state feedback, and cover both routing modes.
+- Verify ordinary tmux history and mouse-aware alternate-screen behavior before
+  physical-iPhone acceptance.
+- Scale application wheel ticks with swipe distance and route Older/Latest as
+  wheel-up/wheel-down bursts only while application scrolling is enabled.
+- Apply a bounded velocity multiplier so a fast flick moves materially farther
+  than a slow drag of comparable distance.
+- Planned commit: `feat(terminal): add opt-in TUI swipe scrolling`
+
+## C013 — Session tiles ordered by in-app recency
+
+Status: active
+
+- Record an opaque device-local MRU list when a session terminal is opened from
+  the main deck.
+- Put the opened session first on return while retaining stable server order for
+  sessions without an in-app recency record.
+- Apply the derived order consistently to tiles, navigation, selection, and the
+  session rail; tolerate malformed and stale local state.
+- Planned commit: `feat(sessions): order tiles by terminal recency`
+
+## C014 — Coalesce application-scroll input bursts
+
+Status: active
+
+- Buffer the negotiated xterm wheel reports emitted by one synthetic gesture and
+  send them once through the existing bounded terminal-input serializer.
+- Preserve the 1x–4x velocity model, 72-event cap, byte order, modifier behavior,
+  server limiter, and all default scrolling behavior.
+- Add a maximum-gesture regression proving one WebSocket message instead of a
+  limiter-exhausting burst.
+- Planned commit: `fix(terminal): coalesce application scroll input`
+
+## C015 — Keep application scrolling focus-neutral
+
+Status: active
+
+- Remove xterm textarea focus from wheel-only dispatch and the App Scroll toggle.
+- Preserve focus for reconnect, typing shortcuts, modifiers, and paste.
+- Verify swipes and application-mode Older/Latest scroll without opening the iOS
+  keyboard or regressing C014 connection stability.
+- Planned commit: `fix(terminal): keep app scroll focus neutral`
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.

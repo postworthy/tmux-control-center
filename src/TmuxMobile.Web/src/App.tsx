@@ -1,6 +1,13 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { getClientConfig, login } from "./api";
 import { SessionCard } from "./SessionCard";
+import {
+  orderSessionsByRecency,
+  promoteSessionRecency,
+  pruneSessionRecency,
+  readSessionRecency,
+  writeSessionRecency
+} from "./sessionRecency";
 import { useInventory } from "./useInventory";
 
 const ACTIVE_KEY = "tmux-mobile-active-session";
@@ -15,17 +22,32 @@ export default function App() {
   const [loginError, setLoginError] = useState("");
   const [updateReady, setUpdateReady] = useState<ServiceWorker | null>(null);
   const [tmuxPrefix, setTmuxPrefix] = useState("C-b");
+  const [recentSessionIds, setRecentSessionIds] = useState(() => readSessionRecency(localStorage));
+  const orderedSessions = useMemo(
+    () => orderSessionsByRecency(inventory.sessions, recentSessionIds),
+    [inventory.sessions, recentSessionIds]
+  );
 
   useEffect(() => {
-    if (!inventory.sessions.length) return;
-    const valid = inventory.sessions.some((session) => session.id === activeId);
-    const next = valid ? activeId : inventory.sessions[0].id;
+    if (!orderedSessions.length) return;
+    const valid = orderedSessions.some((session) => session.id === activeId);
+    const next = valid ? activeId : orderedSessions[0].id;
     if (next !== activeId) setActiveId(next);
     requestAnimationFrame(() => {
       deck.current?.querySelector(`[data-session-id="${CSS.escape(next)}"]`)
         ?.scrollIntoView({ block: "start" });
     });
-  }, [inventory.sessions.map((session) => session.id).join("|")]);
+  }, [orderedSessions.map((session) => session.id).join("|")]);
+
+  useEffect(() => {
+    if (inventory.state !== "ready" && inventory.state !== "empty") return;
+    setRecentSessionIds((current) => {
+      const next = pruneSessionRecency(inventory.sessions, current);
+      if (next.length === current.length && next.every((id, index) => id === current[index])) return current;
+      writeSessionRecency(localStorage, next);
+      return next;
+    });
+  }, [inventory.state, inventory.sessions.map((session) => session.id).join("|")]);
 
   useEffect(() => {
     if (inventory.state === "ready") void getClientConfig().then((config) => setTmuxPrefix(config.tmuxPrefix));
@@ -52,14 +74,24 @@ export default function App() {
   }, []);
 
   const scrollTo = (index: number) => {
-    const session = inventory.sessions[index];
+    const session = orderedSessions[index];
     if (!session) return;
     deck.current?.querySelector(`[data-session-id="${CSS.escape(session.id)}"]`)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const activeIndex = Math.max(0, inventory.sessions.findIndex((session) => session.id === activeId));
-  const terminalSession = inventory.sessions.find((session) => session.id === terminalId);
+  const openTerminal = (sessionId: string) => {
+    setRecentSessionIds((current) => {
+      const next = promoteSessionRecency(current, sessionId);
+      writeSessionRecency(localStorage, next);
+      return next;
+    });
+    setActiveId(sessionId);
+    setTerminalId(sessionId);
+  };
+
+  const activeIndex = Math.max(0, orderedSessions.findIndex((session) => session.id === activeId));
+  const terminalSession = orderedSessions.find((session) => session.id === terminalId);
   if (terminalSession) return (
     <Suspense fallback={<State title="Opening terminal…" busy />}>
       <TerminalView session={terminalSession} tmuxPrefix={tmuxPrefix} onBack={() => setTerminalId(null)} />
@@ -113,16 +145,16 @@ export default function App() {
           cards[0]);
         if (current?.dataset.sessionId) setActiveId(current.dataset.sessionId);
       }}>
-        {inventory.sessions.map((session, index) => (
+        {orderedSessions.map((session, index) => (
           <SessionCard key={session.id} session={session} index={index} total={inventory.sessions.length}
-            onTerminal={() => setTerminalId(session.id)}
+            onTerminal={() => openTerminal(session.id)}
             onRefresh={inventory.refresh}
             onPrevious={() => scrollTo(index - 1)}
             onNext={() => scrollTo(index + 1)} />
         ))}
       </main>
       <div className="session-rail" aria-hidden="true">
-        {inventory.sessions.map((session, index) =>
+        {orderedSessions.map((session, index) =>
           <span key={session.id} className={index === activeIndex ? "active" : ""} />)}
       </div>
     </>

@@ -2,9 +2,18 @@ export const TOUCH_AXIS_THRESHOLD_PIXELS = 6;
 export const TOUCH_SCROLL_LINE_PIXELS = 18;
 export const MAX_HISTORY_SCROLL_PAGES = 3;
 export const TOUCH_LINES_PER_HISTORY_PAGE = 20;
+export const APPLICATION_WHEEL_DELTA_LINES = 1;
+export const MAX_APPLICATION_WHEEL_EVENTS = 72;
+export const APPLICATION_CONTROL_WHEEL_EVENTS = 12;
+export const APPLICATION_MEDIUM_SWIPE_VELOCITY = 0.5;
+export const APPLICATION_FAST_SWIPE_VELOCITY = 1;
+export const APPLICATION_VERY_FAST_SWIPE_VELOCITY = 1.5;
 
 export type TouchAxis = "pending" | "horizontal" | "vertical";
 export type TerminalHistoryAction = "older" | "newer" | "latest";
+export type TouchScrollRoute =
+  | { kind: "history"; message: string }
+  | { kind: "application"; wheelDeltaYs: number[] };
 
 export function classifyTouchAxis(deltaX: number, deltaY: number): TouchAxis {
   if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < TOUCH_AXIS_THRESHOLD_PIXELS)
@@ -23,8 +32,48 @@ export function serializeHistoryRequest(action: TerminalHistoryAction, pages = 1
 
 export function historyRequestFromScrollLines(lines: number): string | null {
   if (!Number.isFinite(lines) || lines === 0) return null;
-  const pages = Math.ceil(Math.abs(lines) / TOUCH_LINES_PER_HISTORY_PAGE);
+  const pages = scrollEventCount(lines);
   return serializeHistoryRequest(lines < 0 ? "older" : "newer", pages);
+}
+
+export function applicationWheelMultiplier(velocityPixelsPerMillisecond: number): number {
+  if (!Number.isFinite(velocityPixelsPerMillisecond) || velocityPixelsPerMillisecond <= 0) return 1;
+  if (velocityPixelsPerMillisecond >= APPLICATION_VERY_FAST_SWIPE_VELOCITY) return 4;
+  if (velocityPixelsPerMillisecond >= APPLICATION_FAST_SWIPE_VELOCITY) return 3;
+  if (velocityPixelsPerMillisecond >= APPLICATION_MEDIUM_SWIPE_VELOCITY) return 2;
+  return 1;
+}
+
+export function routeTouchScroll(
+  lines: number,
+  applicationScroll: boolean,
+  velocityPixelsPerMillisecond = 0
+): TouchScrollRoute | null {
+  if (!Number.isFinite(lines) || lines === 0) return null;
+  if (!applicationScroll) {
+    return { kind: "history", message: historyRequestFromScrollLines(lines)! };
+  }
+
+  const deltaY = lines < 0 ? -APPLICATION_WHEEL_DELTA_LINES : APPLICATION_WHEEL_DELTA_LINES;
+  const eventCount = Math.abs(Math.trunc(lines)) * applicationWheelMultiplier(velocityPixelsPerMillisecond);
+  return {
+    kind: "application",
+    wheelDeltaYs: Array(Math.min(MAX_APPLICATION_WHEEL_EVENTS, Math.max(1, eventCount))).fill(deltaY)
+  };
+}
+
+export function routeScrollControl(
+  action: Extract<TerminalHistoryAction, "older" | "latest">,
+  applicationScroll: boolean
+): TouchScrollRoute {
+  if (!applicationScroll) return { kind: "history", message: serializeHistoryRequest(action) };
+  const deltaY = action === "older" ? -APPLICATION_WHEEL_DELTA_LINES : APPLICATION_WHEEL_DELTA_LINES;
+  return { kind: "application", wheelDeltaYs: Array(APPLICATION_CONTROL_WHEEL_EVENTS).fill(deltaY) };
+}
+
+function scrollEventCount(lines: number): number {
+  return Math.min(MAX_HISTORY_SCROLL_PAGES,
+    Math.max(1, Math.ceil(Math.abs(lines) / TOUCH_LINES_PER_HISTORY_PAGE)));
 }
 
 export function consumeTouchScroll(

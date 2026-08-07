@@ -14,6 +14,7 @@ RUN apt-get update \
 WORKDIR /source
 COPY . .
 RUN dotnet restore TmuxMobile.sln
+RUN find src/TmuxMobile.Server/wwwroot -mindepth 1 -delete
 COPY --from=web-build /source/src/TmuxMobile.Server/wwwroot src/TmuxMobile.Server/wwwroot
 RUN dotnet publish src/TmuxMobile.Server/TmuxMobile.Server.csproj \
     --configuration Release \

@@ -1,7 +1,7 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 1.0
-Last updated: 2026-07-30
+Version: 1.1
+Last updated: 2026-08-04
 Status: Approved
 
 ## Product Objective
@@ -40,6 +40,18 @@ Status: Approved
   bind; never publish the host port on a wildcard address.
 - FR12: run the container as the same numeric non-root UID/GID that owns the
   target tmux server and mount only the required tmux socket directory and state.
+- FR13: keep tmux-backed terminal history navigation as the default and provide
+  an explicit, non-persistent terminal control that temporarily translates
+  vertical swipe distance and velocity plus the Older/Latest controls into
+  bounded, directionally equivalent mouse-wheel input for foreground TUIs.
+- FR14: order main session tiles by device-local in-app terminal recency so the
+  session most recently opened from a tile returns to the top of the deck while
+  untouched sessions retain stable server order.
+- FR15: coalesce all negotiated application-wheel reports produced by one touch
+  gesture into bounded terminal input serialization so velocity scrolling cannot
+  exhaust the per-connection WebSocket message bucket.
+- FR16: keep App Scroll gestures, its toggle, and application-mode Older/Latest
+  focus-neutral so wheel-only interactions never summon the software keyboard.
 
 ## Constraints
 
@@ -70,6 +82,20 @@ Status: Approved
 - [x] AC6: the production image builds successfully.
 - [x] AC7: docs provide exact Compose setup and verification steps without
   suggesting `0.0.0.0` as a host bind.
+- [ ] AC8: terminal swipes and Older/Latest continue to navigate tmux history by
+  default, while an explicitly enabled application-scroll mode routes bounded,
+  distance- and velocity-scaled wheel input plus directionally equivalent
+  Older/Latest wheel input to mouse-aware foreground programs and resets safely
+  to off.
+- [ ] AC9: opening a session terminal promotes that session to the first main
+  tile on return, persists the device-local recency order safely across refresh
+  and reload, and keeps deck navigation and the session rail consistent.
+- [ ] AC10: a maximum application-scroll gesture preserves every ordered xterm
+  wheel report while producing one bounded terminal input message and no
+  rate-limit disconnect.
+- [ ] AC11: dismissing the iPhone keyboard and using App Scroll in either
+  direction or through Older/Latest leaves the keyboard closed while scrolling
+  remains functional and connected.
 
 ## Canonical Verification
 
