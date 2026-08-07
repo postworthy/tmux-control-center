@@ -1,7 +1,7 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 1.1
-Last updated: 2026-08-04
+Version: 1.2
+Last updated: 2026-08-07
 Status: Approved
 
 ## Product Objective
@@ -52,6 +52,11 @@ Status: Approved
   exhaust the per-connection WebSocket message bucket.
 - FR16: keep App Scroll gestures, its toggle, and application-mode Older/Latest
   focus-neutral so wheel-only interactions never summon the software keyboard.
+- FR17: ship a repository-local first-run skill that diagnoses Linux host
+  prerequisites, safely prepares ignored deployment configuration and a login
+  secret, matches the image tmux client to the host tmux release, proves socket
+  compatibility with an isolated session, and guides an explicitly approved
+  Tailscale Serve deployment through reachability checks.
 
 ## Constraints
 
@@ -96,6 +101,10 @@ Status: Approved
 - [ ] AC11: dismissing the iPhone keyboard and using App Scroll in either
   direction or through Older/Latest leaves the keyboard closed while scrolling
   remains functional and connected.
+- [ ] AC12: a fresh-clone operator can use the repository-local setup skill to
+  reach a validated Compose configuration without exposing its generated login
+  secret, and the long-lived deployment is not started until an isolated
+  host/container tmux compatibility probe passes.
 
 ## Canonical Verification
 

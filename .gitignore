@@ -14,6 +14,7 @@ src/TmuxMobile.Server/logs/
 src/TmuxMobile.Server/data-protection/
 artifacts/
 deploy/docker/.env
+deploy/docker/access-key.txt
 deploy/docker/state/
 deploy/docker/secrets/
 TestResults/

@@ -43,6 +43,49 @@ backend IP/port is not an alternate application URL.
 
 ## Prepare
 
+### Guided first run
+
+From a fresh clone, invoke the repository-local `$setup-tmux-mobile` skill with
+a compatible coding agent. Its deterministic helper performs non-mutating
+preflight and private configuration generation:
+
+```bash
+./scripts/first-run-setup.sh preflight
+./scripts/first-run-setup.sh write-env --serve-host HOST.example.ts.net
+```
+
+The second command records the current numeric UID/GID, exact Tailscale IPv4
+address, host tmux release, socket location, origins, ports, and a generated
+32-byte random login key. It atomically writes ignored mode-`0600`
+`deploy/docker/.env` and `deploy/docker/access-key.txt`, never prints the key,
+and refuses to replace existing files unless `--force` is explicitly chosen.
+The operator can personally reveal the key at login with:
+
+```bash
+cat deploy/docker/access-key.txt
+```
+
+After building, require the isolated compatibility gate before starting the
+long-lived service:
+
+```bash
+docker compose -f compose.tailscale-serve.yaml \
+  --env-file deploy/docker/.env build app
+./scripts/first-run-setup.sh probe-tmux
+```
+
+The probe creates a unique disposable `tmux -L` server, checks the image reports
+the pinned host version and can query that mounted socket, then destroys only
+the disposable server. It never addresses the default socket. A failed probe
+must leave the long-lived service stopped.
+
+The skill stops with official guidance rather than installing Docker/Compose or
+Tailscale. It may propose a host-package tmux installation, Tailscale login or
+Serve mapping, and Compose start, but each privileged/network/live mutation
+requires explicit approval.
+
+### Manual preparation
+
 Run these commands as the same Linux account that owns the target tmux server:
 
 ```bash
@@ -54,7 +97,8 @@ tailscale cert
 ```
 
 Edit `deploy/docker/.env` with those values, the full MagicDNS hostname shown by
-`tailscale cert`, and a random application access key. If HTTPS certificates are
+`tailscale cert`, the exact release token from `tmux -V`, and a random
+application access key. If HTTPS certificates are
 enabled for the tailnet, write the certificate files to the configured paths:
 
 ```bash
@@ -119,9 +163,11 @@ curl -o /dev/null -w '%{http_code}\n' \
 
 Readiness can report unhealthy if the host tmux server is not running. Before
 using critical sessions, confirm `/health/ready` and open a disposable tmux
-session. The image's tmux client must be protocol-compatible with the host tmux
-server; rebuild with a matching tmux package/version if attachment reports a
-protocol mismatch.
+session. The image compiles the official upstream tmux release selected by
+`TMUX_VERSION`. It must match the host release token and pass
+`./scripts/first-run-setup.sh probe-tmux`; a version comparison alone is not
+sufficient because the gate also proves real client/server communication over
+the mounted socket.
 
 ## Upgrade and rollback
 

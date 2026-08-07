@@ -171,6 +171,21 @@ Status: active
   keyboard or regressing C014 connection stability.
 - Planned commit: `fix(terminal): keep app scroll focus neutral`
 
+## C016 — First-run host setup skill and tmux compatibility
+
+Status: completed locally; ready with approval-gated follow-ups
+
+- Add a repository-local skill for first-clone Linux setup and deployment.
+- Diagnose tmux, Docker Compose, and Tailscale; install only tmux with explicit
+  approval and direct users to official Docker/Tailscale installation guidance.
+- Generate ignored, permission-restricted Compose configuration and a strong
+  login key without printing or reading the secret back to the agent.
+- Build the image with the host tmux release and require an isolated socket
+  compatibility probe before starting the long-lived service.
+- Guide explicitly approved Tailscale Serve configuration and verify exact-IP
+  binding, container health, and tailnet reachability.
+- Planned commit: `feat(setup): add first-run deployment skill`
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.

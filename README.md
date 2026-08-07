@@ -23,6 +23,8 @@ Tailscale Serve, and publish only on an explicitly configured Tailscale IP.
 - Manifest, icons, service worker, offline shell, systemd/nginx examples, and Tailscale guidance.
 - Unit, HTTP integration, WebSocket authorization, and isolated real-tmux PTY lifecycle tests.
 - Repo-local Tempo skills, contracts, goals, verification, and review records.
+- A repo-local `$setup-tmux-mobile` first-run skill with private environment/key
+  generation and a host/container tmux compatibility gate.
 
 ## Development
 
@@ -64,10 +66,19 @@ The frontend build writes hashed assets into the server's `wwwroot`. Follow [dep
 The preferred production shape is a single non-root container with an exact
 Tailscale-IP host binding:
 
+For a fresh clone, ask your compatible coding agent to use
+`$setup-tmux-mobile`. The skill diagnoses tmux, Docker Compose, and Tailscale;
+generates ignored mode-`0600` configuration without displaying the login key;
+builds the image with the host's exact tmux release; and requires an isolated
+socket compatibility probe before proposing the long-lived start. Docker Engine
+with Compose v2 and Tailscale remain user-installed prerequisites.
+
+The lower-level manual path remains available:
+
 ```bash
 cp deploy/docker/.env.example deploy/docker/.env
-# Fill the host-specific IP, MagicDNS name, UID/GID, access key, tmux socket,
-# and protected state directories. For Tailscale Serve:
+# Fill the host-specific IP, MagicDNS name, UID/GID, access key, host tmux
+# version/socket, and protected state directories. For Tailscale Serve:
 docker compose -f compose.tailscale-serve.yaml \
   --env-file deploy/docker/.env config --quiet
 docker compose -f compose.tailscale-serve.yaml \
