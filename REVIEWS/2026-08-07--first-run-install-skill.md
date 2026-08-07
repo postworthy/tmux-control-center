@@ -10,9 +10,10 @@ Related RCA: `RCA/2026-08-07--first-run-compatibility-probe-failure.md`
 
 ## Decision
 
-Ready with explicit fresh-host and live-deployment follow-ups. The local feature
-is merge-safe, but this record does not authorize merge, push, publication,
-Tailscale changes, secret display, or replacement of the running deployment.
+Ready with explicit fresh-host and live-deployment follow-ups. The owner
+explicitly authorized merge and push to GitHub `main` on 2026-08-07. This does
+not authorize Tailscale changes, secret display, or replacement of the running
+deployment.
 
 ## Branch
 
@@ -123,7 +124,7 @@ Results:
 - Reviewer: Codex agent under the Tempo Change Review process.
 - Approval status: ready with explicit follow-ups.
 - Owner scope approval: 2026-08-07 feature request.
-- Merge/push/publication approval: not requested or granted.
+- Merge/push approval: explicitly granted by the owner on 2026-08-07.
 - Timestamp: 2026-08-07 17:48 CDT.
 
 ## Follow-Ups
