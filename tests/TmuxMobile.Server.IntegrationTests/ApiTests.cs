@@ -170,6 +170,68 @@ public sealed class ApiTests
     }
 
     [Fact]
+    public async Task SessionCreationReturnsOpaqueTargetAndAuditsSuccess()
+    {
+        await using var factory = new TmuxFactory(authenticated: true);
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await SendWithCsrfAsync(client, HttpMethod.Post, "/api/sessions",
+            new { name = " new-agent " });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<CreateSessionResponse>();
+        Assert.NotNull(created);
+        Assert.True(SafeIdentifier.IsSession(created.Id));
+        Assert.Equal("new-agent", created.Name);
+        Assert.Equal(1, factory.CreateCalls);
+        Assert.Contains(factory.AuditRecords,
+            record => record.Action == "session.create" && record.Target == created.Id && record.Succeeded);
+        var sessions = await client.GetFromJsonAsync<TmuxSession[]>("/api/sessions", JsonOptions);
+        Assert.Contains(sessions!, session => session.Id == created.Id && session.Name == "new-agent");
+    }
+
+    [Theory]
+    [InlineData("bad/name", HttpStatusCode.BadRequest)]
+    [InlineData("rewritten.name", HttpStatusCode.BadRequest)]
+    [InlineData("rewritten:name", HttpStatusCode.BadRequest)]
+    [InlineData("work", HttpStatusCode.Conflict)]
+    [InlineData("tmux-failure", HttpStatusCode.ServiceUnavailable)]
+    public async Task SessionCreationFailuresAreBoundedAndAudited(string name, HttpStatusCode expected)
+    {
+        await using var factory = new TmuxFactory(authenticated: true);
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await SendWithCsrfAsync(client, HttpMethod.Post, "/api/sessions", new { name });
+
+        Assert.Equal(expected, response.StatusCode);
+        Assert.Contains(factory.AuditRecords,
+            record => record.Action == "session.create" && record.Target == "new-session" && !record.Succeeded);
+    }
+
+    [Fact]
+    public async Task SessionCreationRequiresAuthenticationAndCsrf()
+    {
+        await using var anonymousFactory = new TmuxFactory(authenticated: false);
+        var anonymous = CreateHttpsClient(anonymousFactory);
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await anonymous.PostAsJsonAsync("/api/sessions", new { name = "new-agent" })).StatusCode);
+
+        await using var authenticatedFactory = new TmuxFactory(authenticated: true);
+        var authenticated = CreateHttpsClient(authenticatedFactory);
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await authenticated.PostAsJsonAsync("/api/sessions", new { name = "new-agent" })).StatusCode);
+        Assert.Equal(0, authenticatedFactory.CreateCalls);
+    }
+
+    [Fact]
     public async Task AuditSinkFailureDoesNotMisreportAnAppliedAction()
     {
         await using var factory = new TmuxFactory(authenticated: true, auditSucceeds: false);
@@ -381,6 +443,7 @@ public sealed class TmuxFactory(bool authenticated,
     public IReadOnlyList<AuditRecord> AuditRecords => fakeAudit.Records.ToArray();
     public long LastPtyInputLength => fakePty.Last?.InputLength ?? 0;
     public int RenameCalls => fakeTmux.RenameCalls;
+    public int CreateCalls => fakeTmux.CreateCalls;
     public sealed record HistoryCall(TerminalHistoryAction Action, int Pages);
     public sealed record AuditRecord(string Action, string Subject, string Target, bool Succeeded);
 
@@ -497,12 +560,30 @@ public sealed class TmuxFactory(bool authenticated,
 
     private sealed class FakeTmuxService : ITmuxService
     {
+        private readonly List<TmuxSession> sessions = [Session];
         public ConcurrentQueue<HistoryCall> HistoryCalls { get; } = new();
         public int RenameCalls { get; private set; }
+        public int CreateCalls { get; private set; }
         public Task<IReadOnlyList<TmuxSession>> GetSessionsAsync(CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<TmuxSession>>([Session]);
+            Task.FromResult<IReadOnlyList<TmuxSession>>(sessions.ToArray());
+        public Task<CreatedTmuxSession> CreateSessionAsync(string name, CancellationToken cancellationToken)
+        {
+            var normalized = InputValidation.ValidateCreateName(name);
+            if (normalized == "work") throw new TmuxConflictException("A session with that name already exists.");
+            if (normalized == "tmux-failure") throw new TmuxCommandException("internal tmux detail");
+            CreateCalls++;
+            var rawId = $"${CreateCalls + 100}";
+            var created = new CreatedTmuxSession(SafeIdentifier.ForSession(rawId), normalized);
+            sessions.Add(Session with
+            {
+                Id = created.Id,
+                Name = created.Name,
+                CurrentPaneId = SafeIdentifier.ForPane($"%{CreateCalls + 100}")
+            });
+            return Task.FromResult(created);
+        }
         public Task<TmuxSession?> GetSessionAsync(string sessionId, CancellationToken cancellationToken) =>
-            Task.FromResult<TmuxSession?>(sessionId == Session.Id ? Session : null);
+            Task.FromResult<TmuxSession?>(sessions.SingleOrDefault(session => session.Id == sessionId));
         public Task<IReadOnlyList<TmuxPane>> GetPanesAsync(string sessionId, CancellationToken cancellationToken)
         {
             if (sessionId != Session.Id) throw new TmuxNotFoundException("Missing");

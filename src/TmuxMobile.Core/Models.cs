@@ -65,6 +65,8 @@ public sealed record ProcessResult(
 
 public sealed record TerminalSize(int Columns, int Rows);
 public sealed record InventorySnapshot(long Version, DateTimeOffset UpdatedAt, IReadOnlyList<TmuxSession> Sessions);
+public sealed record CreatedTmuxSession(string Id, string Name);
 
 public sealed class TmuxNotFoundException(string message) : Exception(message);
+public sealed class TmuxConflictException(string message) : Exception(message);
 public sealed class TmuxCommandException(string message) : Exception(message);

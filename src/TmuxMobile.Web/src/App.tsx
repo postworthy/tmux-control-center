@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { getClientConfig, login } from "./api";
+import { createSession, getClientConfig, login } from "./api";
 import { SessionCard } from "./SessionCard";
+import { filterSessionsByName } from "./sessionFilter";
 import {
   orderSessionsByRecency,
   promoteSessionRecency,
@@ -17,27 +18,36 @@ export default function App() {
   const inventory = useInventory();
   const deck = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState(() => localStorage.getItem(ACTIVE_KEY) ?? "");
-  const [terminalId, setTerminalId] = useState<string | null>(null);
+  const [terminalTarget, setTerminalTarget] = useState<{ id: string; name: string } | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [loginError, setLoginError] = useState("");
   const [updateReady, setUpdateReady] = useState<ServiceWorker | null>(null);
   const [tmuxPrefix, setTmuxPrefix] = useState("C-b");
   const [recentSessionIds, setRecentSessionIds] = useState(() => readSessionRecency(localStorage));
+  const [searchQuery, setSearchQuery] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createName, setCreateName] = useState("");
+  const [createError, setCreateError] = useState("");
+  const [creating, setCreating] = useState(false);
   const orderedSessions = useMemo(
     () => orderSessionsByRecency(inventory.sessions, recentSessionIds),
     [inventory.sessions, recentSessionIds]
   );
+  const visibleSessions = useMemo(
+    () => filterSessionsByName(orderedSessions, searchQuery),
+    [orderedSessions, searchQuery]
+  );
 
   useEffect(() => {
-    if (!orderedSessions.length) return;
-    const valid = orderedSessions.some((session) => session.id === activeId);
-    const next = valid ? activeId : orderedSessions[0].id;
+    if (!visibleSessions.length) return;
+    const valid = visibleSessions.some((session) => session.id === activeId);
+    const next = valid ? activeId : visibleSessions[0].id;
     if (next !== activeId) setActiveId(next);
     requestAnimationFrame(() => {
       deck.current?.querySelector(`[data-session-id="${CSS.escape(next)}"]`)
         ?.scrollIntoView({ block: "start" });
     });
-  }, [orderedSessions.map((session) => session.id).join("|")]);
+  }, [visibleSessions.map((session) => session.id).join("|")]);
 
   useEffect(() => {
     if (inventory.state !== "ready" && inventory.state !== "empty") return;
@@ -74,27 +84,42 @@ export default function App() {
   }, []);
 
   const scrollTo = (index: number) => {
-    const session = orderedSessions[index];
+    const session = visibleSessions[index];
     if (!session) return;
     deck.current?.querySelector(`[data-session-id="${CSS.escape(session.id)}"]`)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const openTerminal = (sessionId: string) => {
+  const openTerminal = (session: { id: string; name: string }) => {
     setRecentSessionIds((current) => {
-      const next = promoteSessionRecency(current, sessionId);
+      const next = promoteSessionRecency(current, session.id);
       writeSessionRecency(localStorage, next);
       return next;
     });
-    setActiveId(sessionId);
-    setTerminalId(sessionId);
+    setActiveId(session.id);
+    setTerminalTarget(session);
   };
 
-  const activeIndex = Math.max(0, orderedSessions.findIndex((session) => session.id === activeId));
-  const terminalSession = orderedSessions.find((session) => session.id === terminalId);
-  if (terminalSession) return (
+  const submitCreate = async () => {
+    setCreating(true);
+    setCreateError("");
+    try {
+      const created = await createSession(createName);
+      setCreateOpen(false);
+      setCreateName("");
+      openTerminal(created);
+      void inventory.refresh();
+    } catch (reason) {
+      setCreateError(reason instanceof Error ? reason.message : "Unable to create session");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const activeIndex = Math.max(0, visibleSessions.findIndex((session) => session.id === activeId));
+  if (terminalTarget) return (
     <Suspense fallback={<State title="Opening terminal…" busy />}>
-      <TerminalView session={terminalSession} tmuxPrefix={tmuxPrefix} onBack={() => setTerminalId(null)} />
+      <TerminalView session={terminalTarget} tmuxPrefix={tmuxPrefix} onBack={() => setTerminalTarget(null)} />
     </Suspense>
   );
 
@@ -122,13 +147,13 @@ export default function App() {
   if (inventory.state === "loading") return <State title="Finding tmux sessions…" busy />;
   if (inventory.state === "error") return <State title="Unable to load sessions" detail={inventory.error}
     action={<button onClick={inventory.refresh}>Try again</button>} />;
-  if (inventory.state === "empty") return <State title="No tmux sessions"
-    detail="Start a tmux session on this host, then refresh."
-    action={<button onClick={inventory.refresh}>Refresh</button>} />;
+
+  const hasAlerts = !inventory.connected || updateReady;
+  const alertCount = Number(!inventory.connected) + Number(Boolean(updateReady));
 
   return (
     <>
-      {(!inventory.connected || updateReady) && <div className="alerts">
+      {hasAlerts && <div className="alerts">
         {!inventory.connected && <div className="offline-banner" role="status">Offline — showing last live state</div>}
         {updateReady && (
           <div className="update-banner" role="status">
@@ -137,7 +162,17 @@ export default function App() {
           </div>
         )}
       </div>}
-      <main className={`session-deck ${(!inventory.connected || updateReady) ? "has-alerts" : ""}`}
+      <header className={`session-toolbar ${alertCount ? `with-${alertCount}-alerts` : ""}`}>
+        <label className="visually-hidden" htmlFor="session-search">Search sessions by name</label>
+        <input id="session-search" type="search" value={searchQuery} placeholder="Search sessions"
+          autoComplete="off" autoCapitalize="none" spellCheck={false}
+          onChange={(event) => setSearchQuery(event.target.value)} />
+        <button className="new-session-button" onClick={() => {
+          setCreateError("");
+          setCreateOpen(true);
+        }} disabled={!inventory.connected}>+ New</button>
+      </header>
+      <main className={`session-deck has-toolbar ${hasAlerts ? "has-alerts" : ""} ${alertCount === 2 ? "with-2-alerts" : ""}`}
         ref={deck} onScroll={() => {
         const cards = Array.from(deck.current?.querySelectorAll<HTMLElement>(".session-card") ?? []);
         const current = cards.reduce((best, card) =>
@@ -145,18 +180,50 @@ export default function App() {
           cards[0]);
         if (current?.dataset.sessionId) setActiveId(current.dataset.sessionId);
       }}>
-        {orderedSessions.map((session, index) => (
-          <SessionCard key={session.id} session={session} index={index} total={inventory.sessions.length}
-            onTerminal={() => openTerminal(session.id)}
+        {visibleSessions.map((session, index) => (
+          <SessionCard key={session.id} session={session} index={index} total={visibleSessions.length}
+            onTerminal={() => openTerminal(session)}
             onRefresh={inventory.refresh}
             onPrevious={() => scrollTo(index - 1)}
             onNext={() => scrollTo(index + 1)} />
         ))}
+        {!visibleSessions.length && (
+          <section className="deck-empty" aria-live="polite">
+            <h1>{inventory.state === "empty" ? "No tmux sessions" : "No matching sessions"}</h1>
+            <p>{inventory.state === "empty"
+              ? "Create a session here or refresh after starting one elsewhere."
+              : `No session name contains “${searchQuery.trim()}”.`}</p>
+            {inventory.state === "empty" && <button onClick={inventory.refresh}>Refresh</button>}
+          </section>
+        )}
       </main>
       <div className="session-rail" aria-hidden="true">
-        {orderedSessions.map((session, index) =>
+        {visibleSessions.map((session, index) =>
           <span key={session.id} className={index === activeIndex ? "active" : ""} />)}
       </div>
+      {createOpen && (
+        <div className="modal-backdrop" role="presentation" onClick={() => !creating && setCreateOpen(false)}>
+          <form className="create-dialog" role="dialog" aria-modal="true" aria-labelledby="create-title"
+            onClick={(event) => event.stopPropagation()} onSubmit={(event) => {
+              event.preventDefault();
+              void submitCreate();
+            }}>
+            <h2 id="create-title">New tmux session</h2>
+            <p>Create a detached session and open its terminal immediately.</p>
+            <label htmlFor="session-name">Session name</label>
+            <input id="session-name" value={createName} required maxLength={64} autoFocus
+              autoComplete="off" autoCapitalize="none" spellCheck={false}
+              onChange={(event) => setCreateName(event.target.value)} />
+            {createError && <p className="error-text" role="alert">{createError}</p>}
+            <div className="create-actions">
+              <button type="button" onClick={() => setCreateOpen(false)} disabled={creating}>Cancel</button>
+              <button className="terminal-button" type="submit" disabled={creating || !createName.trim()}>
+                {creating ? "Creating…" : "Create & open"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </>
   );
 }

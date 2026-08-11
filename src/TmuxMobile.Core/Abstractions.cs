@@ -8,6 +8,7 @@ public interface IProcessRunner
 public interface ITmuxService
 {
     Task<IReadOnlyList<TmuxSession>> GetSessionsAsync(CancellationToken cancellationToken);
+    Task<CreatedTmuxSession> CreateSessionAsync(string name, CancellationToken cancellationToken);
     Task<TmuxSession?> GetSessionAsync(string sessionId, CancellationToken cancellationToken);
     Task<IReadOnlyList<TmuxPane>> GetPanesAsync(string sessionId, CancellationToken cancellationToken);
     Task<string> CapturePaneAsync(string paneId, int historyLines, CancellationToken cancellationToken);

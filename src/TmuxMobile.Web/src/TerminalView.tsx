@@ -18,9 +18,7 @@ import {
   type TerminalHistoryAction,
   type TouchAxis
 } from "./terminalScroll";
-import type { TmuxSession } from "./types";
-
-interface Props { session: TmuxSession; tmuxPrefix: string; onBack: () => void; }
+interface Props { session: { id: string; name: string }; tmuxPrefix: string; onBack: () => void; }
 type ConnectionState = "connecting" | "connected" | "disconnected";
 
 export function TerminalView({ session, tmuxPrefix, onBack }: Props) {

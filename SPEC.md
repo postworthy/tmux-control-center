@@ -1,7 +1,7 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 1.2
-Last updated: 2026-08-07
+Version: 1.3
+Last updated: 2026-08-11
 Status: Approved
 
 ## Product Objective
@@ -57,6 +57,10 @@ Status: Approved
   secret, matches the image tmux client to the host tmux release, proves socket
   compatibility with an isolated session, and guides an explicitly approved
   Tailscale Serve deployment through reachability checks.
+- FR18: provide a main-screen session-name search that filters the current
+  session deck after every edit without submission, and allow the authenticated
+  owner to create one detached tmux session from a validated name through a
+  typed, audited, rate-limited API before opening its terminal immediately.
 
 ## Constraints
 
@@ -105,6 +109,13 @@ Status: Approved
   reach a validated Compose configuration without exposing its generated login
   secret, and the long-lived deployment is not started until an isolated
   host/container tmux compatibility probe passes.
+- [ ] AC13: editing the main-screen search immediately filters session tiles by
+  name without changing inventory or stored recency, clearing it restores the
+  consistently ordered deck, and empty results are explicit.
+- [ ] AC14: submitting a valid, non-conflicting session name creates exactly one
+  detached tmux session through the authenticated typed API and opens its
+  terminal, while invalid, duplicate, unauthorized, rate-limited, or failed
+  requests do not create or open a session and return actionable feedback.
 
 ## Canonical Verification
 
@@ -112,8 +123,11 @@ Status: Approved
 
 ## Safety and Capability Boundaries
 
-- No arbitrary shell, filesystem, process-launch, restart, destructive tmux, or
-  remote-host capability enters the MVP.
+- No arbitrary shell, filesystem, restart, destructive tmux, or remote-host
+  capability enters the MVP. Process launch is limited to creating one detached
+  tmux session with a validated name and tmux's configured default command; the
+  client cannot supply a command, arguments, environment, working directory, or
+  raw tmux target.
 - No agent may deploy, modify Tailscale policy, handle production secrets, push,
   or publish without separate explicit approval.
 - Compose interpolation must stop before deployment when security-critical

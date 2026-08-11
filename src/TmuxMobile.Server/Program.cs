@@ -304,6 +304,53 @@ app.MapGet("/api/config", (IOptions<TmuxOptions> options) => Results.Ok(new
 var sessions = app.MapGroup("/api/sessions").RequireAuthorization("Read");
 sessions.MapGet("/", async (ITmuxService tmux, CancellationToken cancellationToken) =>
     Results.Ok(await tmux.GetSessionsAsync(cancellationToken)));
+sessions.MapPost("/", async (
+    CreateSessionRequest request, HttpContext context, ITmuxService tmux, IInventoryStore inventory,
+    IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+{
+    try
+    {
+        await antiforgery.ValidateRequestAsync(context);
+    }
+    catch (AntiforgeryValidationException)
+    {
+        await auditLogger.WriteAsync("session.create", UserId(context.User), "new-session", false,
+            context.RequestAborted);
+        return Results.BadRequest(new { error = "The CSRF token is missing or invalid." });
+    }
+    try
+    {
+        var created = await tmux.CreateSessionAsync(request.Name, context.RequestAborted);
+        await inventory.RefreshAsync(context.RequestAborted);
+        await auditLogger.WriteAsync("session.create", UserId(context.User), created.Id, true,
+            context.RequestAborted);
+        return Results.Created($"/api/sessions/{created.Id}", new CreateSessionResponse(created.Id, created.Name));
+    }
+    catch (ArgumentException exception)
+    {
+        await auditLogger.WriteAsync("session.create", UserId(context.User), "new-session", false,
+            context.RequestAborted);
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (TmuxConflictException exception)
+    {
+        await auditLogger.WriteAsync("session.create", UserId(context.User), "new-session", false,
+            context.RequestAborted);
+        return Results.Conflict(new { error = exception.Message });
+    }
+    catch (TmuxCommandException)
+    {
+        await auditLogger.WriteAsync("session.create", UserId(context.User), "new-session", false,
+            CancellationToken.None);
+        return Results.Problem("tmux could not create the session.", statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("session.create", UserId(context.User), "new-session", false,
+            CancellationToken.None);
+        throw;
+    }
+}).RequireAuthorization("Interact").RequireRateLimiting("interact");
 sessions.MapGet("/{sessionId}", async (string sessionId, ITmuxService tmux, CancellationToken cancellationToken) =>
     await tmux.GetSessionAsync(sessionId, cancellationToken) is { } session
         ? Results.Ok(session) : Results.NotFound());

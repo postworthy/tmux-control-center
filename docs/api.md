@@ -36,12 +36,21 @@ Session and pane IDs are opaque values such as `s_a1...` and `p_b2...`; raw tmux
 
 All require `Interact`, CSRF, body limits, rate limits, target re-resolution, and auditing.
 
+- `POST /api/sessions` with `{ "name": "benchmark-qwen" }` creates one detached
+  session and returns `201` with `{ "id": "s_...", "name": "benchmark-qwen" }`.
 - `POST /api/sessions/{sessionId}/rename` with `{ "name": "benchmark-qwen" }`
 - `POST /api/panes/{paneId}/keys` with `{ "keys": ["enter", "controlC"] }`
 - `POST /api/panes/{paneId}/text` with `{ "text": "continue" }`
 - `POST /api/panes/{paneId}/interrupt` with no body
 
-Text is sent literally to the already-running pane via `tmux send-keys -l`; it is not executed by a server-side shell. There is no arbitrary command endpoint.
+Creation accepts only a validated session name and rejects `.` and `:` because
+tmux would silently rewrite them to `_`. It invokes a fixed
+argument vector equivalent to `tmux new-session -d -P -F '#{session_id}' -s
+NAME`; there is no request field for a command, argument, path, environment,
+socket, or tmux option. Duplicate names return `409` and bounded tmux failures
+return `503`. Text is sent literally to an already-running pane via
+`tmux send-keys -l`; it is not executed by a server-side shell. There is no
+arbitrary command endpoint.
 
 ## WebSockets
 
@@ -101,4 +110,5 @@ Frames larger than the configured limit and fragmented client messages are rejec
 - `GET /health/live` — process liveness.
 - `GET /health/ready` — verifies the configured executable exists and executes a bounded harmless tmux query. It requires `Read` authorization except from loopback, and no running tmux server is reported as degraded.
 
-Normal error bodies do not include production exception details. `400`, `401`, `403`, `404`, `429`, and `500` have their standard meanings.
+Normal error bodies do not include production exception details. `400`, `401`,
+`403`, `404`, `409`, `429`, `500`, and `503` have their standard meanings.

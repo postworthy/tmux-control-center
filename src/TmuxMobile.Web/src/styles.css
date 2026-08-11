@@ -31,6 +31,19 @@ button:disabled { opacity: .35; cursor: default; }
   scrollbar-width: none;
 }
 .session-deck::-webkit-scrollbar { display: none; }
+.session-toolbar {
+  position: fixed; z-index: 12; top: max(10px, env(safe-area-inset-top)); left: 50%;
+  width: min(calc(100% - 36px), 720px); display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px; padding: 8px; transform: translateX(-50%); border: 1px solid color-mix(in srgb, var(--border), transparent 12%);
+  border-radius: 16px; background: #0d1b17ee; box-shadow: 0 12px 36px #0008; backdrop-filter: blur(12px);
+}
+.session-toolbar.with-1-alerts { top: max(62px, calc(env(safe-area-inset-top) + 52px)); }
+.session-toolbar.with-2-alerts { top: max(106px, calc(env(safe-area-inset-top) + 96px)); }
+.session-toolbar input, .create-dialog input {
+  width: 100%; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px solid var(--border);
+  border-radius: 10px; color: #fff; background: #06100d;
+}
+.new-session-button { padding: 0 14px; color: #04130e; border-color: var(--accent); background: var(--accent); font-weight: 800; }
 .session-card {
   position: relative; width: 100%; max-width: 100vw; min-height: 100dvh; height: 100dvh;
   grid-template-columns: minmax(0, 1fr); overflow: hidden; scroll-snap-align: start;
@@ -104,6 +117,13 @@ button:disabled { opacity: .35; cursor: default; }
 .details-list dt { color: var(--muted); }
 .details-list dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .details-dialog > button { width: 100%; margin-top: 18px; }
+.create-dialog { width: min(100%, 440px); display: grid; gap: 12px; padding: 22px; border: 1px solid var(--border); border-radius: 22px; background: var(--surface-raised); }
+.create-dialog h2, .create-dialog p { margin: 0; }
+.create-dialog > p, .create-dialog label { color: var(--muted); }
+.create-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 6px; }
+.deck-empty { min-height: 100dvh; display: grid; place-content: center; justify-items: center; padding: 110px 28px 28px; text-align: center; }
+.deck-empty h1 { margin-bottom: 4px; }
+.deck-empty p { max-width: 34rem; color: var(--muted); }
 
 .center-state { height: 100dvh; padding: max(30px, env(safe-area-inset-top)) 24px max(30px, env(safe-area-inset-bottom)); display: grid; place-content: center; justify-items: center; text-align: center; }
 .center-state p { max-width: 34rem; color: var(--muted); }
@@ -150,10 +170,9 @@ button:disabled { opacity: .35; cursor: default; }
 .paste-actions .primary { color: #04130e; border-color: var(--accent); background: var(--accent); font-weight: 800; }
 .terminal-mode .reconnect-banner { position: absolute; z-index: 20; top: calc(58px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(calc(100% - 24px), 620px); }
 
-.session-deck.has-alerts .session-card { padding-top: max(68px, calc(env(safe-area-inset-top) + 56px)); }
-.alerts:has(.offline-banner):has(.update-banner) + .session-deck .session-card {
-  padding-top: max(112px, calc(env(safe-area-inset-top) + 100px));
-}
+.session-deck.has-toolbar .session-card { padding-top: max(84px, calc(env(safe-area-inset-top) + 74px)); }
+.session-deck.has-alerts .session-card { padding-top: max(136px, calc(env(safe-area-inset-top) + 126px)); }
+.session-deck.with-2-alerts .session-card { padding-top: max(180px, calc(env(safe-area-inset-top) + 170px)); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (min-width: 760px) {

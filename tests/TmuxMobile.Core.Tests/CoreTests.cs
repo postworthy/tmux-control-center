@@ -27,6 +27,16 @@ public sealed class SafeIdentifierTests
 public sealed class InputValidationTests
 {
     [Theory]
+    [InlineData("agent.1")]
+    [InlineData("agent:1")]
+    public void CreateRejectsCharactersTmuxWouldSilentlyRewrite(string value) =>
+        Assert.Throws<ArgumentException>(() => InputValidation.ValidateCreateName(value));
+
+    [Fact]
+    public void CreateRetainsSupportedNameExactly() =>
+        Assert.Equal("agent 1_@+-", InputValidation.ValidateCreateName(" agent 1_@+- "));
+
+    [Theory]
     [InlineData(" benchmark-qwen ", "benchmark-qwen")]
     [InlineData("café", "café")]
     [InlineData("agent_1.2", "agent_1.2")]

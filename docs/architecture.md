@@ -23,6 +23,14 @@ local tmux server
 
 `TmuxMobile.Infrastructure` owns direct process and operating-system behavior. `ProcessRunner` always uses `ProcessStartInfo.ArgumentList`, never a shell command string, drains stdout and stderr independently, enforces cancellation/timeouts, and retains bounded output. `TmuxService` uses explicit tab-delimited tmux format strings and maps raw `$session`/`%pane` targets to stable SHA-256-derived opaque IDs.
 
+Session creation is the sole process-launch capability outside the terminal
+attach lifecycle. It accepts a normalized subset of the rename grammar,
+rejecting periods and colons that tmux would silently rewrite, and uses one
+fixed tmux argument shape: detached session, printed numeric raw ID,
+and caller-supplied name as one separated argument. The raw ID is validated and
+converted to an opaque ID before returning; duplicate-name stderr is mapped to a
+bounded conflict and other tmux output is not exposed.
+
 `TmuxMobile.Server` composes options, policies, routes, shared polling, WebSockets, health checks, security middleware, and static PWA hosting. The frontend consumes only domain JSON and never sees a raw tmux target.
 
 ## Inventory and previews
@@ -57,14 +65,16 @@ The MVP uses an access key only to establish an encrypted, HttpOnly, Secure, Sam
 Policies are explicit:
 
 - `Read`: inventory, captures, config, and inventory stream.
-- `Interact`: rename, pane input, interrupt, and terminal.
+- `Interact`: create/rename session, pane input, interrupt, and terminal.
 - `Admin`: reserved for future destructive operations.
 
-Cookie mutations require an antiforgery header and same-site token cookie. There are no destructive endpoints.
+Cookie mutations require an antiforgery header and same-site token cookie.
+Creation is rate-limited and audited on both success and failure. There are no
+destructive endpoints or arbitrary command endpoints.
 
 ## UI state
 
-Cards use `100dvh`, safe-area insets, `scroll-snap-type: y mandatory`, and a non-scrollable faded preview so vertical touch movement belongs to the deck. The active opaque session ID is the only value stored in `localStorage`; terminal content, access keys, cookies, and API results are not stored there.
+Cards use `100dvh`, safe-area insets, `scroll-snap-type: y mandatory`, and a non-scrollable faded preview so vertical touch movement belongs to the deck. Local storage contains only the active opaque session ID and the duplicate-free recency list of opaque IDs; terminal content, names, search queries, access keys, cookies, and API results are not stored there.
 
 Realtime snapshots replace records by ID without scrolling the deck. The client
 keeps a device-local, duplicate-free MRU list of opaque session IDs updated only
@@ -80,6 +90,13 @@ Application Scroll to route distance- and velocity-scaled swipe movement plus
 Older/Latest as bounded mouse-wheel input to the foreground program. That mode
 is visibly indicated, never persisted, and resets off on connection loss or
 terminal exit.
+
+The main-screen search applies a case-insensitive substring filter to that
+already-derived order on every input event, so filtering cannot mutate server
+inventory or recency. Tiles, navigation, counts, and the rail consume the same
+filtered array. A top-level New action posts only a name; on success the client
+promotes the returned opaque ID, enters terminal mode directly from the response,
+and refreshes inventory without waiting for polling.
 
 The service worker caches only application-shell GETs. Requests under `/api`, `/ws`, and `/health` are never cached. Each production web build stamps the worker cache identity from the generated root asset graph, allowing the installed PWA to detect a release. Container packaging clears its temporary webroot before copying generated output so obsolete hashed application bundles are not retained. A waiting worker does not activate automatically; the UI announces an update.
 
