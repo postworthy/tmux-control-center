@@ -1,6 +1,6 @@
 # Goal: Live Session Search and Guarded Creation
 
-Status: active
+Status: paused
 Owner: Human Partner and AI Agent
 Risk: T2
 Updated: 2026-08-11
@@ -116,6 +116,9 @@ enter its terminal immediately with clear bounded failure feedback.
   `main`, and pushing `main` to the existing GitHub origin.
 - 2026-08-11: committed the feature, contracts, tests, proposal, and product
   documentation as `416ac6b`; preparing the review/publication checkpoint.
+- 2026-08-11: committed the review/deployment record as `3cf406e`, merged C017
+  to `main` with merge commit `b7b8e5b`, and pushed `main` to the existing GitHub
+  origin. Remote `main` was advanced from `137b774` to `b7b8e5b`.
 
 ## Evidence
 
@@ -163,7 +166,7 @@ enter its terminal immediately with clear bounded failure feedback.
 
 ## Next Action
 
-- Commit the review/publication checkpoint, then merge C017 to `main` with `--no-ff` and push `main` to origin.
+- Owner force-closes/reopens or applies the PWA update, then tests live filtering and create-and-open on the physical device.
 
 ## Pause Conditions
 
@@ -175,5 +178,6 @@ enter its terminal immediately with clear bounded failure feedback.
 
 - Local implementation, contracts, tests, production build, canonical gate,
   changed review, compatibility probe, and owner-approved deployment are
-  complete. The live app is healthy with rollback preserved. Physical acceptance
-  remains pending; commit/merge/push are now explicitly owner-authorized.
+  complete. The live app is healthy with rollback preserved, and commits
+  `416ac6b`/`3cf406e` are published on GitHub `main` through merge `b7b8e5b`.
+  Physical acceptance remains pending.
