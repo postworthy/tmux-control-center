@@ -13,8 +13,9 @@ Tailscale Serve, and publish only on an explicitly configured Tailscale IP.
 - REST APIs, a shared inventory WebSocket, and a Linux `forkpty` terminal bridge attaching a real tmux client.
 - Cookie authentication bootstrapped by a deployment access key, CSRF validation, read/interact/admin policies, origin checks, rate and connection limits, security headers, and JSON-lines auditing.
 - React/TypeScript cards with vertical CSS snap, explicit navigation,
-  device-local terminal-open recency ordering, state preservation, quick
-  actions, details, realtime reconnect, and offline states.
+  device-local terminal-open recency ordering, live session-name filtering,
+  guarded create-and-open session flow, state preservation, quick actions,
+  details, realtime reconnect, and offline states.
 - Lazy-loaded xterm.js terminal with resize, disconnect/reconnect, tmux-backed
   touch/button history by default, explicit non-persistent distance- and
   velocity-scaled application/TUI scrolling for swipes and Older/Latest,
@@ -124,6 +125,9 @@ above.
 - Preview polling is cached per active pane; this is not terminal history indexing.
 - iPhone Safari, installed-mode, sleep/wake, orientation, and Tailscale network switching still require validation on the target physical device and host.
 - Data-protection keys are protected by filesystem permissions, not automatically encrypted at rest. A certificate-backed key encryptor can be added for hosts with managed certificate storage.
-- Destructive operations, arbitrary commands, file browsing, process restart, recording, notifications, and multiple hosts are intentionally absent.
+- Destructive operations, arbitrary commands, file browsing, process restart,
+  recording, notifications, and multiple hosts are intentionally absent. Session
+  creation accepts only a validated name and starts tmux's configured default
+  command; clients cannot provide a command, path, environment, or tmux options.
 
 Recommended next steps after physical-device validation are session favorites/order, read-only identities, rule adapters, and notifications for explicit waiting/error states.

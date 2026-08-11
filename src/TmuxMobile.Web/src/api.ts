@@ -13,8 +13,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (response.status === 401) throw new UnauthorizedError("Authentication required");
   if (!response.ok) {
-    const detail = await response.json().catch(() => null) as { error?: string } | null;
-    throw new Error(detail?.error ?? `Request failed (${response.status})`);
+    const detail = await response.json().catch(() => null) as { error?: string; detail?: string } | null;
+    throw new Error(detail?.error ?? detail?.detail ?? `Request failed (${response.status})`);
   }
   return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }
@@ -33,6 +33,14 @@ export async function login(apiKey: string): Promise<void> {
 
 export const getSessions = () => request<TmuxSession[]>("/api/sessions");
 export const getClientConfig = () => request<{ tmuxPrefix: string }>("/api/config");
+
+export async function createSession(name: string): Promise<{ id: string; name: string }> {
+  return request("/api/sessions", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+    headers: { "X-CSRF-TOKEN": await csrf() }
+  });
+}
 
 export async function action(path: string, body?: unknown): Promise<void> {
   await request(path, {

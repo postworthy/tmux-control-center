@@ -93,6 +93,33 @@ public sealed class TmuxService(
         return sessions.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
+    public async Task<CreatedTmuxSession> CreateSessionAsync(string name, CancellationToken cancellationToken)
+    {
+        var normalized = InputValidation.ValidateCreateName(name);
+        var arguments = new List<string>();
+        if (!string.IsNullOrWhiteSpace(options.Value.SocketName))
+        {
+            arguments.Add("-L");
+            arguments.Add(options.Value.SocketName);
+        }
+        arguments.AddRange(["new-session", "-d", "-P", "-F", "#{session_id}", "-s", normalized]);
+        var result = await runner.RunAsync(new(options.Value.ExecutablePath, arguments,
+            TimeSpan.FromSeconds(options.Value.ProcessTimeoutSeconds), options.Value.MaxCaptureBytes,
+            "tmux.create-session"), cancellationToken);
+        if (result.TimedOut) throw new TmuxCommandException("tmux command timed out.");
+        if (result.ExitCode != 0)
+        {
+            if (result.StandardError.Contains("duplicate session", StringComparison.OrdinalIgnoreCase))
+                throw new TmuxConflictException("A session with that name already exists.");
+            throw new TmuxCommandException($"tmux operation failed with exit code {result.ExitCode}.");
+        }
+
+        var rawId = result.StandardOutput.Trim();
+        if (rawId.Length < 2 || rawId[0] != '$' || !int.TryParse(rawId.AsSpan(1), out _))
+            throw new TmuxCommandException("tmux returned an invalid session identifier.");
+        return new(SafeIdentifier.ForSession(rawId), normalized);
+    }
+
     public async Task<TmuxSession?> GetSessionAsync(string sessionId, CancellationToken cancellationToken)
     {
         if (!SafeIdentifier.IsSession(sessionId)) return null;

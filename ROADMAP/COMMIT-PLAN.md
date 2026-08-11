@@ -186,6 +186,18 @@ Status: completed locally; ready with approval-gated follow-ups
   binding, container health, and tailnet reachability.
 - Planned commit: `feat(setup): add first-run deployment skill`
 
+## C017 — Live session search and guarded session creation
+
+Status: deployed for physical acceptance; local commit/merge/push pending
+
+- Add a main-screen search field that filters the recency-ordered session deck
+  by name after every character without submitting or changing inventory.
+- Add a validated, CSRF-protected, authorized, rate-limited, and audited session
+  creation endpoint that accepts only a name and returns the opaque created ID.
+- Create a session from the main screen and open its terminal immediately while
+  preserving recency, navigation, reconnect, and error behavior.
+- Planned commit: `feat(sessions): add search and guarded creation`
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.

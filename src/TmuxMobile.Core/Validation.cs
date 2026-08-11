@@ -31,6 +31,14 @@ public static partial class SafeIdentifier
 
 public static partial class InputValidation
 {
+    public static string ValidateCreateName(string? name)
+    {
+        var normalized = ValidateRename(name);
+        if (normalized.IndexOfAny(['.', ':']) >= 0)
+            throw new ArgumentException("Session name may not contain a period or colon.");
+        return normalized;
+    }
+
     public static string ValidateRename(string? name)
     {
         var normalized = name?.Normalize(NormalizationForm.FormC).Trim() ?? "";
