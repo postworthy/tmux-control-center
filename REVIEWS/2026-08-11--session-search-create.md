@@ -8,10 +8,10 @@ Related Proposal: `PROPOSALS/2026-08-11--session-search-create.md`
 
 ## Decision
 
-Ready with explicit follow-ups. The initial blocking name-integrity finding was
-corrected and the changed canonical gate passes. The worktree is ready for an
-owner-approved local commit; deployment, merge, push, publication, production
-effects, and physical-iPhone acceptance remain separate boundaries.
+Ready with explicit physical-device follow-up. The initial blocking name-integrity
+finding was corrected and the changed canonical gate passes. The owner-approved
+deployment is healthy, and C017 was merged and pushed to GitHub `main`; physical
+iPhone acceptance remains outstanding.
 
 ## Branch and Scope
 
@@ -99,3 +99,5 @@ test failure.
   `sha256:80f290...` is healthy on the unchanged app/Serve boundary; C015 image
   `sha256:2bc9c5...` is retained as `tmux-mobile:pre-c017-search-create-rollback`.
   Physical search and create/open acceptance remains an explicit follow-up.
+- Publication completed: feature `416ac6b`, review checkpoint `3cf406e`, and
+  merge `b7b8e5b`; GitHub `main` advanced from `137b774` to `b7b8e5b`.

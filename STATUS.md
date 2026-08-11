@@ -4,7 +4,7 @@ Updated: 2026-08-11
 
 ## Current
 
-- C017 is active on `feat/c017-session-search-create`. The owner approved a
+- C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation
   narrows the prior no-process-launch boundary, it is scoped as T2: the request
   accepts only a validated name and tmux receives a fixed separated argument
@@ -19,8 +19,8 @@ Updated: 2026-08-11
   is now healthy on the unchanged Tailscale Serve app after an isolated tmux 3.4
   compatibility probe; HTTPS liveness/root/readiness pass, direct backend remains
   denied, and the prior C015 image is preserved for rollback. Feature commit
-  `416ac6b` is complete; the owner authorized the pending review checkpoint,
-  merge to `main`, and push to GitHub. Physical testing remains a follow-up.
+  `416ac6b` and review checkpoint `3cf406e` are published on GitHub `main`
+  through merge `b7b8e5b`. Physical testing remains a follow-up.
 
 - C016 is active on `feat/c016-first-run-install-skill`. The approved scope adds
   a repository-local first-run setup skill, deterministic ignored environment
