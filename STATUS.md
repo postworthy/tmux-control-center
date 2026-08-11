@@ -1,8 +1,26 @@
 # Project Status
 
-Updated: 2026-08-07
+Updated: 2026-08-11
 
 ## Current
+
+- C017 is active on `feat/c017-session-search-create`. The owner approved a
+  live main-screen name filter and create-then-open workflow. Because creation
+  narrows the prior no-process-launch boundary, it is scoped as T2: the request
+  accepts only a validated name and tmux receives a fixed separated argument
+  vector with no caller-controlled command, path, environment, socket, or
+  options. The protected endpoint returns an opaque ID, refreshes shared
+  inventory, maps duplicates to 409 and bounded tmux failures to 503, and audits
+  all outcomes. Frontend filtering preserves recency order and create success
+  enters the terminal directly. The initial review found that tmux silently
+  rewrites periods and colons; create-specific validation now rejects both
+  before launch and supported punctuation is preserved exactly. Fresh canonical
+  verification and the changed review pass. Verified image `sha256:80f290...`
+  is now healthy on the unchanged Tailscale Serve app after an isolated tmux 3.4
+  compatibility probe; HTTPS liveness/root/readiness pass, direct backend remains
+  denied, and the prior C015 image is preserved for rollback. Feature commit
+  `416ac6b` is complete; the owner authorized the pending review checkpoint,
+  merge to `main`, and push to GitHub. Physical testing remains a follow-up.
 
 - C016 is active on `feat/c016-first-run-install-skill`. The approved scope adds
   a repository-local first-run setup skill, deterministic ignored environment
@@ -137,6 +155,9 @@ Updated: 2026-08-07
   is in `REVIEWS/2026-08-02--initial-github-publication.md`.
 
 ## Next
+
+- Owner reloads/applies the C017 PWA update and physically tests live filtering
+  plus creating and immediately entering a new session.
 
 - Owner reloads/applies C015, dismisses the keyboard, and verifies both App Scroll
   directions and application-mode Older/Latest keep it closed and connected.
