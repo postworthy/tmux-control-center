@@ -1,9 +1,10 @@
 # Docker Compose deployment
 
-This deployment runs one non-root application container and publishes its HTTPS
-or Serve-backend port only on the host's explicit Tailscale IPv4 address. Docker bridge
-networking keeps the container isolated; the `0.0.0.0` listener in
-`compose.yaml` exists only inside that container namespace.
+This deployment runs one non-root application container. Direct HTTPS profiles
+publish only on the host's explicit Tailscale IPv4 address; the Tailscale Serve
+profile publishes its HTTP backend only on host loopback. Docker bridge
+networking keeps the container isolated; the `0.0.0.0` listener inside the
+container namespace is not a wildcard host listener.
 
 For temporary pre-TLS validation, `compose.http-test.yaml` retains API-key
 authentication while explicitly permitting non-Secure cookies. It is an unsafe
@@ -26,7 +27,7 @@ the normal minimum key length.
 When Tailscale Serve terminates HTTPS, use `compose.tailscale-serve.yaml` and set
 `TMUX_MOBILE_SERVE_HOST` plus `TMUX_MOBILE_SERVE_ORIGIN` to the exact hostname
 and HTTPS origin printed by `tailscale serve`. This profile restores Secure
-cookies while leaving the exact-IP port available to the local Serve proxy:
+cookies while leaving a loopback-only port available to the local Serve proxy:
 
 ```bash
 docker compose -f compose.tailscale-serve.yaml --env-file deploy/docker/.env up -d --build
@@ -35,11 +36,23 @@ docker compose -f compose.tailscale-serve.yaml --env-file deploy/docker/.env up 
 The current temporary profile still permits an eight-character test key. Remove
 that override and rotate to a strong random key after validation.
 
-The Serve profile trusts forwarded scheme/address headers only from its
-configured local Tailscale proxy address. Requests that do not become HTTPS
-after that trust check receive `426 Upgrade Required`; only inexpensive
+The Serve profile uses Docker's default bridge, maps
+`host.docker.internal` to its actual gateway, and resolves that static host
+entry as an explicit trusted proxy at startup. Requests that do not become
+HTTPS after that trust check receive
+`426 Upgrade Required`; only inexpensive
 `/health/live` and loopback `/health/ready` remain on HTTP. Thus opening the
 backend IP/port is not an alternate application URL.
+
+The image disables hard per-CPU server-GC thread affinity so a contended host
+CPU cannot indefinitely stop the managed runtime while other assigned CPUs are
+available. Its Compose health check also maintains bounded counters in the
+container tmpfs, resetting when the direct app process identity changes. After
+twelve failed startup checks or six failed checks after the first success, it
+terminates only the validated direct `dotnet` child;
+`restart: unless-stopped` then recreates application availability without
+stopping the host tmux server or its sessions. Invalid watchdog thresholds or
+ambiguous process ownership fail closed without signaling another process.
 
 ## Prepare
 
@@ -140,9 +153,8 @@ docker compose --env-file deploy/docker/.env ps
 docker compose --env-file deploy/docker/.env logs --tail=100 app
 ```
 
-Open `TMUX_MOBILE_ORIGIN` from a tailnet device. The mapping is fail-closed:
-Compose refuses to render if `TAILSCALE_IP` or another security-critical value
-is absent. Confirm on the host that the port is not listening on a LAN or
+Open `TMUX_MOBILE_ORIGIN` from a tailnet device. Confirm on the host that the
+Serve backend is listening only on `127.0.0.1`, never a LAN, Tailscale, or
 wildcard address:
 
 ```bash
@@ -157,7 +169,7 @@ For the Serve profile, also verify the browser URL and direct-backend denial:
 curl --fail "${TMUX_MOBILE_SERVE_ORIGIN}/health/live"
 curl -o /dev/null -w '%{http_code}\n' \
   -H "Host: ${TMUX_MOBILE_SERVE_HOST}" \
-  "http://${TAILSCALE_IP}:${TMUX_MOBILE_HTTP_PORT:-8780}/"
+  "http://127.0.0.1:${TMUX_MOBILE_HTTP_PORT:-8780}/"
 # expected: 426
 ```
 

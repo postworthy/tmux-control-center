@@ -232,6 +232,102 @@ public sealed class ApiTests
     }
 
     [Fact]
+    public async Task SessionTerminationIsProtectedAuditedAndRefreshesInventory()
+    {
+        await using var factory = new TmuxFactory(authenticated: true);
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var response = await SendWithCsrfAsync(client, HttpMethod.Delete,
+            $"/api/sessions/{TmuxFactory.Session.Id}", new { });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(1, factory.KillCalls);
+        Assert.Contains(factory.AuditRecords,
+            record => record.Action == "session.kill" && record.Target == TmuxFactory.Session.Id && record.Succeeded);
+        var sessions = await client.GetFromJsonAsync<TmuxSession[]>("/api/sessions", JsonOptions);
+        Assert.Empty(sessions!);
+    }
+
+    [Fact]
+    public async Task SessionTerminationRejectsUnknownTargetAndTmuxFailure()
+    {
+        await using var missingFactory = new TmuxFactory(authenticated: true);
+        var missingClient = missingFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+        var missing = await SendWithCsrfAsync(missingClient, HttpMethod.Delete,
+            $"/api/sessions/{SafeIdentifier.ForSession("$missing")}", new { });
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        Assert.Equal(0, missingFactory.KillCalls);
+        Assert.Contains(missingFactory.AuditRecords,
+            record => record.Action == "session.kill" && !record.Succeeded);
+
+        await using var failedFactory = new TmuxFactory(authenticated: true, killFails: true);
+        var failedClient = failedFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+        var failed = await SendWithCsrfAsync(failedClient, HttpMethod.Delete,
+            $"/api/sessions/{TmuxFactory.Session.Id}", new { });
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, failed.StatusCode);
+        Assert.Equal(0, failedFactory.KillCalls);
+        Assert.Contains(failedFactory.AuditRecords,
+            record => record.Action == "session.kill" && !record.Succeeded);
+    }
+
+    [Fact]
+    public async Task SessionTerminationRequiresAuthenticationAndCsrf()
+    {
+        await using var anonymousFactory = new TmuxFactory(authenticated: false);
+        var anonymous = CreateHttpsClient(anonymousFactory);
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await anonymous.DeleteAsync($"/api/sessions/{TmuxFactory.Session.Id}")).StatusCode);
+
+        await using var authenticatedFactory = new TmuxFactory(authenticated: true);
+        var authenticated = CreateHttpsClient(authenticatedFactory);
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await authenticated.DeleteAsync($"/api/sessions/{TmuxFactory.Session.Id}")).StatusCode);
+        Assert.Equal(0, authenticatedFactory.KillCalls);
+    }
+
+    [Fact]
+    public async Task SessionTerminationUsesInteractionRateLimit()
+    {
+        await using var factory = new TmuxFactory(authenticated: true);
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+        var csrf = await client.GetAsync("/api/auth/csrf");
+        csrf.EnsureSuccessStatusCode();
+        var token = (await csrf.Content.ReadFromJsonAsync<CsrfResponse>())!.Token;
+        var cookie = csrf.Headers.GetValues("Set-Cookie").Single(x => x.StartsWith("TmuxMobile-Csrf-Dev="))
+            .Split(';')[0];
+        var missingId = SafeIdentifier.ForSession("$missing");
+
+        for (var attempt = 0; attempt < 60; attempt++)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/sessions/{missingId}");
+            request.Headers.Add("X-CSRF-TOKEN", token);
+            request.Headers.Add("Cookie", cookie);
+            Assert.Equal(HttpStatusCode.NotFound, (await client.SendAsync(request)).StatusCode);
+        }
+        using var limitedRequest = new HttpRequestMessage(HttpMethod.Delete, $"/api/sessions/{missingId}");
+        limitedRequest.Headers.Add("X-CSRF-TOKEN", token);
+        limitedRequest.Headers.Add("Cookie", cookie);
+        Assert.Equal(HttpStatusCode.TooManyRequests, (await client.SendAsync(limitedRequest)).StatusCode);
+        Assert.Equal(0, factory.KillCalls);
+    }
+
+    [Fact]
     public async Task AuditSinkFailureDoesNotMisreportAnAppliedAction()
     {
         await using var factory = new TmuxFactory(authenticated: true, auditSucceeds: false);
@@ -426,9 +522,10 @@ public sealed class ApiTests
 
 public sealed class TmuxFactory(bool authenticated,
     IReadOnlyDictionary<string, string?>? overrides = null,
-    bool auditSucceeds = true) : WebApplicationFactory<Program>
+    bool auditSucceeds = true,
+    bool killFails = false) : WebApplicationFactory<Program>
 {
-    private readonly FakeTmuxService fakeTmux = new();
+    private readonly FakeTmuxService fakeTmux = new(killFails);
     private readonly FakePseudoTerminalFactory fakePty = new();
     private readonly FakeAuditLogger fakeAudit = new(auditSucceeds);
     private readonly string auditPath = Path.Combine(Path.GetTempPath(),
@@ -444,6 +541,7 @@ public sealed class TmuxFactory(bool authenticated,
     public long LastPtyInputLength => fakePty.Last?.InputLength ?? 0;
     public int RenameCalls => fakeTmux.RenameCalls;
     public int CreateCalls => fakeTmux.CreateCalls;
+    public int KillCalls => fakeTmux.KillCalls;
     public sealed record HistoryCall(TerminalHistoryAction Action, int Pages);
     public sealed record AuditRecord(string Action, string Subject, string Target, bool Succeeded);
 
@@ -558,12 +656,13 @@ public sealed class TmuxFactory(bool authenticated,
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
-    private sealed class FakeTmuxService : ITmuxService
+    private sealed class FakeTmuxService(bool killFails) : ITmuxService
     {
         private readonly List<TmuxSession> sessions = [Session];
         public ConcurrentQueue<HistoryCall> HistoryCalls { get; } = new();
         public int RenameCalls { get; private set; }
         public int CreateCalls { get; private set; }
+        public int KillCalls { get; private set; }
         public Task<IReadOnlyList<TmuxSession>> GetSessionsAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<TmuxSession>>(sessions.ToArray());
         public Task<CreatedTmuxSession> CreateSessionAsync(string name, CancellationToken cancellationToken)
@@ -601,6 +700,15 @@ public sealed class TmuxFactory(bool authenticated,
             InputValidation.ValidateRename(newName);
             if (sessionId != Session.Id) throw new TmuxNotFoundException("Missing");
             RenameCalls++;
+            return Task.CompletedTask;
+        }
+        public Task KillSessionAsync(string sessionId, CancellationToken cancellationToken)
+        {
+            var session = sessions.SingleOrDefault(candidate => candidate.Id == sessionId)
+                ?? throw new TmuxNotFoundException("Missing");
+            if (killFails) throw new TmuxCommandException("internal tmux detail");
+            sessions.Remove(session);
+            KillCalls++;
             return Task.CompletedTask;
         }
         public Task SendKeysAsync(string paneId, IReadOnlyList<TmuxKey> keys, CancellationToken cancellationToken) =>

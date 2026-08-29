@@ -1,7 +1,7 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 1.3
-Last updated: 2026-08-11
+Version: 1.5
+Last updated: 2026-08-19
 Status: Approved
 
 ## Product Objective
@@ -36,14 +36,18 @@ Status: Approved
   terminal data.
 - FR10: require production authentication, CSRF protection, authorization
   policies, origin/Host controls, rate limits, security headers, and auditing.
-- FR11: publish through Docker Compose with HTTPS and an exact Tailscale-IP host
-  bind; never publish the host port on a wildcard address.
+- FR11: publish through Docker Compose without a wildcard host bind. The
+  Tailscale Serve profile binds its HTTP backend only to host loopback so Docker
+  startup is independent of Tailscale address readiness; direct-HTTPS profiles
+  use an explicitly configured Tailscale-IP bind.
 - FR12: run the container as the same numeric non-root UID/GID that owns the
   target tmux server and mount only the required tmux socket directory and state.
 - FR13: keep tmux-backed terminal history navigation as the default and provide
-  an explicit, non-persistent terminal control that temporarily translates
+  an explicit device-local, session-scoped terminal control that translates
   vertical swipe distance and velocity plus the Older/Latest controls into
-  bounded, directionally equivalent mouse-wheel input for foreground TUIs.
+  bounded, directionally equivalent mouse-wheel input for foreground TUIs;
+  once selected, the mode persists for only that session across terminal exits,
+  reconnects, and app reloads until explicitly disabled.
 - FR14: order main session tiles by device-local in-app terminal recency so the
   session most recently opened from a tile returns to the top of the deck while
   untouched sessions retain stable server order.
@@ -61,6 +65,18 @@ Status: Approved
   session deck after every edit without submission, and allow the authenticated
   owner to create one detached tmux session from a validated name through a
   typed, audited, rate-limited API before opening its terminal immediately.
+- FR19: make sessions with no attached tmux clients visually distinct on the
+  main deck and state clearly that no terminal is attached while the tmux
+  session itself remains running.
+- FR20: provide an All/Detached main-deck filter composed with live name search,
+  and let the authenticated owner terminate one explicitly confirmed tmux
+  session through a typed, audited, rate-limited endpoint that resolves only an
+  opaque current-inventory target into a fixed `kill-session` invocation.
+- FR21: keep HTTP liveness, startup, shutdown, and supervised recovery responsive
+  during bounded host CPU contention, tmux subprocess delay, and terminal churn;
+  isolate blocking subprocess/PTY lifecycle work from Kestrel worker capacity,
+  expose tmux degradation through readiness and stale inventory, and contain
+  unrecoverable non-progress without terminating underlying tmux sessions.
 
 ## Constraints
 
@@ -94,8 +110,8 @@ Status: Approved
 - [ ] AC8: terminal swipes and Older/Latest continue to navigate tmux history by
   default, while an explicitly enabled application-scroll mode routes bounded,
   distance- and velocity-scaled wheel input plus directionally equivalent
-  Older/Latest wheel input to mouse-aware foreground programs and resets safely
-  to off.
+  Older/Latest wheel input to mouse-aware foreground programs and persists only
+  for that session across exit, reconnect, and reload until explicitly disabled.
 - [ ] AC9: opening a session terminal promotes that session to the first main
   tile on return, persists the device-local recency order safely across refresh
   and reload, and keeps deck navigation and the session rail consistent.
@@ -116,6 +132,18 @@ Status: Approved
   detached tmux session through the authenticated typed API and opens its
   terminal, while invalid, duplicate, unauthorized, rate-limited, or failed
   requests do not create or open a session and return actionable feedback.
+- [ ] AC15: a session with zero attached tmux clients has a prominent,
+  non-error visual treatment and a clear "No terminal attached" explanation;
+  attached sessions retain their existing presentation.
+- [ ] AC16: All/Detached filtering preserves coherent deck ordering and states;
+  killing requires a named confirmation and one protected request terminates
+  only its inventory-resolved target, refreshes inventory, audits the outcome,
+  and handles authorization, CSRF, rate-limit, missing-target, and tmux failures.
+- [ ] AC17: under an isolated constrained-resource workload, subprocess and PTY
+  lifecycle resources remain bounded, liveness stays responsive while tmux is
+  blocked, readiness degrades and recovers explicitly, graceful stop is
+  zombie-free, and induced unrecoverable non-progress exits for supervised
+  restart without ending the underlying tmux session.
 
 ## Canonical Verification
 
@@ -123,9 +151,11 @@ Status: Approved
 
 ## Safety and Capability Boundaries
 
-- No arbitrary shell, filesystem, restart, destructive tmux, or remote-host
-  capability enters the MVP. Process launch is limited to creating one detached
-  tmux session with a validated name and tmux's configured default command; the
+- No arbitrary shell, filesystem, restart, bulk/automatic tmux cleanup, or
+  remote-host capability enters the MVP. Process launch is limited to creating
+  one detached tmux session with a validated name and tmux's configured default
+  command. Destruction is limited to one explicitly confirmed current session
+  resolved from an opaque ID into a fixed `kill-session` argument vector. The
   client cannot supply a command, arguments, environment, working directory, or
   raw tmux target.
 - No agent may deploy, modify Tailscale policy, handle production secrets, push,

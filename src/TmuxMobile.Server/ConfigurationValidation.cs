@@ -87,11 +87,14 @@ public sealed class SecurityConfigurationValidator(IHostEnvironment environment,
     public ValidateOptionsResult Validate(string? name, ForwardedHeaderSettings options)
     {
         if (!options.Enabled) return ValidateOptionsResult.Success;
-        if (options.KnownProxies.Length == 0)
+        if (options.KnownProxies.Length == 0 && options.KnownProxyHosts.Length == 0)
             return ValidateOptionsResult.Fail("Forwarded headers require at least one explicit known proxy.");
         foreach (var proxy in options.KnownProxies)
             if (!System.Net.IPAddress.TryParse(proxy, out _))
                 return ValidateOptionsResult.Fail($"ForwardedHeaders known proxy '{proxy}' is not an IP address.");
+        foreach (var host in options.KnownProxyHosts)
+            if (string.IsNullOrWhiteSpace(host) || Uri.CheckHostName(host) != UriHostNameType.Dns)
+                return ValidateOptionsResult.Fail($"ForwardedHeaders known proxy host '{host}' is not a DNS name.");
         return ValidateOptionsResult.Success;
     }
 

@@ -4,9 +4,10 @@ Run the service as the same non-root Linux user that owns the tmux server. That 
 
 The preferred publishing path is the lightweight Docker Compose deployment in
 [`deploy/docker/README.md`](../deploy/docker/README.md). It either terminates
-HTTPS in the application container or uses Tailscale Serve, and maps the host
-port only on a required Tailscale IP. The existing systemd approaches below
-remain supported alternatives.
+HTTPS in the application container or uses Tailscale Serve. Direct HTTPS maps
+only on a required Tailscale IP; Serve maps its backend only on host loopback so
+Docker can start before Tailscale. The existing systemd approaches below remain
+supported alternatives.
 
 ## Docker Compose on the host tailnet
 
@@ -32,14 +33,22 @@ specific tmux socket directory. It does not run its own tmux server. Its
 read-only root filesystem receives only writable data-protection/audit mounts
 and read-only TLS files. A small in-memory `/tmp` supports PTY and atomic
 data-protection operations; the specific host tmux socket directory is mounted
-over its matching subdirectory. `TAILSCALE_IP` has no default: omitting it stops
-Compose configuration instead of exposing the port on every host interface.
+over its matching subdirectory. Direct-HTTPS profiles require `TAILSCALE_IP`;
+the Serve profile hard-codes `127.0.0.1` for its backend rather than permitting
+an environment override to broaden exposure.
 
 The image compiles the official upstream tmux release selected by the required
 `TMUX_VERSION` build argument. Set it to the sanitized release token reported by
 the host, then require the first-run helper's isolated socket probe before
 starting the service. See the Compose guide for the exact gate, TLS, health,
 upgrade, and rollback commands.
+
+The Compose image also disables hard per-CPU server-GC affinity and uses an
+image-local health watchdog. A failed probe still marks the container unhealthy;
+after a bounded startup or steady-state failure budget, the watchdog terminates
+only the validated application child so `restart: unless-stopped` can recover.
+It does not mount the Docker socket or stop the independently owned host tmux
+server. Inspect the health history and restart count after a recovery event.
 
 The systemd unit deliberately leaves `PrivateTmp=false`: tmux normally stores its per-user server socket under `/tmp`, and a private mount namespace would make that socket invisible. Other filesystem hardening remains enabled.
 
@@ -110,22 +119,22 @@ tailscale serve status
 
 Tailscale CLI syntax can change; confirm the current command with `tailscale serve --help`. The external HTTPS origin must match `Security__AllowedOrigins__0`.
 
-For the exact-Tailscale-IP Docker constraint, use
-`compose.tailscale-serve.yaml` instead. Docker publishes the backend only on the
-required Tailscale IP, while `AllowedHosts` and `Security:AllowedOrigins` accept
-only the Serve hostname and HTTPS origin. The browser receives Secure cookies.
-Forwarded scheme/address headers are accepted only from the configured proxy
-address; after that trust check, unforwarded HTTP application traffic receives
+For the Docker deployment, use `compose.tailscale-serve.yaml`. Docker publishes
+the backend only on host loopback, while `AllowedHosts` and
+`Security:AllowedOrigins` accept only the Serve hostname and HTTPS origin. The
+browser receives Secure cookies. The app resolves Docker's static
+`host.docker.internal` entry on the explicitly selected default bridge and
+trusts only that gateway (plus loopback) for forwarded headers. Unforwarded HTTP application traffic receives
 426. The HTTP port exists as the Serve target, not as a second application URL.
 
 For the currently deployed shape:
 
 ```bash
-sudo tailscale serve --https=8443 --bg http://100.85.13.102:8780
+sudo tailscale serve --https=8443 --bg http://127.0.0.1:8780
 tailscale serve status
 ```
 
-Replace both addresses with the exact values for the host. Rollback for the
+Replace the port with the configured backend port. Rollback for the
 proxy is `sudo tailscale serve --https=8443 off`; capture `tailscale serve
 status` before changing it. The current application rollout does not require a
 Serve rule change when that mapping already exists.

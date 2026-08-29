@@ -70,4 +70,5 @@ public sealed class ForwardedHeaderSettings
     public const string Section = "ForwardedHeaders";
     public bool Enabled { get; init; }
     public string[] KnownProxies { get; init; } = ["127.0.0.1", "::1"];
+    public string[] KnownProxyHosts { get; init; } = [];
 }

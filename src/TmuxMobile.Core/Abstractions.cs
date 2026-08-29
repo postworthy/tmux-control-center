@@ -13,6 +13,7 @@ public interface ITmuxService
     Task<IReadOnlyList<TmuxPane>> GetPanesAsync(string sessionId, CancellationToken cancellationToken);
     Task<string> CapturePaneAsync(string paneId, int historyLines, CancellationToken cancellationToken);
     Task RenameSessionAsync(string sessionId, string newName, CancellationToken cancellationToken);
+    Task KillSessionAsync(string sessionId, CancellationToken cancellationToken);
     Task SendKeysAsync(string paneId, IReadOnlyList<TmuxKey> keys, CancellationToken cancellationToken);
     Task SendTextAsync(string paneId, string text, CancellationToken cancellationToken);
     Task InterruptPaneAsync(string paneId, CancellationToken cancellationToken);

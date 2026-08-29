@@ -155,6 +155,24 @@ public sealed class TmuxService(
             "tmux.rename-session", cancellationToken);
     }
 
+    public async Task KillSessionAsync(string sessionId, CancellationToken cancellationToken)
+    {
+        var raw = await ResolveSessionAsync(sessionId, cancellationToken)
+            ?? throw new TmuxNotFoundException("Session was not found.");
+        try
+        {
+            await RunAsync(["kill-session", "-t", raw], "tmux.kill-session", cancellationToken);
+        }
+        catch (Exception exception) when (exception is TmuxCommandException or OperationCanceledException)
+        {
+            // Killing the final session can tear down the tmux server before its
+            // client reports success. Reconcile authoritative state so callers
+            // never retry an irreversible action that already took effect.
+            if (await ResolveSessionAsync(sessionId, CancellationToken.None) is null) return;
+            throw;
+        }
+    }
+
     public async Task SendKeysAsync(string paneId, IReadOnlyList<TmuxKey> keys, CancellationToken cancellationToken)
     {
         if (keys.Count is < 1 or > 32) throw new ArgumentException("Between 1 and 32 keys are required.");

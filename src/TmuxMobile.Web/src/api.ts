@@ -42,6 +42,13 @@ export async function createSession(name: string): Promise<{ id: string; name: s
   });
 }
 
+export async function killSession(sessionId: string): Promise<void> {
+  await request(`/api/sessions/${encodeURIComponent(sessionId)}`, {
+    method: "DELETE",
+    headers: { "X-CSRF-TOKEN": await csrf() }
+  });
+}
+
 export async function action(path: string, body?: unknown): Promise<void> {
   await request(path, {
     method: "POST",

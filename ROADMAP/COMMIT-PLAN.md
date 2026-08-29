@@ -125,10 +125,10 @@ Status: completed
 Status: active correction after owner physical-iPhone feedback
 
 - Preserve tmux-backed swipe history as the default terminal behavior.
-- Add an explicit, non-persistent application-scroll toggle that translates
-  bounded vertical swipes into negotiated xterm mouse-wheel input.
-- Reset application-scroll mode on terminal exit and connection loss, retain
-  accessible pressed-state feedback, and cover both routing modes.
+- Add an explicit application-scroll toggle that translates bounded vertical
+  swipes into negotiated xterm mouse-wheel input.
+- Retain accessible pressed-state feedback and cover both routing modes; C020
+  supersedes the original exit/connection reset with session-scoped persistence.
 - Verify ordinary tmux history and mouse-aware alternate-screen behavior before
   physical-iPhone acceptance.
 - Scale application wheel ticks with swipe distance and route Older/Latest as
@@ -197,6 +197,34 @@ Status: deployed for physical acceptance; local commit/merge/push pending
 - Create a session from the main screen and open its terminal immediately while
   preserving recency, navigation, reconnect, and error behavior.
 - Planned commit: `feat(sessions): add search and guarded creation`
+
+## C019 — Runtime starvation resilience
+
+Status: active; recurrence RCA and containment thin slice implemented locally
+
+- Reproduce the production starvation with a constrained disposable container
+  and isolated tmux socket before changing runtime architecture.
+- Bound and isolate subprocess output, PTY reads, and child waits so they cannot
+  consume the worker capacity required by Kestrel.
+- Decouple HTTP liveness from initial and ongoing tmux inventory, report
+  readiness/staleness explicitly, and contain unrecoverable non-progress through
+  session-preserving supervised restart.
+- Prove bounded descriptors, children, threads, startup, liveness, shutdown,
+  and recovery in a 60-minute constrained soak before an approval-gated canary.
+- Planned commits: staged under
+  `PROPOSALS/2026-08-15--runtime-starvation-resilience.md`.
+
+## C020 — Persist App Scroll per session
+
+Status: active
+
+- Keep new and never-enabled sessions default-off.
+- Persist an explicit App Scroll choice on this device by opaque session ID
+  across terminal exit, reconnect, and reload until explicitly disabled.
+- Bound and defensively parse local preference state so one session's mode never
+  changes another session.
+- Preserve wheel routing, coalescing, focus neutrality, and backend contracts.
+- Planned commit: `feat(terminal): persist app scroll per session`
 
 ## Later
 

@@ -5,7 +5,7 @@ A self-hosted, observation-first PWA for viewing and interacting with tmux sessi
 The production default is deliberately closed: loopback-only HTTP,
 authentication required, no configured key, and no allowed WebSocket origin.
 The supported Compose deployments either terminate HTTPS in Kestrel or use
-Tailscale Serve, and publish only on an explicitly configured Tailscale IP.
+Tailscale Serve, and publish its Serve backend only on host loopback.
 
 ## What is included
 
@@ -14,11 +14,12 @@ Tailscale Serve, and publish only on an explicitly configured Tailscale IP.
 - Cookie authentication bootstrapped by a deployment access key, CSRF validation, read/interact/admin policies, origin checks, rate and connection limits, security headers, and JSON-lines auditing.
 - React/TypeScript cards with vertical CSS snap, explicit navigation,
   device-local terminal-open recency ordering, live session-name filtering,
-  guarded create-and-open session flow, state preservation, quick actions,
-  details, realtime reconnect, and offline states.
+  detached-only filtering and highlighting, guarded create-and-open and
+  confirmed single-session termination flows, state preservation, quick
+  actions, details, realtime reconnect, and offline states.
 - Lazy-loaded xterm.js terminal with resize, disconnect/reconnect, tmux-backed
-  touch/button history by default, explicit non-persistent distance- and
-  velocity-scaled application/TUI scrolling for swipes and Older/Latest,
+  touch/button history by default, explicit device-local per-session distance-
+  and velocity-scaled application/TUI scrolling for swipes and Older/Latest,
   one-shot Ctrl/Alt, mobile shortcut keys, and guarded clipboard paste with a
   Safari fallback.
 - Manifest, icons, service worker, offline shell, systemd/nginx examples, and Tailscale guidance.
@@ -64,8 +65,8 @@ The frontend build writes hashed assets into the server's `wwwroot`. Follow [dep
 
 ## Docker Compose over Tailscale
 
-The preferred production shape is a single non-root container with an exact
-Tailscale-IP host binding:
+The preferred production shape is a single non-root container with a
+loopback-only host binding behind Tailscale Serve:
 
 For a fresh clone, ask your compatible coding agent to use
 `$setup-tmux-mobile`. The skill diagnoses tmux, Docker Compose, and Tailscale;
@@ -89,7 +90,9 @@ docker compose -f compose.tailscale-serve.yaml \
 See [the Compose guide](deploy/docker/README.md). Missing security-critical
 values make Compose fail before startup, and the host mapping never defaults to
 `0.0.0.0`. In the Serve profile, direct backend HTTP application traffic is
-rejected even though the exact-IP port remains available to the local proxy.
+rejected and the backend port is reachable only from the host. Because Docker
+binds loopback rather than the Tailscale interface, container recovery does not
+depend on Tailscale having assigned its address first during boot.
 
 ## Verification
 

@@ -23,8 +23,9 @@ the user.
   stop and direct the user to the official installer linked by preflight.
 - Never query or mutate the default tmux server during compatibility testing.
   Use only the repository probe, which creates a unique `tmux -L` server.
-- Do not weaken the exact-Tailscale-IP bind, authentication, origin/Host checks,
-  Secure cookies, or direct-backend denial to make setup pass.
+- Do not weaken the loopback-only Serve backend bind (or exact-Tailscale-IP
+  direct-HTTPS bind), authentication, origin/Host checks, Secure cookies, or
+  direct-backend denial to make setup pass.
 
 ## Workflow
 
@@ -88,14 +89,14 @@ the user.
    ```
 
    Configure Tailscale Serve using the syntax confirmed by its local help,
-   forwarding the chosen HTTPS port to the exact Tailscale-IP backend port.
+   forwarding the chosen HTTPS port to the loopback backend port.
    Do not change tailnet grants/ACLs or firewall policy without separate scope.
 
 7. Verify without exposing the key:
 
    - Confirm `docker compose ... ps` reports healthy and inspect bounded app logs.
-   - Confirm `ss -ltn` shows only the exact Tailscale IP and configured backend
-     port, never a wildcard or LAN address.
+   - Confirm `ss -ltn` shows the configured backend port only on `127.0.0.1`,
+     never the Tailscale IP, a wildcard, or a LAN address.
    - Confirm `tailscale serve status` shows the intended HTTPS-to-backend route.
    - Request `/health/live` through the HTTPS MagicDNS origin and confirm 200.
    - Request backend `/` with the configured Host and confirm 426.

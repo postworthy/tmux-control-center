@@ -9,5 +9,5 @@
     "outDir": ".test-dist",
     "skipLibCheck": true
   },
-  "include": ["src/sessionFilter.ts", "src/terminalInput.ts", "src/terminalScroll.ts", "tests/**/*.test.ts"]
+  "include": ["src/applicationScrollPreference.ts", "src/sessionFilter.ts", "src/terminalInput.ts", "src/terminalScroll.ts", "tests/**/*.test.ts"]
 }

@@ -34,11 +34,15 @@ Session and pane IDs are opaque values such as `s_a1...` and `p_b2...`; raw tmux
 
 ## Actions
 
-All require `Interact`, CSRF, body limits, rate limits, target re-resolution, and auditing.
+State-changing actions require CSRF, body limits, rate limits, target
+re-resolution, and auditing. Actions require `Interact` except the destructive
+single-session DELETE, which requires `Admin`.
 
 - `POST /api/sessions` with `{ "name": "benchmark-qwen" }` creates one detached
   session and returns `201` with `{ "id": "s_...", "name": "benchmark-qwen" }`.
 - `POST /api/sessions/{sessionId}/rename` with `{ "name": "benchmark-qwen" }`
+- `DELETE /api/sessions/{sessionId}` with no body terminates that one session and
+  returns `204`; unknown targets return `404` and bounded tmux failures return `503`.
 - `POST /api/panes/{paneId}/keys` with `{ "keys": ["enter", "controlC"] }`
 - `POST /api/panes/{paneId}/text` with `{ "text": "continue" }`
 - `POST /api/panes/{paneId}/interrupt` with no body
@@ -50,7 +54,10 @@ NAME`; there is no request field for a command, argument, path, environment,
 socket, or tmux option. Duplicate names return `409` and bounded tmux failures
 return `503`. Text is sent literally to an already-running pane via
 `tmux send-keys -l`; it is not executed by a server-side shell. There is no
-arbitrary command endpoint.
+arbitrary command endpoint. Termination resolves the opaque ID against current
+tmux inventory immediately before invoking the fixed separated argument vector
+`tmux kill-session -t RAW_ID`; callers cannot provide a raw target, option, or
+command.
 
 ## WebSockets
 

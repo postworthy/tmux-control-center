@@ -35,6 +35,9 @@ ASP.NET Core configuration applies in this order: checked-in JSON, environment-s
 | `ForwardedHeaders:KnownProxies` | loopback v4/v6 | Explicit IPs allowed to set forwarded scheme/address. |
 | `Audit:Destination` | `logs/audit.jsonl` | Use an absolute production path beneath an owner-only directory. Linux startup rejects group/other-accessible audit storage. |
 | `DataProtection:KeysDirectory` | `data-protection` | Persistent cookie keys; use an absolute protected production path. |
+| `DOTNET_GCNoAffinitize` | `1` in the image | Keeps server-GC threads schedulable across the container's available CPUs instead of hard-pinning each thread to one CPU. |
+| `TMUX_MOBILE_WATCHDOG_STARTUP_FAILURES` | `12` | Image health watchdog failure budget before first liveness success; integer 1–100. |
+| `TMUX_MOBILE_WATCHDOG_STEADY_FAILURES` | `6` | Failure budget after first liveness success; integer 1–100. At the threshold the watchdog terminates only the validated app child so Docker can restart it. |
 | `Status:IdleAfterMinutes` | 10 | Conservative inactivity threshold. |
 | `Status:WaitingPatterns` | built-in examples | Case-insensitive literal patterns. |
 | `Status:CompletedPatterns` | built-in examples | Case-insensitive literal patterns. |

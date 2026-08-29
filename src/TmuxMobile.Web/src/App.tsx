@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createSession, getClientConfig, login } from "./api";
 import { SessionCard } from "./SessionCard";
-import { filterSessionsByName } from "./sessionFilter";
+import { filterSessions } from "./sessionFilter";
 import {
   orderSessionsByRecency,
   promoteSessionRecency,
@@ -25,6 +25,7 @@ export default function App() {
   const [tmuxPrefix, setTmuxPrefix] = useState("C-b");
   const [recentSessionIds, setRecentSessionIds] = useState(() => readSessionRecency(localStorage));
   const [searchQuery, setSearchQuery] = useState("");
+  const [detachedOnly, setDetachedOnly] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createError, setCreateError] = useState("");
@@ -34,8 +35,8 @@ export default function App() {
     [inventory.sessions, recentSessionIds]
   );
   const visibleSessions = useMemo(
-    () => filterSessionsByName(orderedSessions, searchQuery),
-    [orderedSessions, searchQuery]
+    () => filterSessions(orderedSessions, searchQuery, detachedOnly),
+    [orderedSessions, searchQuery, detachedOnly]
   );
 
   useEffect(() => {
@@ -167,6 +168,10 @@ export default function App() {
         <input id="session-search" type="search" value={searchQuery} placeholder="Search sessions"
           autoComplete="off" autoCapitalize="none" spellCheck={false}
           onChange={(event) => setSearchQuery(event.target.value)} />
+        <button className={`detached-filter-button${detachedOnly ? " active" : ""}`}
+          aria-pressed={detachedOnly} onClick={() => setDetachedOnly((current) => !current)}>
+          Detached
+        </button>
         <button className="new-session-button" onClick={() => {
           setCreateError("");
           setCreateOpen(true);
@@ -189,10 +194,8 @@ export default function App() {
         ))}
         {!visibleSessions.length && (
           <section className="deck-empty" aria-live="polite">
-            <h1>{inventory.state === "empty" ? "No tmux sessions" : "No matching sessions"}</h1>
-            <p>{inventory.state === "empty"
-              ? "Create a session here or refresh after starting one elsewhere."
-              : `No session name contains “${searchQuery.trim()}”.`}</p>
+            <h1>{emptyDeckTitle(inventory.state === "empty", detachedOnly, searchQuery)}</h1>
+            <p>{emptyDeckDetail(inventory.state === "empty", detachedOnly, searchQuery)}</p>
             {inventory.state === "empty" && <button onClick={inventory.refresh}>Refresh</button>}
           </section>
         )}
@@ -239,4 +242,18 @@ function State({ title, detail, busy, action }: {
       {action}
     </main>
   );
+}
+
+function emptyDeckTitle(inventoryEmpty: boolean, detachedOnly: boolean, query: string) {
+  if (inventoryEmpty) return "No tmux sessions";
+  if (detachedOnly && query.trim()) return "No matching detached sessions";
+  if (detachedOnly) return "No detached sessions";
+  return "No matching sessions";
+}
+
+function emptyDeckDetail(inventoryEmpty: boolean, detachedOnly: boolean, query: string) {
+  if (inventoryEmpty) return "Create a session here or refresh after starting one elsewhere.";
+  if (detachedOnly && query.trim()) return `No detached session name contains “${query.trim()}”.`;
+  if (detachedOnly) return "Every tmux session currently has a terminal attached.";
+  return `No session name contains “${query.trim()}”.`;
 }

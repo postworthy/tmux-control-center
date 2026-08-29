@@ -12,7 +12,8 @@ This service controls terminals owned by its Linux account and must be treated a
 
 ## Implemented controls
 
-- No `/bin/sh -c`, command interpolation, arbitrary process launch, arbitrary filesystem endpoint, restart, or destructive API.
+- No `/bin/sh -c`, command interpolation, arbitrary process launch, arbitrary
+  filesystem endpoint, restart, bulk cleanup, or arbitrary destructive API.
 - Process executable and arguments remain separate. Every session/pane target is rediscovered from tmux and compared through an opaque identifier immediately before use.
 - Rename values use Unicode normalization, a 64-character allowlist, and typed bodies. Text has NUL and length checks and uses literal tmux input.
 - Process timeouts, cancellation, separate bounded stdout/stderr drains, capture line/byte limits, HTTP body limits, WebSocket frame limits, terminal idle timeout, global/per-user terminal leases, identity/IP-partitioned request limits, and per-connection terminal message/byte limits.
@@ -20,6 +21,11 @@ This service controls terminals owned by its Linux account and must be treated a
 - Strict same-origin frontend usage and configured WebSocket origins. Forwarded headers are disabled by default and, when enabled, trust only listed proxy IPs.
 - One-year HSTS on production HTTPS, same-origin-only CSP connectivity, frame denial, MIME sniffing denial, no-referrer, a restrictive browser permissions policy, and `Cache-Control: no-store` on APIs. `style-src 'unsafe-inline'` remains narrowly required for xterm.js runtime styles; scripts do not receive an inline exception.
 - Terminal contents and keystrokes are absent from application logs and audits. Audits record actor, operation, opaque target, success, and time. Failed allowed interactions are recorded, and a sink failure is logged separately without changing an already-applied action response.
+- Single-session termination requires the `Admin` policy, CSRF, the interaction
+  rate limit, and a current opaque-target resolution. It can produce only a
+  separated `kill-session -t RAW_ID` invocation. The UI names the target and
+  states irreversibility in a confirmation; detached state never triggers an
+  automatic action.
 - Clipboard text is read only after the user taps Paste, remains in ephemeral
   terminal component state, and is cleared after send or cancel. Multiline and
   large pastes require confirmation, no Enter is appended, and serialized input
@@ -84,10 +90,11 @@ Use grants/ACLs to allow only the owner identity or device tag to reach the tmux
 
 ## Container boundary
 
-The Compose deployment requires `TAILSCALE_IP` in the host-side port mapping.
-Although Kestrel listens on all interfaces inside its private container
-namespace, Docker publishes it only on that exact host address. Do not remove
-the address portion of the mapping.
+The direct-HTTPS Compose deployment requires `TAILSCALE_IP` in the host-side
+port mapping. The Tailscale Serve profile instead publishes its HTTP backend
+only on `127.0.0.1`. Although Kestrel listens on all interfaces inside its
+private container namespace, neither production profile publishes a wildcard
+host listener.
 
 The container drops Linux capabilities, enables `no-new-privileges`, uses a
 read-only root filesystem, and runs as the tmux owner's numeric non-root
@@ -130,8 +137,8 @@ available.
 
 ### Tailscale Serve HTTPS test mode
 
-`compose.tailscale-serve.yaml` keeps Kestrel on the exact Tailscale-IP HTTP
-backend required by the local Serve proxy, but configures the application for
+`compose.tailscale-serve.yaml` keeps Kestrel behind a loopback-only HTTP backend
+used by the local Serve proxy, but configures the application for
 the public tailnet-only HTTPS hostname and origin. It uses the normal Secure
 `__Host-` cookies and permits the temporary eight-character test key through
 the explicit weak-key switch. Direct HTTP is not the browser-facing URL.
@@ -143,7 +150,8 @@ Trusted forwarded headers run before the HTTPS boundary. The application then
 rejects ordinary direct HTTP application traffic with 426; anonymous liveness
 and loopback readiness are the only exceptions. Continue to omit the backend
 port from grants/ACLs because application rejection is defense in depth, not a
-replacement for network policy.
+replacement for network policy. The resolved Docker host-gateway alias is the
+only non-loopback proxy trusted inside the container.
 
 ## Audit and incident response
 

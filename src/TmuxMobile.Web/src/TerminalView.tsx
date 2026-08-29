@@ -3,6 +3,10 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import {
+  isApplicationScrollEnabled,
+  writeApplicationScrollPreference
+} from "./applicationScrollPreference";
+import {
   coalesceTerminalInput,
   MAX_PASTE_BYTES,
   pasteByteLength,
@@ -28,7 +32,9 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
   const socket = useRef<WebSocket | null>(null);
   const [connection, setConnection] = useState<ConnectionState>("connecting");
   const modifiers = useRef({ control: false, alt: false });
-  const applicationScroll = useRef(false);
+  const [applicationScrollEnabled, setApplicationScrollEnabled] = useState(() =>
+    isApplicationScrollEnabled(localStorage, session.id));
+  const applicationScroll = useRef(applicationScrollEnabled);
   const dispatchingApplicationWheel = useRef(false);
   const applicationWheelInput = useRef<string[]>([]);
   const [modifierState, setModifierState] = useState({ control: false, alt: false });
@@ -36,12 +42,12 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
   const [pasteDraft, setPasteDraft] = useState("");
   const [pasteStatus, setPasteStatus] = useState("");
   const [historyMode, setHistoryMode] = useState(false);
-  const [applicationScrollEnabled, setApplicationScrollEnabled] = useState(false);
 
-  const resetApplicationScroll = useCallback(() => {
-    applicationScroll.current = false;
-    setApplicationScrollEnabled(false);
-  }, []);
+  useEffect(() => {
+    const enabled = isApplicationScrollEnabled(localStorage, session.id);
+    applicationScroll.current = enabled;
+    setApplicationScrollEnabled(enabled);
+  }, [session.id]);
 
   const send = useCallback((data: string) => {
     if (socket.current?.readyState !== WebSocket.OPEN) return;
@@ -104,11 +110,10 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     ws.onclose = () => {
       if (socket.current === ws) socket.current = null;
       setHistoryMode(false);
-      resetApplicationScroll();
       setConnection("disconnected");
     };
     ws.onerror = () => ws.close();
-  }, [resetApplicationScroll, session.id]);
+  }, [session.id]);
 
   useEffect(() => {
     const xterm = new Terminal({
@@ -212,7 +217,6 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     };
     const touchCancel = () => { touch = null; };
     const terminalViewport = container.current!;
-    resetApplicationScroll();
     terminalViewport.addEventListener("touchstart", touchStart, { passive: true });
     terminalViewport.addEventListener("touchmove", touchMove, { passive: false });
     terminalViewport.addEventListener("touchend", touchEnd);
@@ -233,7 +237,7 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
       xterm.dispose();
       terminal.current = null;
     };
-  }, [connect, dispatchApplicationWheel, resetApplicationScroll, send]);
+  }, [connect, dispatchApplicationWheel, send]);
 
   const key = (value: string) => { send(value); terminal.current?.focus(); };
   const toggle = (name: "control" | "alt") => {
@@ -301,9 +305,9 @@ export function TerminalView({ session, tmuxPrefix, onBack }: Props) {
     const enabled = !applicationScroll.current;
     applicationScroll.current = enabled;
     setApplicationScrollEnabled(enabled);
+    writeApplicationScrollPreference(localStorage, session.id, enabled);
   };
   const leaveTerminal = () => {
-    resetApplicationScroll();
     if (historyMode) requestHistory("latest");
     onBack();
   };

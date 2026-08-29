@@ -195,12 +195,25 @@ public sealed class ConfigurationValidationTests
         Assert.True(validator.Validate(null, new ForwardedHeaderSettings
         {
             Enabled = true,
-            KnownProxies = []
+            KnownProxies = [],
+            KnownProxyHosts = []
         }).Failed);
         Assert.True(validator.Validate(null, new ForwardedHeaderSettings
         {
             Enabled = true,
             KnownProxies = ["not-an-ip"]
+        }).Failed);
+        Assert.True(validator.Validate(null, new ForwardedHeaderSettings
+        {
+            Enabled = true,
+            KnownProxies = [],
+            KnownProxyHosts = ["host.docker.internal"]
+        }).Succeeded);
+        Assert.True(validator.Validate(null, new ForwardedHeaderSettings
+        {
+            Enabled = true,
+            KnownProxies = [],
+            KnownProxyHosts = ["not a host"]
         }).Failed);
     }
 

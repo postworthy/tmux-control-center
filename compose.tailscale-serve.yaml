@@ -10,6 +10,7 @@ services:
         TMUX_VERSION: "${TMUX_VERSION:?Set TMUX_VERSION to the host tmux release}"
     restart: unless-stopped
     init: true
+    network_mode: bridge
     user: "${TMUX_MOBILE_UID:?Set TMUX_MOBILE_UID}:${TMUX_MOBILE_GID:?Set TMUX_MOBILE_GID}"
     read_only: true
     cap_drop:
@@ -18,7 +19,9 @@ services:
       - no-new-privileges:true
     pids_limit: 128
     ports:
-      - "${TAILSCALE_IP:?Set the exact host Tailscale IPv4 address}:${TMUX_MOBILE_HTTP_PORT:-8780}:5179"
+      - "127.0.0.1:${TMUX_MOBILE_HTTP_PORT:-8780}:5179"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       Urls: http://0.0.0.0:5179
@@ -30,7 +33,8 @@ services:
       Security__AllowedOrigins__0: "${TMUX_MOBILE_SERVE_ORIGIN:?Set the exact Tailscale Serve HTTPS origin}"
       Security__ExternalHttpsTermination: "true"
       ForwardedHeaders__Enabled: "true"
-      ForwardedHeaders__KnownProxies__0: "${TAILSCALE_IP:?Set the exact host Tailscale IPv4 address}"
+      ForwardedHeaders__KnownProxies__0: "127.0.0.1"
+      ForwardedHeaders__KnownProxyHosts__0: "host.docker.internal"
       Tmux__ExecutablePath: /usr/bin/tmux
       Tmux__SocketName: "${TMUX_SOCKET_NAME:-}"
       DataProtection__KeysDirectory: /state/keys
@@ -50,15 +54,12 @@ services:
     healthcheck:
       test:
         - CMD
-        - curl
-        - --fail
-        - --silent
-        - --show-error
+        - /usr/local/bin/tmux-mobile-healthcheck
         - --header
         - "Host: ${TMUX_MOBILE_SERVE_HOST:?Set the exact Tailscale Serve hostname}"
         - http://127.0.0.1:5179/health/live
       interval: 15s
-      timeout: 5s
+      timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     stop_grace_period: 20s

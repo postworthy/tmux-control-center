@@ -31,6 +31,11 @@ and caller-supplied name as one separated argument. The raw ID is validated and
 converted to an opaque ID before returning; duplicate-name stderr is mapped to a
 bounded conflict and other tmux output is not exposed.
 
+Single-session termination is the sole destructive tmux capability. The server
+re-resolves one browser-facing opaque ID against current session IDs and invokes
+the fixed separated argument vector `kill-session -t RAW_ID`. No request field
+can supply a raw target, option, command, pane, window, or bulk selector.
+
 `TmuxMobile.Server` composes options, policies, routes, shared polling, WebSockets, health checks, security middleware, and static PWA hosting. The frontend consumes only domain JSON and never sees a raw tmux target.
 
 ## Inventory and previews
@@ -56,7 +61,26 @@ Disposal sends HUP/TERM and finally KILL only to the attach-client process group
 then reaps its leader; tmux's server and session remain alive. Real
 isolated-socket and stubborn-descendant tests verify this behavior.
 
-The bridge has global and per-identity leases, bounded client messages, one send lock for PTY output and heartbeat frames, and explicit cleanup. Because an attached tmux client—not xterm's alternate buffer—owns authoritative pane history, the default terminal gesture uses typed history messages that resolve the safe session target and invoke fixed `copy-mode` and `send-keys -X` argument arrays. An explicit default-off Application Scroll control instead starts at one wheel event per 18 pixels of vertical swipe movement and applies a deterministic 1x–4x multiplier from average gesture velocity, capped at 72 events, through xterm's negotiated mouse protocol. This lets deliberate drags remain precise while fast flicks travel farther in a mouse-aware foreground TUI. Xterm's ordered reports from one synthetic gesture are buffered only during that dispatch and sent together through the existing bounded input serializer, preventing one gesture from amplifying into a rate-limit-exhausting WebSocket message burst. Wheel dispatch, the App Scroll toggle, and application-mode Older/Latest are focus-neutral, so they do not focus xterm's hidden keyboard textarea; connection and typing-oriented controls retain intentional focus. In that mode Older and Latest use the same path as fixed 12-event wheel-up and wheel-down bursts; while off they retain their tmux-history behavior. The control is browser-memory-only and resets on terminal entry, exit, and connection loss. Latest and disconnect cancel copy mode entered by the connection only while application scrolling is off. The abstraction permits replacing `forkpty` without changing routes or frontend protocol.
+The bridge has global and per-identity leases, bounded client messages, one send lock for PTY output and heartbeat frames, and explicit cleanup. Because an attached tmux client—not xterm's alternate buffer—owns authoritative pane history, the default terminal gesture uses typed history messages that resolve the safe session target and invoke fixed `copy-mode` and `send-keys -X` argument arrays. An explicit default-off Application Scroll control instead starts at one wheel event per 18 pixels of vertical swipe movement and applies a deterministic 1x–4x multiplier from average gesture velocity, capped at 72 events, through xterm's negotiated mouse protocol. This lets deliberate drags remain precise while fast flicks travel farther in a mouse-aware foreground TUI. Xterm's ordered reports from one synthetic gesture are buffered only during that dispatch and sent together through the existing bounded input serializer, preventing one gesture from amplifying into a rate-limit-exhausting WebSocket message burst. Wheel dispatch, the App Scroll toggle, and application-mode Older/Latest are focus-neutral, so they do not focus xterm's hidden keyboard textarea; connection and typing-oriented controls retain intentional focus. In that mode Older and Latest use the same path as fixed 12-event wheel-up and wheel-down bursts; while off they retain their tmux-history behavior. New sessions remain default-off; an explicit selection is stored on this device by opaque session ID and survives terminal exit, connection loss, reconnect, and reload only for that session until explicitly disabled. Latest and disconnect cancel copy mode entered by the connection only while application scrolling is off. The abstraction permits replacing `forkpty` without changing routes or frontend protocol.
+
+## Runtime containment
+
+The container disables server-GC hard affinity so each GC thread remains
+schedulable across the process's available CPUs during asymmetric host
+contention. Liveness remains an in-process endpoint, but the probe that observes
+it is an image-local shell process started independently by Docker. It records
+only bounded failure counters in tmpfs, keyed to the current app process start
+identity so a restarted process cannot inherit a prior trip count. Twelve
+failures are allowed before the first successful startup and six afterward;
+success clears the current count.
+
+At the threshold, the watchdog signals only PID 1 when it is `dotnet`, or the
+sole direct PID-1 child when that child is `dotnet`. Ambiguous process ownership
+fails closed. This turns a prolonged running-but-unhealthy state into process
+exit so the existing restart policy can recover, while the separately owned
+host tmux server and its sessions remain alive. The watchdog has no Docker
+socket, added capability, host process visibility, tmux command access, or
+terminal-content logging.
 
 ## Authentication and authorization
 
@@ -66,15 +90,15 @@ Policies are explicit:
 
 - `Read`: inventory, captures, config, and inventory stream.
 - `Interact`: create/rename session, pane input, interrupt, and terminal.
-- `Admin`: reserved for future destructive operations.
+- `Admin`: explicitly confirmed single-session termination.
 
 Cookie mutations require an antiforgery header and same-site token cookie.
-Creation is rate-limited and audited on both success and failure. There are no
-destructive endpoints or arbitrary command endpoints.
+Creation and termination are rate-limited and audited on both success and
+failure. There are no arbitrary command or bulk destructive endpoints.
 
 ## UI state
 
-Cards use `100dvh`, safe-area insets, `scroll-snap-type: y mandatory`, and a non-scrollable faded preview so vertical touch movement belongs to the deck. Local storage contains only the active opaque session ID and the duplicate-free recency list of opaque IDs; terminal content, names, search queries, access keys, cookies, and API results are not stored there.
+Cards use `100dvh`, safe-area insets, `scroll-snap-type: y mandatory`, and a non-scrollable faded preview so vertical touch movement belongs to the deck. Local storage contains only the active opaque session ID, the duplicate-free recency list of opaque IDs, and a bounded set of opaque session IDs with explicitly enabled App Scroll; terminal content, names, search queries, access keys, cookies, and API results are not stored there.
 
 Realtime snapshots replace records by ID without scrolling the deck. The client
 keeps a device-local, duplicate-free MRU list of opaque session IDs updated only
@@ -85,16 +109,20 @@ all consume this one derived order. The active ID is restored after reload or
 resume if it still exists. Terminal mode is lazy-loaded, preserves the selected
 card, and exposes an explicit back control. One-finger vertical gestures
 navigate bounded tmux history by default; Older and Latest provide explicit
-access to the same history controls. The owner may temporarily enable
+access to the same history controls. The owner may explicitly enable
 Application Scroll to route distance- and velocity-scaled swipe movement plus
 Older/Latest as bounded mouse-wheel input to the foreground program. That mode
-is visibly indicated, never persisted, and resets off on connection loss or
-terminal exit.
+is visibly indicated and persists on this device only for that opaque session
+across connection loss, terminal exit, and reload until explicitly disabled.
 
 The main-screen search applies a case-insensitive substring filter to that
 already-derived order on every input event, so filtering cannot mutate server
 inventory or recency. Tiles, navigation, counts, and the rail consume the same
-filtered array. A top-level New action posts only a name; on success the client
+filtered array. A non-persistent Detached toggle composes with that name filter
+using the session attachment metadata without treating detached as abandoned.
+A card's quick menu can open a target-naming confirmation before the Admin-only
+single-session termination request; cancellation sends nothing and failures
+remain visible without optimistic removal. A top-level New action posts only a name; on success the client
 promotes the returned opaque ID, enters terminal mode directly from the response,
 and refreshes inventory without waiting for polling.
 

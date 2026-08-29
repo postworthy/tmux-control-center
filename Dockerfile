@@ -8,6 +8,7 @@ COPY src/TmuxMobile.Web src/TmuxMobile.Web
 RUN npm --prefix src/TmuxMobile.Web run build
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS server-build
+ENV DOTNET_GCNoAffinitize=1
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends gcc libc6-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -50,11 +51,13 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=server-build /publish .
 COPY --from=tmux-build /opt/tmux/bin/tmux /usr/bin/tmux
+COPY --chmod=0555 deploy/docker/healthcheck-watchdog.sh /usr/local/bin/tmux-mobile-healthcheck
 RUN test "$(/usr/bin/tmux -V)" = "tmux ${TMUX_VERSION}"
 
 ENV ASPNETCORE_ENVIRONMENT=Production \
     Urls=https://0.0.0.0:5443 \
-    DOTNET_EnableDiagnostics=0
+    DOTNET_EnableDiagnostics=0 \
+    DOTNET_GCNoAffinitize=1
 
 EXPOSE 5443
 ENTRYPOINT ["dotnet", "TmuxMobile.Server.dll"]

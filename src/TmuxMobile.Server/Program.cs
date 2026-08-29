@@ -159,6 +159,24 @@ if (forwarded.Enabled)
                 throw new InvalidOperationException($"ForwardedHeaders known proxy '{proxy}' is not an IP address.");
             options.KnownProxies.Add(address);
         }
+        foreach (var host in forwarded.KnownProxyHosts)
+        {
+            IPAddress[] addresses;
+            try
+            {
+                addresses = Dns.GetHostAddresses(host);
+            }
+            catch (Exception exception) when (exception is System.Net.Sockets.SocketException or ArgumentException)
+            {
+                throw new InvalidOperationException(
+                    $"ForwardedHeaders known proxy host '{host}' could not be resolved.", exception);
+            }
+            if (addresses.Length == 0)
+                throw new InvalidOperationException(
+                    $"ForwardedHeaders known proxy host '{host}' resolved to no addresses.");
+            foreach (var address in addresses)
+                options.KnownProxies.Add(address);
+        }
     });
 }
 
@@ -359,6 +377,56 @@ sessions.MapGet("/{sessionId}/panes", async (string sessionId, ITmuxService tmux
     try { return Results.Ok(await tmux.GetPanesAsync(sessionId, cancellationToken)); }
     catch (TmuxNotFoundException) { return Results.NotFound(); }
 });
+sessions.MapDelete("/{sessionId}", async (
+    string sessionId, HttpContext context, ITmuxService tmux, IInventoryStore inventory,
+    IAntiforgery antiforgery, IAuditLogger auditLogger, ILogger<Program> logger) =>
+{
+    try
+    {
+        await antiforgery.ValidateRequestAsync(context);
+    }
+    catch (AntiforgeryValidationException)
+    {
+        await auditLogger.WriteAsync("session.kill", UserId(context.User), sessionId, false,
+            context.RequestAborted);
+        return Results.BadRequest(new { error = "The CSRF token is missing or invalid." });
+    }
+    try
+    {
+        await tmux.KillSessionAsync(sessionId, context.RequestAborted);
+        try
+        {
+            await inventory.RefreshAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception,
+                "Session {SessionId} was terminated but the immediate inventory refresh failed", sessionId);
+        }
+        await auditLogger.WriteAsync("session.kill", UserId(context.User), sessionId, true,
+            CancellationToken.None);
+        return Results.NoContent();
+    }
+    catch (TmuxNotFoundException)
+    {
+        await auditLogger.WriteAsync("session.kill", UserId(context.User), sessionId, false,
+            context.RequestAborted);
+        return Results.NotFound();
+    }
+    catch (TmuxCommandException)
+    {
+        await auditLogger.WriteAsync("session.kill", UserId(context.User), sessionId, false,
+            CancellationToken.None);
+        return Results.Problem("tmux could not terminate the session.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("session.kill", UserId(context.User), sessionId, false,
+            CancellationToken.None);
+        throw;
+    }
+}).RequireAuthorization("Admin").RequireRateLimiting("interact");
 sessions.MapPost("/{sessionId}/rename", async (
     string sessionId, RenameRequest request, HttpContext context, ITmuxService tmux,
     IAntiforgery antiforgery, IAuditLogger auditLogger) =>

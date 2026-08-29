@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { action } from "./api";
+import { action, killSession } from "./api";
 import type { TmuxSession } from "./types";
 
 interface Props {
@@ -7,7 +7,7 @@ interface Props {
   index: number;
   total: number;
   onTerminal: () => void;
-  onRefresh: () => void;
+  onRefresh: () => void | Promise<void>;
   onPrevious: () => void;
   onNext: () => void;
 }
@@ -19,6 +19,9 @@ export function SessionCard({
   const [actions, setActions] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [killConfirm, setKillConfirm] = useState(false);
+  const [killBusy, setKillBusy] = useState(false);
+  const [killError, setKillError] = useState("");
 
   const run = async (operation: () => Promise<void>) => {
     setBusy(true);
@@ -31,9 +34,23 @@ export function SessionCard({
     const name = window.prompt("New session name", session.name);
     if (name) await run(() => action(`/api/sessions/${session.id}/rename`, { name }));
   };
+  const confirmKill = async () => {
+    setKillBusy(true);
+    setKillError("");
+    try {
+      await killSession(session.id);
+      setKillConfirm(false);
+      setKillBusy(false);
+      void onRefresh();
+    } catch (reason) {
+      setKillError(reason instanceof Error ? reason.message : "Unable to kill session");
+      setKillBusy(false);
+    }
+  };
 
   return (
-    <article className="session-card" data-session-id={session.id} aria-labelledby={`title-${session.id}`}>
+    <article className={`session-card${session.isAttached ? "" : " session-card-detached"}`}
+      data-session-id={session.id} aria-labelledby={`title-${session.id}`}>
       <div className="card-shell">
         <header className="session-header">
           <button className="session-title" onClick={() => setDetails(true)}
@@ -53,6 +70,16 @@ export function SessionCard({
           <span>{session.isAttached ? `${session.attachedClientCount} attached` : "detached"}</span>
           <span>{relativeTime(session.lastActivityAt)}</span>
         </div>
+
+        {!session.isAttached && (
+          <div className="detached-notice" role="status">
+            <span className="detached-notice-icon" aria-hidden="true">○</span>
+            <span>
+              <strong>No terminal attached</strong>
+              <small>The tmux session is still running.</small>
+            </span>
+          </div>
+        )}
 
         <dl className="metadata">
           <div><dt>Running</dt><dd>{session.currentCommand || "Unknown"}</dd></div>
@@ -87,6 +114,11 @@ export function SessionCard({
             <button role="menuitem" onClick={onRefresh}>Refresh output</button>
             <button role="menuitem" onClick={() => navigator.clipboard.writeText(session.previewText)}>Copy recent output</button>
             <button role="menuitem" onClick={() => void rename()}>Rename session</button>
+            <button className="danger-menu-item" role="menuitem" onClick={() => {
+              setActions(false);
+              setKillError("");
+              setKillConfirm(true);
+            }}>Kill session</button>
           </div>
         )}
       </div>
@@ -104,6 +136,24 @@ export function SessionCard({
               <dt>Working directory</dt><dd>{session.currentWorkingDirectory || "Unknown"}</dd>
             </dl>
             <button onClick={() => setDetails(false)}>Close</button>
+          </section>
+        </div>
+      )}
+
+      {killConfirm && (
+        <div className="modal-backdrop" role="presentation"
+          onClick={() => !killBusy && setKillConfirm(false)}>
+          <section className="kill-dialog" role="dialog" aria-modal="true"
+            aria-labelledby={`kill-title-${session.id}`} onClick={(event) => event.stopPropagation()}>
+            <h2 id={`kill-title-${session.id}`}>Kill “{session.name}”?</h2>
+            <p>This permanently ends the tmux session and programs running inside it. This cannot be undone.</p>
+            {killError && <p className="error-text" role="alert">{killError}</p>}
+            <div className="kill-actions">
+              <button autoFocus onClick={() => setKillConfirm(false)} disabled={killBusy}>Cancel</button>
+              <button className="danger-button" onClick={() => void confirmKill()} disabled={killBusy}>
+                {killBusy ? "Killing…" : "Kill session"}
+              </button>
+            </div>
           </section>
         </div>
       )}
