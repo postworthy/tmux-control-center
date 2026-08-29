@@ -2,14 +2,38 @@ import { useEffect, useRef } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { terminalWebSocketUrl } from "./desktopApi";
+import { isTerminalPing, reconnectDelay } from "./reconnect";
+
+export type TerminalConnectionState = "connecting" | "connected" | "reconnecting" | "disconnected";
 
 interface Props {
   sessionId: string;
-  onConnectionState: (state: "connecting" | "connected" | "disconnected") => void;
+  active: boolean;
+  onConnectionState: (state: TerminalConnectionState) => void;
 }
 
-export default function DesktopTerminal({ sessionId, onConnectionState }: Props) {
+export default function DesktopTerminal({ sessionId, active, onConnectionState }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const terminalRef = useRef<Terminal | null>(null);
+  const fitRef = useRef<FitAddon | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
+  const connectionCallbackRef = useRef(onConnectionState);
+
+  useEffect(() => { connectionCallbackRef.current = onConnectionState; }, [onConnectionState]);
+
+  useEffect(() => {
+    if (!active) return;
+    const frame = window.requestAnimationFrame(() => {
+      fitRef.current?.fit();
+      const socket = socketRef.current;
+      const terminal = terminalRef.current;
+      if (socket?.readyState === WebSocket.OPEN && terminal) {
+        socket.send(JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }));
+      }
+      terminal?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [active]);
 
   useEffect(() => {
     const terminal = new Terminal({
@@ -28,43 +52,90 @@ export default function DesktopTerminal({ sessionId, onConnectionState }: Props)
     const fit = new FitAddon();
     terminal.loadAddon(fit);
     terminal.open(hostRef.current!);
+    terminalRef.current = terminal;
+    fitRef.current = fit;
     fit.fit();
 
-    onConnectionState("connecting");
-    const socket = new WebSocket(terminalWebSocketUrl(sessionId));
-    socket.binaryType = "arraybuffer";
     const encoder = new TextEncoder();
+    let stopped = false;
+    let retryAttempt = 0;
+    let retryTimer = 0;
     const resize = () => {
+      if (!hostRef.current?.classList.contains("active")) return;
       fit.fit();
-      if (socket.readyState === WebSocket.OPEN) {
+      const socket = socketRef.current;
+      if (socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }));
       }
     };
     const observer = new ResizeObserver(resize);
     observer.observe(hostRef.current!);
     const input = terminal.onData(data => {
-      if (socket.readyState === WebSocket.OPEN) socket.send(encoder.encode(data));
+      const socket = socketRef.current;
+      if (socket?.readyState === WebSocket.OPEN) socket.send(encoder.encode(data));
     });
 
-    socket.addEventListener("open", () => {
-      onConnectionState("connected");
-      resize();
-      terminal.focus();
-    });
-    socket.addEventListener("message", event => {
-      if (event.data instanceof ArrayBuffer) terminal.write(new Uint8Array(event.data));
-      else terminal.write(event.data);
-    });
-    socket.addEventListener("close", () => onConnectionState("disconnected"));
-    socket.addEventListener("error", () => onConnectionState("disconnected"));
+    const connect = () => {
+      if (stopped || socketRef.current?.readyState === WebSocket.OPEN ||
+          socketRef.current?.readyState === WebSocket.CONNECTING) return;
+      if (!navigator.onLine) {
+        connectionCallbackRef.current("disconnected");
+        return;
+      }
+      connectionCallbackRef.current(retryAttempt ? "reconnecting" : "connecting");
+      const socket = new WebSocket(terminalWebSocketUrl(sessionId));
+      socket.binaryType = "arraybuffer";
+      socketRef.current = socket;
+      socket.addEventListener("open", () => {
+        retryAttempt = 0;
+        connectionCallbackRef.current("connected");
+        resize();
+        if (hostRef.current?.classList.contains("active")) terminal.focus();
+      });
+      socket.addEventListener("message", event => {
+        if (event.data instanceof ArrayBuffer) terminal.write(new Uint8Array(event.data));
+        else if (isTerminalPing(event.data) && socket.readyState === WebSocket.OPEN)
+          socket.send(JSON.stringify({ type: "pong" }));
+      });
+      socket.addEventListener("close", () => {
+        if (socketRef.current === socket) socketRef.current = null;
+        if (stopped) return;
+        connectionCallbackRef.current("reconnecting");
+        retryTimer = window.setTimeout(connect, reconnectDelay(retryAttempt++));
+      });
+      socket.addEventListener("error", () => socket.close());
+    };
+    const online = () => {
+      window.clearTimeout(retryTimer);
+      connect();
+    };
+    const offline = () => {
+      window.clearTimeout(retryTimer);
+      connectionCallbackRef.current("disconnected");
+      socketRef.current?.close(1001, "Desktop offline");
+    };
+    const pageHide = () => socketRef.current?.close(1000, "Desktop window closed");
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+    window.addEventListener("pagehide", pageHide);
+    connect();
 
     return () => {
+      stopped = true;
+      window.clearTimeout(retryTimer);
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+      window.removeEventListener("pagehide", pageHide);
       observer.disconnect();
       input.dispose();
-      socket.close(1000, "Desktop tab closed");
+      socketRef.current?.close(1000, "Desktop tab closed");
+      socketRef.current = null;
+      terminalRef.current = null;
+      fitRef.current = null;
       terminal.dispose();
     };
-  }, [sessionId, onConnectionState]);
+  }, [sessionId]);
 
-  return <div className="terminal-host" ref={hostRef} aria-label="Terminal" />;
+  return <div className={active ? "terminal-host active" : "terminal-host"}
+    ref={hostRef} aria-label="Terminal" aria-hidden={!active} />;
 }

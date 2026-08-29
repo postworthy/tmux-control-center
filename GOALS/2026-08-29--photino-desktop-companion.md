@@ -87,8 +87,8 @@ existing mobile PWA.
 | Unit | Status | Exit criteria | Verification |
 | --- | --- | --- | --- |
 | 1. Transport/auth spike | completed | Photino reaches a configured test server, completes protected auth, lists inventory, attaches xterm.js, and detaches without a security exception. | 13 URL tests, frontend typecheck/build, isolated protected Photino/tmux runtime passed |
-| 2. Shell and profiles | in progress | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser round trip; offline/reconnect remains |
-| 3. Session thin slice | pending | One desktop tab creates one real tmux client and every clean/abrupt close path detaches only that client. | Server integration and isolated real-tmux lifecycle tests |
+| 2. Shell and profiles | completed | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser and offline/reconnect runtime |
+| 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
 | 4. Tmux topology | pending | Session/window/pane tabs and splits use fixed typed operations and round-trip across reconnect/mobile. | Contract/security tests and isolated topology round trip |
 | 5. Desktop interaction | pending | Keyboard/mouse terminal workflows, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | Frontend interaction suite and owner Ubuntu acceptance |
 | 6. Cross-platform delivery | pending | Ubuntu/macOS source builds, launch evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, `./scripts/verify.sh`, Review Record |
@@ -115,7 +115,14 @@ the session remains running and becomes detached in the mobile PWA.
   storage, strict URL/label validation, add/edit/delete/connect operations, and
   a desktop-only return control. An isolated Photino run saved a profile,
   connected to the remote desktop, and returned to the chooser without storing
-  a login key or terminal content. Unit 2 remains open for offline/reconnect.
+  a login key or terminal content.
+- 2026-08-29: kept every open session tab mounted, added inventory/terminal
+  reconnect with capped exponential backoff, handled terminal heartbeats as
+  control messages, and added clean page/tab close paths. An isolated two-
+  session run proved tab switching preserves both attachments, tab close
+  detaches only its client, network loss detaches while sessions survive,
+  reconnect creates one fresh client, and abrupt Photino loss cleans up the
+  final client. Units 2 and 3 are complete.
 
 ## Evidence
 
@@ -149,6 +156,22 @@ the session remains running and becomes detached in the mobile PWA.
   label, and server URL. Photino connected profile `local` to the disposable
   server and its Servers control returned to the chooser. The app, X server,
   container, and temporary settings were then removed.
+- Desktop lifecycle runtime: disposable image `sha256:eee9e208...` and socket
+  `c022_lifecycle` hosted sessions `alpha` and `beta`. Opening both produced
+  client PIDs 103 and 105; selecting alpha left both clients attached; closing
+  alpha left only beta and `alpha:0`. Disconnecting the disposable container's
+  bridge produced `alpha:0` and `beta:0` plus a visible server-offline state.
+  Reconnecting restored beta as one new client (PID 200). Sending SIGQUIT to
+  Photino then removed that client immediately, the disconnect was audited, and
+  both tmux sessions remained alive. All disposable processes and state were
+  removed afterward.
+- Frontend resilience checks: TypeScript compilation passes and the sixth unit
+  suite proves 1-30 second bounded reconnect delays plus terminal heartbeat
+  discrimination.
+- Initial connection failure runtime: Photino navigated to unused loopback port
+  55999, then its native 12-second watchdog returned to the chooser with a
+  server/network/TLS error and a usable profile form. The disposable app and X
+  server were stopped and no settings were created.
 
 ## Discoveries
 
@@ -171,6 +194,12 @@ the session remains running and becomes detached in the mobile PWA.
 - The remote desktop needs one narrow native bridge operation to reopen the
   server chooser. Profile mutations are valid only while the native chooser is
   displayed, keeping remote page content outside the settings-write boundary.
+- An error document from an unreachable or TLS-invalid origin cannot render the
+  remote Servers control. A native navigation watchdog must require a
+  non-secret desktop-ready message and return to the chooser on timeout.
+- Rendering only the selected terminal is not equivalent to keeping a desktop
+  tab open: React unmount would detach the inactive tmux client. All open tab
+  terminals must remain mounted and only their presentation may be hidden.
 
 ## Decisions
 
@@ -187,6 +216,8 @@ the session remains running and becomes detached in the mobile PWA.
 - Persist only versioned profile IDs, labels, and normalized origins in a
   device-local atomic JSON file with Unix mode `0600` under a mode-`0700`
   directory; keep authentication entirely in the server-hosted page.
+- Retry inventory and terminal sockets with 1-30 second exponential backoff;
+  treat server heartbeat JSON as control data, never terminal output.
 
 ## Retry State
 
@@ -196,9 +227,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Complete Unit 2 with explicit offline/reconnect states, then prove Unit 3's
-  clean and abrupt desktop-close paths detach only the app-owned tmux client
-  within a documented bound while leaving the session alive.
+- Implement Unit 4's typed tmux window/pane topology: authoritative subordinate
+  window tabs and pane splits with create/select/resize/close operations that
+  round-trip through reconnect and remain visible to other tmux clients.
 
 ## Pause Conditions
 
@@ -216,6 +247,6 @@ the session remains running and becomes detached in the mobile PWA.
 - Unit 1 complete: the selected server-hosted desktop architecture preserves
   protected same-origin transport and proves real tmux attach/detach behavior in
   an isolated Photino runtime.
-- Unit 2 profile slice complete: native profile management and its security
-  boundary are implemented and runtime-proven; resilience remains active before
-  the unit can close. Units 2-6 remain active.
+- Units 2 and 3 complete: native profiles, offline/reconnect behavior, stable
+  multi-tab attachments, clean detach, reconnect, and abrupt-loss cleanup are
+  implemented and runtime-proven. Units 4-6 remain active.

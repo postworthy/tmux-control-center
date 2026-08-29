@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import DesktopTerminal from "./DesktopTerminal";
+import DesktopTerminal, { type TerminalConnectionState } from "./DesktopTerminal";
+import { reconnectDelay } from "./reconnect";
 import {
   UnauthorizedError,
   createSession,
@@ -24,7 +25,8 @@ export default function DesktopApp() {
   const [apiKey, setApiKey] = useState("");
   const [newName, setNewName] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [connection, setConnection] = useState<"connecting" | "connected" | "disconnected">("disconnected");
+  const [connections, setConnections] = useState<Record<string, TerminalConnectionState>>({});
+  const [inventoryConnected, setInventoryConnected] = useState(navigator.onLine);
   const [nativeProfilesAvailable, setNativeProfilesAvailable] = useState(false);
 
   const showProfiles = () => {
@@ -33,8 +35,16 @@ export default function DesktopApp() {
   };
 
   useEffect(() => {
-    const detect = () => setNativeProfilesAvailable(
-      typeof (window.external as unknown as { sendMessage?: unknown })?.sendMessage === "function");
+    let announcedReady = false;
+    const detect = () => {
+      const bridge = window.external as unknown as { sendMessage?: (message: string) => void };
+      const available = typeof bridge?.sendMessage === "function";
+      setNativeProfilesAvailable(available);
+      if (available && !announcedReady) {
+        announcedReady = true;
+        bridge.sendMessage!(JSON.stringify({ type: "desktopReady" }));
+      }
+    };
     detect();
     const timer = window.setTimeout(detect, 250);
     return () => window.clearTimeout(timer);
@@ -55,13 +65,39 @@ export default function DesktopApp() {
 
   useEffect(() => {
     if (authRequired) return;
-    const socket = new WebSocket(inventoryWebSocketUrl());
-    socket.addEventListener("message", event => {
-      const snapshot = JSON.parse(String(event.data)) as InventorySnapshot;
-      setSessions(snapshot.sessions);
-    });
-    socket.addEventListener("close", () => window.setTimeout(() => void refresh(), 1_500));
-    return () => socket.close(1000, "Desktop inventory closed");
+    let stopped = false;
+    let attempt = 0;
+    let timer = 0;
+    let socket: WebSocket | null = null;
+    const connect = () => {
+      if (stopped || socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) return;
+      if (!navigator.onLine) { setInventoryConnected(false); return; }
+      socket = new WebSocket(inventoryWebSocketUrl());
+      const current = socket;
+      current.addEventListener("open", () => { attempt = 0; setInventoryConnected(true); });
+      current.addEventListener("message", event => {
+        const snapshot = JSON.parse(String(event.data)) as InventorySnapshot;
+        setSessions(snapshot.sessions);
+      });
+      current.addEventListener("close", () => {
+        if (socket === current) socket = null;
+        setInventoryConnected(false);
+        if (!stopped) timer = window.setTimeout(connect, reconnectDelay(attempt++));
+      });
+      current.addEventListener("error", () => current.close());
+    };
+    const online = () => { window.clearTimeout(timer); void refresh(); connect(); };
+    const offline = () => { window.clearTimeout(timer); setInventoryConnected(false); socket?.close(); };
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+    connect();
+    return () => {
+      stopped = true;
+      window.clearTimeout(timer);
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+      socket?.close(1000, "Desktop inventory closed");
+    };
   }, [authRequired, refresh]);
 
   const activeTab = useMemo(() => tabs.find(tab => tab.sessionId === activeId) ?? null, [tabs, activeId]);
@@ -79,7 +115,16 @@ export default function DesktopApp() {
       if (activeId === sessionId) setActiveId(next[Math.max(0, index - 1)]?.sessionId ?? null);
       return next;
     });
+    setConnections(current => {
+      const next = { ...current };
+      delete next[sessionId];
+      return next;
+    });
   };
+
+  const updateConnection = useCallback((sessionId: string, state: TerminalConnectionState) => {
+    setConnections(current => current[sessionId] === state ? current : { ...current, [sessionId]: state });
+  }, []);
 
   const submitLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -157,12 +202,15 @@ export default function DesktopApp() {
           <button onClick={() => setActiveId(tab.sessionId)}>{tab.name}</button>
           <button className="tab-close" aria-label={`Detach ${tab.name}`} onClick={() => close(tab.sessionId)}>×</button>
         </div>)}
-        <span className={`connection ${connection}`}>{activeTab ? connection : "no session"}</span>
+        <span className={`connection ${activeTab ? connections[activeTab.sessionId] ?? "connecting" : ""}`}>
+          {!inventoryConnected ? "server offline" : activeTab ? connections[activeTab.sessionId] ?? "connecting" : "no session"}
+        </span>
       </nav>
       <div className="terminal-stage">
-        {activeTab
-          ? <DesktopTerminal key={activeTab.sessionId} sessionId={activeTab.sessionId} onConnectionState={setConnection} />
-          : <div className="empty-state"><h1>Select a session</h1><p>Open an existing tmux session from the sidebar.</p></div>}
+        {tabs.map(tab => <DesktopTerminal key={tab.sessionId} sessionId={tab.sessionId}
+          active={tab.sessionId === activeId}
+          onConnectionState={state => updateConnection(tab.sessionId, state)} />)}
+        {!activeTab && <div className="empty-state"><h1>Select a session</h1><p>Open an existing tmux session from the sidebar.</p></div>}
       </div>
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => setError(null)}>Dismiss</button></div>}
     </section>

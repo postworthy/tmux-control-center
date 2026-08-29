@@ -46,8 +46,9 @@ input:focus { border-color: #72d6a4; box-shadow: 0 0 0 1px #72d6a4; }
 .connection { align-self: center; margin-left: auto; padding: 0 12px; color: #8f99a5; font-size: 11px; white-space: nowrap; }
 .connection.connected { color: #72d6a4; }
 .connection.connecting { color: #e2a65a; }
-.terminal-stage { min-width: 0; min-height: 0; padding: 7px 0 0 7px; background: #111418; }
-.terminal-host { width: 100%; height: 100%; }
+.terminal-stage { position: relative; min-width: 0; min-height: 0; padding: 7px 0 0 7px; background: #111418; }
+.terminal-host { display: none; width: 100%; height: 100%; }
+.terminal-host.active { display: block; }
 .empty-state { display: grid; height: 100%; place-content: center; color: #8f99a5; text-align: center; }
 .empty-state h1 { margin: 0; color: #d3d8de; font-size: 20px; font-weight: 550; }
 .empty-state p { margin: 8px 0 0; font-size: 13px; }

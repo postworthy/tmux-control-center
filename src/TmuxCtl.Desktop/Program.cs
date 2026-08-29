@@ -6,7 +6,9 @@ namespace TmuxCtl.Desktop;
 
 public static class Program
 {
+    private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(12);
     private static bool _profilesVisible;
+    private static int _navigationGeneration;
 
     [STAThread]
     public static int Main(string[] args)
@@ -41,7 +43,7 @@ public static class Program
             .RegisterWebMessageReceivedHandler((sender, message) =>
                 HandleMessage((PhotinoWindow)sender!, profiles, message));
 
-        if (directServer is not null) Connect(window, directServer);
+        if (directServer is not null) Connect(window, profiles, directServer);
         else ShowProfiles(window, profiles);
 
         window.WaitForClose();
@@ -55,12 +57,15 @@ public static class Program
             var command = JsonSerializer.Deserialize<ProfileCommand>(message,
                 new JsonSerializerOptions(JsonSerializerDefaults.Web))
                 ?? throw new InvalidDataException("The desktop command is empty.");
-            if (!_profilesVisible && command.Type != "showProfiles")
+            if (!_profilesVisible && command.Type is not ("showProfiles" or "desktopReady"))
                 throw new InvalidDataException("Profile changes are available only from the native server chooser.");
             switch (command.Type)
             {
                 case "showProfiles":
                     ShowProfiles(window, profiles);
+                    break;
+                case "desktopReady":
+                    Interlocked.Increment(ref _navigationGeneration);
                     break;
                 case "connect":
                 {
@@ -69,7 +74,7 @@ public static class Program
                                   ?? throw new InvalidDataException("That server profile no longer exists.");
                     if (!DesktopServerUrl.TryCreate(profile.ServerUrl, out var server, out var error))
                         throw new InvalidDataException(error);
-                    Connect(window, server!);
+                    Connect(window, profiles, server!);
                     break;
                 }
                 case "saveAndConnect":
@@ -77,7 +82,7 @@ public static class Program
                     Guid? id = string.IsNullOrWhiteSpace(command.Id) ? null : ParseId(command.Id);
                     var profile = profiles.Save(id, command.Label, command.Url);
                     DesktopServerUrl.TryCreate(profile.ServerUrl, out var server, out _);
-                    Connect(window, server!);
+                    Connect(window, profiles, server!);
                     break;
                 }
                 case "delete":
@@ -99,16 +104,30 @@ public static class Program
             ? id
             : throw new InvalidDataException("The server profile ID is invalid.");
 
-    private static void Connect(PhotinoWindow window, DesktopServerUrl server)
+    private static void Connect(PhotinoWindow window, ServerProfileStore profiles, DesktopServerUrl server)
     {
         _profilesVisible = false;
+        var generation = Interlocked.Increment(ref _navigationGeneration);
         window.SetTitle($"tmuxctl — {server.ServerUri.Host}");
         window.Load(server.DesktopUri.AbsoluteUri);
+        _ = ReturnToProfilesOnConnectionTimeoutAsync(window, profiles, generation, server.ServerUri.Host);
+    }
+
+    private static async Task ReturnToProfilesOnConnectionTimeoutAsync(
+        PhotinoWindow window, ServerProfileStore profiles, int generation, string host)
+    {
+        await Task.Delay(ConnectionTimeout);
+        window.Invoke(() =>
+        {
+            if (!_profilesVisible && Volatile.Read(ref _navigationGeneration) == generation)
+                ShowProfiles(window, profiles, $"Could not connect to {host}. Check the server, network, and TLS certificate, then try again.");
+        });
     }
 
     private static void ShowProfiles(PhotinoWindow window, ServerProfileStore profiles, string? error = null)
     {
         _profilesVisible = true;
+        Interlocked.Increment(ref _navigationGeneration);
         IReadOnlyList<ServerProfile> saved;
         try { saved = profiles.Load(); }
         catch (Exception exception) when (exception is InvalidDataException or IOException or UnauthorizedAccessException)

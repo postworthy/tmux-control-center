@@ -36,8 +36,10 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
   Claude resume with fixed CLI commands while other panes reopen as shells.
 - A separate server-hosted `/desktop/` interface and self-contained .NET 10
   Photino shell. The desktop path keeps authentication, CSRF, REST, and terminal
-  WebSockets same-origin and attaches a real tmux client for each open terminal
-  tab without changing the mobile PWA.
+  WebSockets same-origin and keeps one real tmux client attached for each open
+  terminal tab without changing the mobile PWA. Switching tabs preserves those
+  attachments; closing a tab/window detaches its clients, and transient network
+  loss reconnects with bounded exponential backoff.
 
 ## Development
 
@@ -83,6 +85,8 @@ dotnet run --project src/TmuxCtl.Desktop -- http://127.0.0.1:5179
 
 The desktop login key is sent only to the server's same-origin login endpoint.
 Use the desktop sidebar's **Servers** control to return to the native chooser.
+If the initial page cannot load, the native shell returns to the chooser after
+12 seconds with server, network, and TLS troubleshooting context.
 
 ## Production build
 

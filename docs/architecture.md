@@ -38,14 +38,21 @@ token bridge, embedded credentials, or a new remotely callable capability.
 Plain HTTP server origins are rejected by the native shell except for explicit
 loopback development. Remote desktop content may ask the native shell to return
 to its chooser, but profile create, update, and delete messages are accepted
-only while that native chooser is displayed.
+only while that native chooser is displayed. A successful desktop page sends a
+non-secret readiness message to cancel the native 12-second navigation
+watchdog; an initially offline server or TLS failure therefore returns to the
+chooser instead of trapping the user in the operating-system WebView error.
 
 Opening a desktop session tab connects to the existing terminal WebSocket and
-therefore starts one real `tmux attach-session` client. Unmounting that tab
-closes the socket and disposes only its PTY attach client; the tmux session and
-other clients remain alive. Tmux inventory remains authoritative for attached
-state. Later C022 units extend this same mapping so top-level desktop tabs,
-subordinate tabs, and splits correspond to tmux sessions, windows, and panes.
+therefore starts one real `tmux attach-session` client. Every open tab remains
+mounted while another tab is selected, so switching visibility does not detach
+it. Closing a tab or cleanly closing the window closes its socket and disposes
+only its PTY attach client; abrupt loss is detected by the server's 20-second
+heartbeat at the latest. The tmux session and other clients remain alive.
+Inventory and terminal connections retry with exponential backoff capped at 30
+seconds, and tmux inventory remains authoritative for attached state. Later
+C022 units extend this same mapping so top-level desktop tabs, subordinate tabs,
+and splits correspond to tmux sessions, windows, and panes.
 
 Workspace recovery adds a deliberately narrow side channel beside the tmux
 socket. A host daemon running as the tmux owner writes an atomic metadata-only
