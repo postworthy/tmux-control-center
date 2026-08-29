@@ -1,13 +1,14 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 1.6
+Version: 1.7
 Last updated: 2026-08-29
 Status: Approved
 
 ## Product Objective
 
-- Provide an observation-first, self-hosted mobile control surface for local
-  tmux sessions without exposing a shell-control service to the public internet.
+- Provide an observation-first, self-hosted mobile control surface and a
+  desktop terminal companion for local tmux sessions without exposing a
+  shell-control service to the public internet.
 
 ## Users and Core Workflows
 
@@ -17,6 +18,10 @@ Status: Approved
   intervention is necessary.
 - The owner exits terminal mode without losing the selected session and can
   reconnect after ordinary mobile network changes.
+- On Ubuntu or Apple Silicon macOS, the owner selects a saved tmuxctl HTTPS URL,
+  authenticates through the existing application boundary, and uses a
+  keyboard-and-mouse desktop terminal with session tabs and tmux-backed windows
+  and splits.
 
 ## Functional Requirements
 
@@ -82,10 +87,43 @@ Status: Approved
   names, panes, layouts, directories, and active selections when tmux is empty;
   automatically invoke fixed directory-scoped resume commands only for local
   Codex and Claude Code panes, while every other program restores as a shell.
+- FR23: provide a self-contained .NET 10/Photino desktop companion with a
+  desktop-only xterm.js presentation for Ubuntu x64 and Apple Silicon macOS;
+  it connects to an already-running tmuxctl server by user-supplied HTTPS URL
+  and never installs, launches, or supervises that server.
+- FR24: store multiple device-local server profiles containing only a label and
+  validated URL, reuse the server's authentication, authorization, CSRF,
+  origin, and rate-limit protections, and never persist terminal content or a
+  plaintext login secret in application settings.
+- FR25: represent one tmux session as one top-level desktop session tab, expose
+  tmux windows as subordinate tabs, and expose real tmux panes as splits so the
+  same topology persists and remains visible to mobile and other tmux clients.
+- FR26: enumerate, select, create, detach from, and explicitly kill sessions,
+  and create/select/close tmux windows and panes only through typed,
+  inventory-resolved, authorized, audited, and rate-limited operations rather
+  than arbitrary tmux or shell commands.
+- FR27: every open desktop terminal is a real tmux client attachment; closing a
+  tab or desktop window detaches only the clients owned by that UI scope,
+  unexpected process or network loss clears stale attachments within a bounded
+  heartbeat interval, and other attached clients or the tmux session survive.
+- FR28: preserve ordinary terminal semantics: input such as `exit` is never
+  intercepted, so it closes only the shell/pane/window that tmux would normally
+  close; terminating an entire session remains a distinct named-confirmation
+  action in the session list.
+- FR29: make the desktop interface behave like a conventional Linux terminal
+  with keyboard-driven tabs, splits, focus, selection, copy/paste, context
+  menus, resizing, and reconnection states, without rendering the PWA's mobile
+  cards, swipe navigation, touch shortcut bar, or oversized mobile controls.
+- FR30: provide documented repository-source build and test commands that
+  produce self-contained `linux-x64` and `osx-arm64` desktop outputs without a
+  preinstalled .NET runtime; native installers and published binaries are not
+  required in this cut.
 
 ## Constraints
 
-- Linux and one local tmux host are supported in v1.
+- The tmuxctl server supports Linux and one local tmux host; desktop clients
+  support Ubuntu x64 and Apple Silicon macOS and may save profiles for multiple
+  independently deployed servers.
 - The browser never executes shell commands and tmux remains authoritative.
 - Tailscale is defense in depth, not a replacement for application security.
 - Docker deployment requires host/container tmux protocol compatibility.
@@ -95,6 +133,8 @@ Status: Approved
 ## Risk Model
 
 - T1 for repository-local governance and packaging.
+- T2 for the desktop architecture, remote authentication bridge, new typed tmux
+  topology operations, attachment lifecycle, and cross-platform compatibility.
 - T2/T3 boundaries include changing host permissions, tailnet policy, secrets,
   production deployment, or public/network exposure and require explicit
   approval before execution.
@@ -155,6 +195,32 @@ Status: Approved
   in-app request initiates restore, only classified Codex and Claude panes launch
   fixed resume commands, live sessions block restore, corrupt state creates
   nothing, and stopping the recovery daemon leaves tmux alive.
+- [ ] AC19: from a clean source checkout, documented commands produce
+  self-contained Ubuntu x64 and Apple Silicon macOS desktop outputs; the Ubuntu
+  app launches without a machine-wide .NET runtime, while an actual macOS build
+  or approved macOS CI runner proves the Apple Silicon output launches.
+- [ ] AC20: the desktop app validates and saves multiple label/URL profiles,
+  connects through Tailscale to an already-running server, completes the
+  existing protected login flow without storing a plaintext login secret in
+  settings, and gives actionable offline, authentication, and TLS errors.
+- [ ] AC21: opening a listed session creates a real tmux client and changes
+  inventory attachment state; closing its tab, closing the desktop window, or
+  losing the client unexpectedly removes only its owned attachment within the
+  bounded timeout while the session and any other client remain alive.
+- [ ] AC22: one session tab renders tmux window tabs and real tmux pane splits;
+  create, select, resize, and close actions update authoritative tmux topology
+  and are visible after reconnect and from the mobile client.
+- [ ] AC23: session creation and named-confirmation termination operate on only
+  the inventory-resolved target, while closing a tab merely detaches and typed
+  `exit` retains normal tmux pane/window/session semantics.
+- [ ] AC24: keyboard navigation, focus, selection, copy/paste, context menu,
+  terminal resize, reconnect, and independent desktop windows pass automated
+  interaction checks and owner acceptance on Ubuntu without exposing the
+  mobile card deck or touch shortcut controls.
+- [ ] AC25: all new server operations reject unauthorized, cross-origin,
+  rate-limited, stale, malformed, or caller-command-bearing requests; focused
+  security/integration tests and canonical `./scripts/verify.sh` pass, docs
+  match behavior, rollback is proven, and a Tempo Change Review is ready.
 
 ## Canonical Verification
 
@@ -173,6 +239,10 @@ Status: Approved
   cannot receive caller-controlled commands or persist/replay argv: one protected
   no-arguments app request maps the closed pane class set `codex`, `claude`, and
   `shell` to two fixed resume commands or no command. It never restores at boot.
+- Desktop topology actions are a closed set of fixed tmux operations. Callers
+  may provide validated names, opaque inventory targets, and bounded layout
+  dimensions where required, but never commands, arguments, environments,
+  filesystem paths, or raw tmux target expressions.
 - No agent may deploy, modify Tailscale policy, handle production secrets, push,
   or publish without separate explicit approval.
 - Compose interpolation must stop before deployment when security-critical
@@ -182,13 +252,20 @@ Status: Approved
 
 - HTTP and WebSocket API contracts remain unchanged by container packaging.
 - Existing systemd/nginx deployment remains supported.
+- The mobile PWA, its routes, and existing API clients remain supported while
+  the desktop client and additive typed topology operations are introduced.
 - The Docker image contains its own tmux client; deployment must confirm it can
   communicate with the host tmux server before using critical sessions.
 
 ## Non-Goals
 
-- Multiple remote hosts, orchestration platforms, native iOS packaging, public
-  ingress, collaboration, notifications, history indexing, and external LLMs.
+- One server controlling multiple hosts, orchestration platforms, native iOS
+  packaging, public ingress, collaboration, notifications, history indexing,
+  and external LLMs.
 - Automatic boot restore, SSH reconnection, remote-agent restore, arbitrary tool
   adapters, process-memory checkpointing, terminal-content snapshots, and exact
   agent-ID association.
+- Desktop-managed server installation/startup, a bundled tmux server, native
+  terminal rendering, Electron, Linux distributions beyond the initial Ubuntu
+  target, Intel macOS, Windows, `.deb`/`.dmg` installers, signing,
+  notarization, app-store delivery, and published release binaries.

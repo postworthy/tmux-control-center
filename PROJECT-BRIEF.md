@@ -10,18 +10,24 @@ Last updated: 2026-08-29
 
 ## One-Sentence Project Goal
 
-- Let one authenticated owner observe and safely interact with local tmux
-  sessions from an installable iPhone-first PWA reached only through Tailscale.
+- Let one authenticated owner observe and safely interact with tmux sessions
+  through an iPhone-first PWA or a conventional desktop terminal companion,
+  with the tmuxctl server reached only through Tailscale.
 
 ## Problem Statement (In User Words)
 
 - Opening an SSH client, connecting, typing tmux commands, and using
   keyboard-oriented navigation is cumbersome on a phone.
+- On a desktop, the mobile-first web controls do not provide the tabbed,
+  split-pane, keyboard-and-mouse terminal experience expected from Ghostty or
+  Terminator.
 
 ## Target Users
 
 - The primary user is the owner of a Linux tmux host using an iPhone or another
   mobile device on the same private tailnet.
+- The same owner may use an Ubuntu desktop or Apple Silicon Mac to connect to
+  one of their saved tmuxctl server URLs through Tailscale.
 
 ## First Version Outcomes (Must Have)
 
@@ -33,10 +39,18 @@ Last updated: 2026-08-29
   it from the app after a host reboot, resuming only local Codex and Claude.
 - Publish as a lightweight Docker Compose service whose host port binds only to
   an explicitly configured Tailscale IP.
+- Provide a self-contained .NET/Photino desktop companion with a distinct
+  desktop-first xterm.js interface, real tmux attachment state, tmux-backed
+  session/window/pane navigation, and source builds for Ubuntu x64 and Apple
+  Silicon macOS.
 
 ## Out of Scope (Must Not Build Yet)
 
-- Multiple hosts or collaborative users.
+- Collaborative users, or one tmuxctl server controlling multiple tmux hosts.
+- Launching, installing, or supervising the tmuxctl server from the desktop
+  application.
+- Debian packages, DMGs, signing, notarization, Intel macOS, app stores, or
+  published binary releases for the first desktop cut.
 - Arbitrary command execution, filesystem browsing, automatic boot restore,
   captured-command replay, remote process restart, or automatic restart of
   tools other than local Codex and Claude Code.
@@ -44,8 +58,10 @@ Last updated: 2026-08-29
 
 ## Constraints
 
-- Platform and delivery: Linux host, local tmux server, iPhone-first PWA,
-  Docker Compose, HTTPS, and exact Tailscale-IP host binding.
+- Platform and delivery: Linux server host, local tmux server, iPhone-first PWA,
+  Docker Compose, HTTPS, and exact Tailscale-IP host binding; the desktop client
+  targets Ubuntu x64 and Apple Silicon macOS and assumes the remote server and
+  Tailscale route already exist.
 - Security/privacy/legal: application authorization remains mandatory; terminal
   input/output is not logged or cached; the service never runs as root.
 - Time/budget: keep the MVP self-hosted and operationally small.
@@ -67,6 +83,14 @@ Last updated: 2026-08-29
 - Confirmed by the user: reboot recovery preserves tmux names and directories,
   resumes only local Codex and Claude after an explicit in-app action, and
   restores other panes as shells rather than replaying their commands.
+- Confirmed by the user: the first desktop cut uses Photino and xterm.js, takes
+  a tmuxctl server URL, does not launch the server, maps tabs and splits to real
+  tmux state, and detaches its client when a tab or window closes.
+- Confirmed by the user: the desktop session list can select, create, detach,
+  and explicitly kill sessions; normal terminal `exit` behavior is not
+  intercepted.
+- Confirmed by the user: Apple Silicon is the initial macOS architecture and
+  users build from the GitHub repository before native installer work begins.
 - Corrected: physical iPhone validation is recommended evidence, but it is not a
   prerequisite for completing the repository-delivery goal.
 

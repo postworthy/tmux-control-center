@@ -240,6 +240,23 @@ Status: active
   commands; restore every other pane as a shell.
 - Planned commit: `feat(tmux): restore workspaces after reboot`
 
+## C022 — tmuxctl Photino desktop companion
+
+Status: active
+
+- Add a self-contained .NET 10/Photino desktop client with a desktop-specific
+  xterm.js interface for Ubuntu x64 and Apple Silicon macOS.
+- Connect by saved HTTPS server URL to an already-running tmuxctl deployment
+  through Tailscale; preserve the existing protected authentication boundary.
+- Map desktop session tabs, window tabs, and splits to authoritative tmux
+  sessions, windows, and panes through closed typed operations.
+- Register real tmux attachments, detach only app-owned clients when UI closes
+  or becomes stale, and keep explicit session kill distinct from terminal exit.
+- Document source builds from the GitHub repository; defer installers, signing,
+  Intel macOS, server launch, and binary publication.
+- Planned commits: staged under
+  `PROPOSALS/2026-08-29--photino-desktop-companion.md`.
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.

@@ -96,3 +96,18 @@ signals restoration, which proceeds only when tmux has no sessions. The two
 agent classes map to fixed directory-scoped resume commands; every other prior
 process, including SSH, returns as a shell. Terminal content, argv, environment,
 credentials, and remote targets are never persisted or replayed.
+
+## D011 — Use Photino and xterm.js for the first desktop companion
+
+Date: 2026-08-29
+
+The first tmuxctl desktop client uses a self-contained .NET 10 Photino shell and
+a distinct desktop-first xterm.js interface. It connects by configured HTTPS URL
+to an already-running Linux tmuxctl server over the owner's Tailscale network and
+does not install or supervise the server. Tmux remains authoritative: desktop
+session tabs map to tmux sessions, subordinate tabs map to tmux windows, splits
+map to tmux panes, and every open terminal is a real tmux client attachment.
+Closing UI detaches only the associated client; session termination remains an
+explicit confirmed operation, and terminal input is never intercepted to infer
+termination intent. Ubuntu x64 and Apple Silicon macOS source builds are the
+initial targets; native installers and a native terminal renderer are deferred.
