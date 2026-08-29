@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.desktop.tsbuildinfo"
+  },
+  "include": ["desktop", "src/types.ts"]
+}

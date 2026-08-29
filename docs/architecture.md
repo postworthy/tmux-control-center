@@ -3,7 +3,7 @@
 ## Boundaries
 
 ```text
-React PWA
+React PWA or server-hosted desktop React/xterm.js entry point
   ├─ REST /api/*                  bounded reads and typed actions
   ├─ WebSocket /ws/inventory      shared complete snapshots
   └─ WebSocket /ws/terminal/:id   PTY bytes plus resize/input envelopes
@@ -18,6 +18,29 @@ ASP.NET Core
           │
 local tmux server
 ```
+
+## Desktop companion
+
+`TmuxCtl.Desktop` is a self-contained .NET 10 Photino shell. It accepts a
+validated tmuxctl server origin and navigates the operating system WebView to
+that server's `/desktop/` entry point. The server build produces a separate
+desktop React bundle under `wwwroot/desktop`; the mobile PWA remains the root
+entry point and does not share its card, swipe, or touch-toolbar presentation.
+
+Serving the desktop entry point from the tmuxctl origin is an intentional
+security boundary. API-key login, Strict cookies, antiforgery tokens, REST
+requests, inventory WebSockets, and terminal WebSockets remain same-origin.
+The desktop client does not require CORS, a relaxed SameSite policy, a bearer
+token bridge, embedded credentials, or a new remotely callable capability.
+Plain HTTP server origins are rejected by the native shell except for explicit
+loopback development.
+
+Opening a desktop session tab connects to the existing terminal WebSocket and
+therefore starts one real `tmux attach-session` client. Unmounting that tab
+closes the socket and disposes only its PTY attach client; the tmux session and
+other clients remain alive. Tmux inventory remains authoritative for attached
+state. Later C022 units extend this same mapping so top-level desktop tabs,
+subordinate tabs, and splits correspond to tmux sessions, windows, and panes.
 
 Workspace recovery adds a deliberately narrow side channel beside the tmux
 socket. A host daemon running as the tmux owner writes an atomic metadata-only
@@ -49,7 +72,9 @@ re-resolves one browser-facing opaque ID against current session IDs and invokes
 the fixed separated argument vector `kill-session -t RAW_ID`. No request field
 can supply a raw target, option, command, pane, window, or bulk selector.
 
-`TmuxMobile.Server` composes options, policies, routes, shared polling, WebSockets, health checks, security middleware, and static PWA hosting. The frontend consumes only domain JSON and never sees a raw tmux target.
+`TmuxMobile.Server` composes options, policies, routes, shared polling,
+WebSockets, health checks, security middleware, and static PWA/desktop hosting.
+The frontends consume only domain JSON and never see a raw tmux target.
 
 ## Inventory and previews
 

@@ -1,6 +1,10 @@
-# Tmux Mobile Control Center
+# tmuxctl
 
-A self-hosted, observation-first PWA for viewing and interacting with tmux sessions from an iPhone. The ASP.NET Core service runs as the same non-root Linux user that owns tmux; the React client provides full-height swipeable cards and opens a real xterm.js terminal only when intervention is needed.
+A self-hosted control center for viewing and interacting with tmux sessions.
+The existing iPhone-first PWA provides observation-oriented mobile controls;
+the in-progress Photino desktop companion provides a conventional
+keyboard-and-mouse xterm.js interface on Ubuntu and macOS. The ASP.NET Core
+service runs as the same non-root Linux user that owns tmux.
 
 The production default is deliberately closed: loopback-only HTTP,
 authentication required, no configured key, and no allowed WebSocket origin.
@@ -30,6 +34,10 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
 - Owner-only workspace snapshots plus an explicit in-app restore action. Session,
   window, pane, layout, and working-directory metadata survive reboot; Codex and
   Claude resume with fixed CLI commands while other panes reopen as shells.
+- A separate server-hosted `/desktop/` interface and self-contained .NET 10
+  Photino shell. The desktop path keeps authentication, CSRF, REST, and terminal
+  WebSockets same-origin and attaches a real tmux client for each open terminal
+  tab without changing the mobile PWA.
 
 ## Development
 
@@ -55,6 +63,22 @@ npm --prefix src/TmuxMobile.Web run dev
 
 Open `http://127.0.0.1:5173`. Vite proxies API and WebSocket traffic to the backend.
 
+For the desktop frontend hot-reload server, use:
+
+```bash
+npm --prefix src/TmuxMobile.Web run dev:desktop
+```
+
+The native C022 spike accepts an existing tmuxctl origin. HTTP is allowed only
+for loopback development; normal server URLs must use HTTPS:
+
+```bash
+dotnet run --project src/TmuxCtl.Desktop -- http://127.0.0.1:5179
+```
+
+The desktop login key is sent only to the server's same-origin login endpoint
+and is not stored in native application settings.
+
 ## Production build
 
 ```bash
@@ -62,9 +86,16 @@ npm --prefix src/TmuxMobile.Web ci
 npm --prefix src/TmuxMobile.Web run build
 dotnet publish src/TmuxMobile.Server/TmuxMobile.Server.csproj \
   --configuration Release --output artifacts/publish
+dotnet publish src/TmuxCtl.Desktop/TmuxCtl.Desktop.csproj \
+  --configuration Release --runtime linux-x64 --self-contained true \
+  --output artifacts/desktop/linux-x64
 ```
 
-The frontend build writes hashed assets into the server's `wwwroot`. Follow [deployment.md](docs/deployment.md) for systemd and HTTPS setup. Configuration is documented in [configuration.md](docs/configuration.md).
+The frontend build writes separate hashed mobile and desktop assets into the
+server's `wwwroot`. The desktop binary still expects an already-running server;
+it does not install or launch one. Follow [deployment.md](docs/deployment.md)
+for systemd and HTTPS setup. Configuration is documented in
+[configuration.md](docs/configuration.md).
 
 ## Docker Compose over Tailscale
 
@@ -125,6 +156,9 @@ above.
 ## Known limitations
 
 - One local tmux host and one owner identity are supported.
+- The first desktop cut targets Ubuntu x64 and Apple Silicon macOS. Server
+  launch, Intel macOS, Windows, native installers, signing, and published binary
+  releases are deferred.
 - PTY support is Linux-only and uses a small native `forkpty`/immediate-`exec`
   boundary compiled during build.
 - Status is heuristic and intentionally returns `Unknown` when signals are weak.

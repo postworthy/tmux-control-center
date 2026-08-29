@@ -626,6 +626,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     Predicate = registration => registration.Tags.Contains("ready")
 }).RequireAuthorization("Readiness").RequireRateLimiting("health");
 app.UseSwagger(options => options.RouteTemplate = "openapi/{documentName}.json");
+app.MapFallbackToFile("/desktop/{*path:nonfile}", "desktop/index.html").AllowAnonymous();
 app.MapFallbackToFile("index.html").AllowAnonymous();
 
 app.Lifetime.ApplicationStopped.Register(() => app.Logger.LogInformation("Tmux Mobile stopped"));

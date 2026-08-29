@@ -86,7 +86,7 @@ existing mobile PWA.
 
 | Unit | Status | Exit criteria | Verification |
 | --- | --- | --- | --- |
-| 1. Transport/auth spike | pending | Photino reaches a configured test server, completes protected auth, lists inventory, attaches xterm.js, and detaches without a security exception. | Focused app/server tests plus local isolated attach evidence |
+| 1. Transport/auth spike | completed | Photino reaches a configured test server, completes protected auth, lists inventory, attaches xterm.js, and detaches without a security exception. | 13 URL tests, frontend typecheck/build, isolated protected Photino/tmux runtime passed |
 | 2. Shell and profiles | pending | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | Desktop unit tests, settings inspection, `linux-x64` publish/launch |
 | 3. Session thin slice | pending | One desktop tab creates one real tmux client and every clean/abrupt close path detaches only that client. | Server integration and isolated real-tmux lifecycle tests |
 | 4. Tmux topology | pending | Session/window/pane tabs and splits use fixed typed operations and round-trip across reconnect/mobile. | Contract/security tests and isolated topology round trip |
@@ -105,6 +105,12 @@ the session remains running and becomes detached in the mobile PWA.
   Apple Silicon, and source-build delivery.
 - 2026-08-29: C022 product contract, proposal, durable decision, roadmap item,
   and resumable goal drafted; implementation has not begun.
+- 2026-08-29: added the .NET 10/Photino shell, separate desktop React/xterm.js
+  build, same-origin `/desktop/` route, initial session list/create/kill/tab UI,
+  URL validation, and focused desktop tests.
+- 2026-08-29: an isolated API-key server and tmux socket proved protected login,
+  inventory rendering, one real tmux client on tab open, audited disconnect on
+  tab close, and survival of the detached session. Unit 1 is complete.
 
 ## Evidence
 
@@ -116,6 +122,22 @@ the session remains running and becomes detached in the mobile PWA.
   healthcheck-watchdog, and workspace-recovery shell suites, then exited 145 at
   `dotnet restore` because this environment has SDK 8.0.130 while `global.json`
   requires 10.0.300. No product test failed and no toolchain change was made.
+- Desktop URL tests: .NET 10 SDK container ran 13/13 passing tests for HTTPS,
+  loopback-only development HTTP, credential/path/query rejection, and canonical
+  `/desktop/` construction.
+- Desktop frontend: `npm --prefix src/TmuxMobile.Web run typecheck` passed and a
+  production Vite build emitted the independent desktop HTML/CSS/JS graph.
+- Isolated runtime: local image `sha256:6f7055d...` served a CSP-restricted
+  `/desktop/` page; Photino rendered it under Xvfb. API-key login audited one
+  failed synthetic-input attempt and one successful owner login without key
+  disclosure. Opening `protected-spike` produced one tmux client and a successful
+  `terminal.connect`; closing the tab produced `terminal.disconnect`, returned
+  `session_attached=0`, and left the session alive. The disposable container,
+  tmux socket, Photino process, and X server were then removed/stopped.
+- Canonical gate: with the ignored local .NET 10 SDK cache, `./scripts/verify.sh`
+  exits 0 with 27 Core, 23 Infrastructure (four expected opt-in skips), 48
+  Server integration, 13 Desktop, and five frontend suites passing, followed by
+  both Compose positive and fail-closed configuration assertions.
 
 ## Discoveries
 
@@ -125,6 +147,16 @@ the session remains running and becomes detached in the mobile PWA.
 - Existing PTY attachment already provides the correct basic client ownership
   boundary, but bounded abrupt-loss cleanup and tmux topology operations need
   explicit end-to-end evidence.
+- ASP.NET endpoint matching treats `/desktop` and `/desktop/` equivalently; an
+  explicit redirect caused a loop and was removed. Static default-file handling
+  serves `/desktop/` directly.
+- The canonical Compose assertion still expected the older equals-sign
+  `extra_hosts` spelling while the approved file uses YAML's colon spelling;
+  the verifier now accepts either exact separator without relaxing the required
+  `host.docker.internal` to `host-gateway` mapping.
+- A server-hosted desktop entry point preserves every existing same-origin
+  control and avoids a native token/cookie bridge. Photino needs only the
+  validated server origin and never receives the login key through native code.
 
 ## Decisions
 
@@ -136,6 +168,8 @@ the session remains running and becomes detached in the mobile PWA.
   terminal input is never interpreted as an app lifecycle command.
 - Target Ubuntu x64 and Apple Silicon macOS source builds before installers or
   release distribution.
+- Serve versioned desktop assets from the remote tmuxctl server at `/desktop/`;
+  keep the Photino shell small and retain Strict same-origin security semantics.
 
 ## Retry State
 
@@ -145,10 +179,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Implement a disposable Photino transport/auth feasibility spike that proves
-  protected inventory and terminal attach/detach against an isolated local
-  tmuxctl server, then record whether desktop assets are bundled locally or
-  served from the remote server.
+- Implement safe device-local server profile persistence and a native connection
+  chooser so the app can add, select, edit, and remove multiple label/HTTPS-URL
+  profiles without storing login keys or terminal content.
 
 ## Pause Conditions
 
@@ -163,6 +196,6 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Outcomes
 
-- Planning outcome only: C022 has approved scope, measurable completion
-  criteria, bounded authority, ordered work, retry/pause rules, rollback, a
-  review boundary, and one executable next action.
+- Unit 1 complete: the selected server-hosted desktop architecture preserves
+  protected same-origin transport and proves real tmux attach/detach behavior in
+  an isolated Photino runtime. Units 2-6 remain active.
