@@ -25,6 +25,20 @@ export default function DesktopApp() {
   const [newName, setNewName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [connection, setConnection] = useState<"connecting" | "connected" | "disconnected">("disconnected");
+  const [nativeProfilesAvailable, setNativeProfilesAvailable] = useState(false);
+
+  const showProfiles = () => {
+    const bridge = window.external as unknown as { sendMessage: (message: string) => void };
+    bridge.sendMessage(JSON.stringify({ type: "showProfiles" }));
+  };
+
+  useEffect(() => {
+    const detect = () => setNativeProfilesAvailable(
+      typeof (window.external as unknown as { sendMessage?: unknown })?.sendMessage === "function");
+    detect();
+    const timer = window.setTimeout(detect, 250);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -119,7 +133,9 @@ export default function DesktopApp() {
 
   return <main className="desktop-shell">
     <aside className="session-sidebar">
-      <header><div className="brand-mark">tmuxctl</div><span>{location.host}</span></header>
+      <header><div className="brand-mark">tmuxctl</div><span>{location.host}</span>
+        {nativeProfilesAvailable && <button className="servers-button" onClick={showProfiles}>Servers</button>}
+      </header>
       <form className="new-session" onSubmit={submitCreate}>
         <input aria-label="New session name" placeholder="New session" value={newName}
           onChange={event => setNewName(event.target.value)} />

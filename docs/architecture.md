@@ -21,8 +21,11 @@ local tmux server
 
 ## Desktop companion
 
-`TmuxCtl.Desktop` is a self-contained .NET 10 Photino shell. It accepts a
-validated tmuxctl server origin and navigates the operating system WebView to
+`TmuxCtl.Desktop` is a self-contained .NET 10 Photino shell. Its native chooser
+stores multiple user-labelled, validated tmuxctl origins in the operating
+system application-data directory. The versioned JSON file is written
+atomically with owner-only permissions on Unix and contains no login key or
+terminal content. Selecting a profile navigates the operating system WebView to
 that server's `/desktop/` entry point. The server build produces a separate
 desktop React bundle under `wwwroot/desktop`; the mobile PWA remains the root
 entry point and does not share its card, swipe, or touch-toolbar presentation.
@@ -33,7 +36,9 @@ requests, inventory WebSockets, and terminal WebSockets remain same-origin.
 The desktop client does not require CORS, a relaxed SameSite policy, a bearer
 token bridge, embedded credentials, or a new remotely callable capability.
 Plain HTTP server origins are rejected by the native shell except for explicit
-loopback development.
+loopback development. Remote desktop content may ask the native shell to return
+to its chooser, but profile create, update, and delete messages are accepted
+only while that native chooser is displayed.
 
 Opening a desktop session tab connects to the existing terminal WebSocket and
 therefore starts one real `tmux attach-session` client. Unmounting that tab

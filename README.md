@@ -69,15 +69,20 @@ For the desktop frontend hot-reload server, use:
 npm --prefix src/TmuxMobile.Web run dev:desktop
 ```
 
-The native C022 spike accepts an existing tmuxctl origin. HTTP is allowed only
-for loopback development; normal server URLs must use HTTPS:
+The native client opens a server chooser when launched without arguments. It
+stores multiple labels and validated server origins in the operating system's
+application-data directory (`~/.config/tmuxctl/profiles.json` on a conventional
+Ubuntu setup) with owner-only permissions. It never stores login keys or
+terminal content. HTTP is allowed only for loopback development; normal server
+URLs must use HTTPS. A URL argument bypasses the chooser for development and
+automation:
 
 ```bash
 dotnet run --project src/TmuxCtl.Desktop -- http://127.0.0.1:5179
 ```
 
-The desktop login key is sent only to the server's same-origin login endpoint
-and is not stored in native application settings.
+The desktop login key is sent only to the server's same-origin login endpoint.
+Use the desktop sidebar's **Servers** control to return to the native chooser.
 
 ## Production build
 

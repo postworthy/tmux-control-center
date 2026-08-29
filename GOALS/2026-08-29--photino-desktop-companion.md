@@ -87,7 +87,7 @@ existing mobile PWA.
 | Unit | Status | Exit criteria | Verification |
 | --- | --- | --- | --- |
 | 1. Transport/auth spike | completed | Photino reaches a configured test server, completes protected auth, lists inventory, attaches xterm.js, and detaches without a security exception. | 13 URL tests, frontend typecheck/build, isolated protected Photino/tmux runtime passed |
-| 2. Shell and profiles | pending | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | Desktop unit tests, settings inspection, `linux-x64` publish/launch |
+| 2. Shell and profiles | in progress | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser round trip; offline/reconnect remains |
 | 3. Session thin slice | pending | One desktop tab creates one real tmux client and every clean/abrupt close path detaches only that client. | Server integration and isolated real-tmux lifecycle tests |
 | 4. Tmux topology | pending | Session/window/pane tabs and splits use fixed typed operations and round-trip across reconnect/mobile. | Contract/security tests and isolated topology round trip |
 | 5. Desktop interaction | pending | Keyboard/mouse terminal workflows, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | Frontend interaction suite and owner Ubuntu acceptance |
@@ -111,6 +111,11 @@ the session remains running and becomes detached in the mobile PWA.
 - 2026-08-29: an isolated API-key server and tmux socket proved protected login,
   inventory rendering, one real tmux client on tab open, audited disconnect on
   tab close, and survival of the detached session. Unit 1 is complete.
+- 2026-08-29: added a native multi-server chooser with atomic owner-only profile
+  storage, strict URL/label validation, add/edit/delete/connect operations, and
+  a desktop-only return control. An isolated Photino run saved a profile,
+  connected to the remote desktop, and returned to the chooser without storing
+  a login key or terminal content. Unit 2 remains open for offline/reconnect.
 
 ## Evidence
 
@@ -135,9 +140,15 @@ the session remains running and becomes detached in the mobile PWA.
   `session_attached=0`, and left the session alive. The disposable container,
   tmux socket, Photino process, and X server were then removed/stopped.
 - Canonical gate: with the ignored local .NET 10 SDK cache, `./scripts/verify.sh`
-  exits 0 with 27 Core, 23 Infrastructure (four expected opt-in skips), 48
-  Server integration, 13 Desktop, and five frontend suites passing, followed by
-  both Compose positive and fail-closed configuration assertions.
+  exits 0 after the profile slice with 27 Core, 23 Infrastructure (four
+  expected opt-in skips), 48 Server integration, 21 Desktop, and five frontend
+  suites passing, followed by both Compose positive and fail-closed
+  configuration assertions.
+- Native profile runtime: `/tmp/tmuxctl-c022-profiles.pau3K9/profiles.json` was
+  mode `0600` inside a mode-`0700` directory and contained only version, ID,
+  label, and server URL. Photino connected profile `local` to the disposable
+  server and its Servers control returned to the chooser. The app, X server,
+  container, and temporary settings were then removed.
 
 ## Discoveries
 
@@ -157,6 +168,9 @@ the session remains running and becomes detached in the mobile PWA.
 - A server-hosted desktop entry point preserves every existing same-origin
   control and avoids a native token/cookie bridge. Photino needs only the
   validated server origin and never receives the login key through native code.
+- The remote desktop needs one narrow native bridge operation to reopen the
+  server chooser. Profile mutations are valid only while the native chooser is
+  displayed, keeping remote page content outside the settings-write boundary.
 
 ## Decisions
 
@@ -170,6 +184,9 @@ the session remains running and becomes detached in the mobile PWA.
   release distribution.
 - Serve versioned desktop assets from the remote tmuxctl server at `/desktop/`;
   keep the Photino shell small and retain Strict same-origin security semantics.
+- Persist only versioned profile IDs, labels, and normalized origins in a
+  device-local atomic JSON file with Unix mode `0600` under a mode-`0700`
+  directory; keep authentication entirely in the server-hosted page.
 
 ## Retry State
 
@@ -179,9 +196,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Implement safe device-local server profile persistence and a native connection
-  chooser so the app can add, select, edit, and remove multiple label/HTTPS-URL
-  profiles without storing login keys or terminal content.
+- Complete Unit 2 with explicit offline/reconnect states, then prove Unit 3's
+  clean and abrupt desktop-close paths detach only the app-owned tmux client
+  within a documented bound while leaving the session alive.
 
 ## Pause Conditions
 
@@ -198,4 +215,7 @@ the session remains running and becomes detached in the mobile PWA.
 
 - Unit 1 complete: the selected server-hosted desktop architecture preserves
   protected same-origin transport and proves real tmux attach/detach behavior in
-  an isolated Photino runtime. Units 2-6 remain active.
+  an isolated Photino runtime.
+- Unit 2 profile slice complete: native profile management and its security
+  boundary are implemented and runtime-proven; resilience remains active before
+  the unit can close. Units 2-6 remain active.
