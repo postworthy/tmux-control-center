@@ -46,6 +46,12 @@ single-session DELETE, which requires `Admin`.
 - `POST /api/panes/{paneId}/keys` with `{ "keys": ["enter", "controlC"] }`
 - `POST /api/panes/{paneId}/text` with `{ "text": "continue" }`
 - `POST /api/panes/{paneId}/interrupt` with no body
+- `GET /api/workspace-recovery` returns snapshot availability, saved time,
+  request state, and the last bounded result. It requires `Read`.
+- `POST /api/workspace-recovery/restore` takes no body and writes one fixed
+  owner-only request for the host recovery service. It requires `Admin`, CSRF,
+  the interaction rate limit, an available snapshot, and an empty tmux server;
+  accepted requests return `202` with a generated request ID.
 
 Creation accepts only a validated session name and rejects `.` and `:` because
 tmux would silently rewrite them to `_`. It invokes a fixed
@@ -58,6 +64,10 @@ arbitrary command endpoint. Termination resolves the opaque ID against current
 tmux inventory immediately before invoking the fixed separated argument vector
 `tmux kill-session -t RAW_ID`; callers cannot provide a raw target, option, or
 command.
+
+Workspace recovery has no caller-controlled command, path, target, environment,
+or agent field. The host service accepts only the fixed request record emitted
+by the server. Starting the app or recovery service does not restore anything.
 
 ## WebSockets
 

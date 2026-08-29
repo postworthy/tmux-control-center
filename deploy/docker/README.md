@@ -129,8 +129,14 @@ and recreate the container before expiry.
 Create protected state directories owned by the tmux user:
 
 ```bash
-install -d -m 0700 deploy/docker/state/keys deploy/docker/state/audit
+install -d -m 0700 deploy/docker/state/keys deploy/docker/state/audit deploy/docker/state/workspace
 ```
+
+`TMUX_MOBILE_WORKSPACE_DIR` is mounted into the app only as a fixed request and
+status bridge. The separately installed host recovery service must use the same
+host directory. It saves automatically but never restores at boot; after a
+reboot, sign in and use **Restore saved workspace** while no tmux sessions are
+running.
 
 `TMUX_SOCKET_DIR` normally equals `/tmp/tmux-$(id -u)`. If using `tmux -L
 name`, also set `TMUX_SOCKET_NAME=name`. Never mount an unrelated `/tmp`

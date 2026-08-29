@@ -19,6 +19,19 @@ ASP.NET Core
 local tmux server
 ```
 
+Workspace recovery adds a deliberately narrow side channel beside the tmux
+socket. A host daemon running as the tmux owner writes an atomic metadata-only
+snapshot and watches an owner-private directory. The authenticated Admin action
+writes a fixed request record there; only then, and only when tmux is empty, the
+host daemon reconstructs the workspace. Service startup never restores.
+
+The snapshot contains session/window names, numeric indices, layouts, active
+selections, pane working directories, and only `shell`, `codex`, or `claude` as
+the process classification. It contains no output, argv, environment, SSH
+destination, credential, or arbitrary command. Codex maps to `codex resume
+--last`, Claude maps to `claude --continue`, and every other process maps to the
+tmux default shell. Missing directories fall back to the owner's home.
+
 `TmuxMobile.Core` contains stable models, interfaces, validation, sanitization, key encoding, inventory comparison, and status rules. It has no ASP.NET Core or process-execution dependency.
 
 `TmuxMobile.Infrastructure` owns direct process and operating-system behavior. `ProcessRunner` always uses `ProcessStartInfo.ArgumentList`, never a shell command string, drains stdout and stderr independently, enforces cancellation/timeouts, and retains bounded output. `TmuxService` uses explicit tab-delimited tmux format strings and maps raw `$session`/`%pane` targets to stable SHA-256-derived opaque IDs.

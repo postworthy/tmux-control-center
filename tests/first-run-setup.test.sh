@@ -73,6 +73,8 @@ PATH="$fake_bin:$PATH" TMUX_MOBILE_SETUP_ROOT="$fake_repo" \
 grep -q '^TAILSCALE_IP=100.101.102.103$' "$env_file"
 grep -q '^TMUX_VERSION=3.4$' "$env_file"
 grep -q '^TMUX_MOBILE_UID=[0-9][0-9]*$' "$env_file"
+grep -q '^TMUX_MOBILE_WORKSPACE_DIR=./deploy/docker/state/workspace$' "$env_file"
+[[ $(stat -c '%a' "$fake_repo/deploy/docker/state/workspace") == 700 ]]
 key=$(sed -n 's/^TMUX_MOBILE_API_KEY=//p' "$env_file")
 [[ "$key" =~ ^[0-9a-f]{64}$ ]]
 [[ $(tr -d '\n' <"$key_file") == "$key" ]]

@@ -5,7 +5,7 @@ namespace TmuxMobile.Server;
 
 public sealed class SecurityConfigurationValidator(IHostEnvironment environment, IConfiguration configuration) :
     IValidateOptions<AuthOptions>, IValidateOptions<SecurityOptions>, IValidateOptions<TmuxOptions>,
-    IValidateOptions<ForwardedHeaderSettings>
+    IValidateOptions<ForwardedHeaderSettings>, IValidateOptions<WorkspaceRecoveryOptions>
 {
     public ValidateOptionsResult Validate(string? name, AuthOptions options)
     {
@@ -107,6 +107,14 @@ public sealed class SecurityConfigurationValidator(IHostEnvironment environment,
             return ValidateOptionsResult.Fail("Tmux socket name contains unsupported characters.");
         if (!System.Text.RegularExpressions.Regex.IsMatch(options.Prefix, @"^C-[A-Za-z]$"))
             return ValidateOptionsResult.Fail("Tmux prefix must use the C-x form.");
+        return ValidateOptionsResult.Success;
+    }
+
+    public ValidateOptionsResult Validate(string? name, WorkspaceRecoveryOptions options)
+    {
+        if (!options.Enabled) return ValidateOptionsResult.Success;
+        if (!Path.IsPathFullyQualified(options.ControlDirectory))
+            return ValidateOptionsResult.Fail("Enabled workspace recovery requires an absolute control directory.");
         return ValidateOptionsResult.Success;
     }
 

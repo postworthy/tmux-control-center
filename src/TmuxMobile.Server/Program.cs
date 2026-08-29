@@ -33,11 +33,15 @@ builder.Services.AddOptions<DataProtectionSettings>().BindConfiguration(DataProt
     .ValidateDataAnnotations().ValidateOnStart();
 builder.Services.AddOptions<ForwardedHeaderSettings>().BindConfiguration(ForwardedHeaderSettings.Section)
     .ValidateOnStart();
+builder.Services.AddOptions<WorkspaceRecoveryOptions>().BindConfiguration(WorkspaceRecoveryOptions.Section)
+    .ValidateDataAnnotations().ValidateOnStart();
 builder.Services.AddSingleton<SecurityConfigurationValidator>();
 builder.Services.AddSingleton<IValidateOptions<AuthOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
 builder.Services.AddSingleton<IValidateOptions<SecurityOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
 builder.Services.AddSingleton<IValidateOptions<TmuxOptions>>(sp => sp.GetRequiredService<SecurityConfigurationValidator>());
 builder.Services.AddSingleton<IValidateOptions<ForwardedHeaderSettings>>(sp =>
+    sp.GetRequiredService<SecurityConfigurationValidator>());
+builder.Services.AddSingleton<IValidateOptions<WorkspaceRecoveryOptions>>(sp =>
     sp.GetRequiredService<SecurityConfigurationValidator>());
 
 var auth = builder.Configuration.GetSection(AuthOptions.Section).Get<AuthOptions>() ?? new();
@@ -193,6 +197,8 @@ builder.Services.AddSingleton<IInventoryStore>(sp => sp.GetRequiredService<Inven
 builder.Services.AddHostedService<InventoryPollingService>();
 builder.Services.AddSingleton<IAuditLogger, JsonLineAuditLogger>();
 builder.Services.AddHostedService<AuditStorageStartupService>();
+builder.Services.AddSingleton<WorkspaceRecoveryControl>();
+builder.Services.AddHostedService<WorkspaceRecoveryStartupService>();
 builder.Services.AddSingleton<TerminalConnectionLimiter>();
 builder.Services.AddSingleton<WebSocketHandlers>();
 
@@ -318,6 +324,63 @@ app.MapGet("/api/config", (IOptions<TmuxOptions> options) => Results.Ok(new
 {
     tmuxPrefix = options.Value.Prefix
 })).RequireAuthorization("Read");
+
+var workspaceRecovery = app.MapGroup("/api/workspace-recovery").RequireAuthorization("Read");
+workspaceRecovery.MapGet("/", (WorkspaceRecoveryControl control) => Results.Ok(control.GetStatus()));
+workspaceRecovery.MapPost("/restore", async (
+    HttpContext context, WorkspaceRecoveryControl control, ITmuxService tmux,
+    IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+{
+    const string auditTarget = "saved-workspace";
+    try
+    {
+        await antiforgery.ValidateRequestAsync(context);
+    }
+    catch (AntiforgeryValidationException)
+    {
+        await auditLogger.WriteAsync("workspace.restore.request", UserId(context.User), auditTarget, false,
+            context.RequestAborted);
+        return Results.BadRequest(new { error = "The CSRF token is missing or invalid." });
+    }
+    try
+    {
+        if ((await tmux.GetSessionsAsync(context.RequestAborted)).Count != 0)
+        {
+            await auditLogger.WriteAsync("workspace.restore.request", UserId(context.User), auditTarget, false,
+                context.RequestAborted);
+            return Results.Conflict(new { error = "Restore is available only when no tmux sessions are running." });
+        }
+        var requestId = await control.RequestRestoreAsync(context.RequestAborted);
+        await auditLogger.WriteAsync("workspace.restore.request", UserId(context.User), requestId.ToString("D"), true,
+            context.RequestAborted);
+        return Results.Accepted("/api/workspace-recovery", new { requestId });
+    }
+    catch (WorkspaceRecoveryDisabledException)
+    {
+        await auditLogger.WriteAsync("workspace.restore.request", UserId(context.User), auditTarget, false,
+            context.RequestAborted);
+        return Results.Problem("Workspace recovery is not enabled.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+    catch (WorkspaceSnapshotUnavailableException)
+    {
+        await auditLogger.WriteAsync("workspace.restore.request", UserId(context.User), auditTarget, false,
+            context.RequestAborted);
+        return Results.Conflict(new { error = "No saved workspace is available." });
+    }
+    catch (WorkspaceRestorePendingException)
+    {
+        await auditLogger.WriteAsync("workspace.restore.request", UserId(context.User), auditTarget, false,
+            context.RequestAborted);
+        return Results.Conflict(new { error = "A restore request is already pending." });
+    }
+    catch
+    {
+        await auditLogger.WriteAsync("workspace.restore.request", UserId(context.User), auditTarget, false,
+            CancellationToken.None);
+        throw;
+    }
+}).RequireAuthorization("Admin").RequireRateLimiting("interact");
 
 var sessions = app.MapGroup("/api/sessions").RequireAuthorization("Read");
 sessions.MapGet("/", async (ITmuxService tmux, CancellationToken cancellationToken) =>

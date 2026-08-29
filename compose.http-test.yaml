@@ -34,6 +34,8 @@ services:
       Tmux__SocketName: "${TMUX_SOCKET_NAME:-}"
       DataProtection__KeysDirectory: /state/keys
       Audit__Destination: /state/audit/audit.jsonl
+      WorkspaceRecovery__Enabled: "true"
+      WorkspaceRecovery__ControlDirectory: /state/workspace
     volumes:
       - type: bind
         source: "${TMUX_SOCKET_DIR:?Set the tmux owner's socket directory}"
@@ -44,6 +46,9 @@ services:
       - type: bind
         source: "${TMUX_MOBILE_AUDIT_DIR:?Set a protected writable host directory}"
         target: /state/audit
+      - type: bind
+        source: "${TMUX_MOBILE_WORKSPACE_DIR:?Set the protected host recovery directory}"
+        target: /state/workspace
     tmpfs:
       - /tmp:rw,noexec,nosuid,nodev,mode=1777
     healthcheck:

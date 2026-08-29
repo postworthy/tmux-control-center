@@ -1,4 +1,4 @@
-import type { TmuxSession } from "./types";
+import type { TmuxSession, WorkspaceRecoveryStatus } from "./types";
 
 let csrfToken: string | null = null;
 
@@ -33,6 +33,15 @@ export async function login(apiKey: string): Promise<void> {
 
 export const getSessions = () => request<TmuxSession[]>("/api/sessions");
 export const getClientConfig = () => request<{ tmuxPrefix: string }>("/api/config");
+export const getWorkspaceRecoveryStatus = () =>
+  request<WorkspaceRecoveryStatus>("/api/workspace-recovery");
+
+export async function requestWorkspaceRestore(): Promise<{ requestId: string }> {
+  return request("/api/workspace-recovery/restore", {
+    method: "POST",
+    headers: { "X-CSRF-TOKEN": await csrf() }
+  });
+}
 
 export async function createSession(name: string): Promise<{ id: string; name: string }> {
   return request("/api/sessions", {

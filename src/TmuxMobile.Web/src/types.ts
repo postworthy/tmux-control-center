@@ -26,3 +26,14 @@ export interface InventorySnapshot {
   updatedAt: string;
   sessions: TmuxSession[];
 }
+
+export interface WorkspaceRecoveryStatus {
+  enabled: boolean;
+  snapshotAvailable: boolean;
+  snapshotSavedAt: string | null;
+  requestPending: boolean;
+  state: string;
+  updatedAt: string | null;
+  restoredSessionCount: number;
+  requestId: string | null;
+}

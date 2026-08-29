@@ -1,7 +1,7 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 1.5
-Last updated: 2026-08-19
+Version: 1.6
+Last updated: 2026-08-29
 Status: Approved
 
 ## Product Objective
@@ -77,6 +77,11 @@ Status: Approved
   isolate blocking subprocess/PTY lifecycle work from Kestrel worker capacity,
   expose tmux degradation through readiness and stale inventory, and contain
   unrecoverable non-progress without terminating underlying tmux sessions.
+- FR22: periodically preserve content-free host tmux workspace metadata and,
+  only after an explicit authenticated in-app action, reconstruct session/window
+  names, panes, layouts, directories, and active selections when tmux is empty;
+  automatically invoke fixed directory-scoped resume commands only for local
+  Codex and Claude Code panes, while every other program restores as a shell.
 
 ## Constraints
 
@@ -144,6 +149,12 @@ Status: Approved
   blocked, readiness degrades and recovers explicitly, graceful stop is
   zombie-free, and induced unrecoverable non-progress exits for supervised
   restart without ending the underlying tmux session.
+- [ ] AC18: an owner-only atomic snapshot round-trips an isolated multi-session
+  tmux workspace after server loss without storing terminal content, argv,
+  environment, credentials, or remote targets; boot remains idle, one protected
+  in-app request initiates restore, only classified Codex and Claude panes launch
+  fixed resume commands, live sessions block restore, corrupt state creates
+  nothing, and stopping the recovery daemon leaves tmux alive.
 
 ## Canonical Verification
 
@@ -158,6 +169,10 @@ Status: Approved
   resolved from an opaque ID into a fixed `kill-session` argument vector. The
   client cannot supply a command, arguments, environment, working directory, or
   raw tmux target.
+- The host recovery service is the only automatic process-restart exception. It
+  cannot receive caller-controlled commands or persist/replay argv: one protected
+  no-arguments app request maps the closed pane class set `codex`, `claude`, and
+  `shell` to two fixed resume commands or no command. It never restores at boot.
 - No agent may deploy, modify Tailscale policy, handle production secrets, push,
   or publish without separate explicit approval.
 - Compose interpolation must stop before deployment when security-critical
@@ -174,3 +189,6 @@ Status: Approved
 
 - Multiple remote hosts, orchestration platforms, native iOS packaging, public
   ingress, collaboration, notifications, history indexing, and external LLMs.
+- Automatic boot restore, SSH reconnection, remote-agent restore, arbitrary tool
+  adapters, process-memory checkpointing, terminal-content snapshots, and exact
+  agent-ID association.

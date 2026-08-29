@@ -1,4 +1,4 @@
-const CACHE = "tmux-mobile-shell-c02de5582fead907";
+const CACHE = "tmux-mobile-shell-9ed1d3ea4761c4b7";
 const SHELL = ["/", "/manifest.webmanifest", "/icon.svg", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {

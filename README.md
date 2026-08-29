@@ -27,6 +27,9 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
 - Repo-local Tempo skills, contracts, goals, verification, and review records.
 - A repo-local `$setup-tmux-mobile` first-run skill with private environment/key
   generation and a host/container tmux compatibility gate.
+- Owner-only workspace snapshots plus an explicit in-app restore action. Session,
+  window, pane, layout, and working-directory metadata survive reboot; Codex and
+  Claude resume with fixed CLI commands while other panes reopen as shells.
 
 ## Development
 
@@ -132,5 +135,9 @@ above.
   recording, notifications, and multiple hosts are intentionally absent. Session
   creation accepts only a validated name and starts tmux's configured default
   command; clients cannot provide a command, path, environment, or tmux options.
+- Workspace restore is never automatic at boot and does not preserve terminal
+  output, command arguments, environment variables, credentials, SSH
+  connections, or process memory. It restores only when tmux is empty and the
+  authenticated owner presses Restore in the app.
 
 Recommended next steps after physical-device validation are session favorites/order, read-only identities, rule adapters, and notifications for explicit waiting/error states.

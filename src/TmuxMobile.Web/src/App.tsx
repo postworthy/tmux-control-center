@@ -1,5 +1,11 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { createSession, getClientConfig, login } from "./api";
+import {
+  createSession,
+  getClientConfig,
+  getWorkspaceRecoveryStatus,
+  login,
+  requestWorkspaceRestore
+} from "./api";
 import { SessionCard } from "./SessionCard";
 import { filterSessions } from "./sessionFilter";
 import {
@@ -10,6 +16,7 @@ import {
   writeSessionRecency
 } from "./sessionRecency";
 import { useInventory } from "./useInventory";
+import type { WorkspaceRecoveryStatus } from "./types";
 
 const ACTIVE_KEY = "tmux-mobile-active-session";
 const TerminalView = lazy(() => import("./TerminalView").then((module) => ({ default: module.TerminalView })));
@@ -30,6 +37,9 @@ export default function App() {
   const [createName, setCreateName] = useState("");
   const [createError, setCreateError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [recoveryStatus, setRecoveryStatus] = useState<WorkspaceRecoveryStatus | null>(null);
+  const [restoreBusy, setRestoreBusy] = useState(false);
+  const [restoreError, setRestoreError] = useState("");
   const orderedSessions = useMemo(
     () => orderSessionsByRecency(inventory.sessions, recentSessionIds),
     [inventory.sessions, recentSessionIds]
@@ -63,6 +73,28 @@ export default function App() {
   useEffect(() => {
     if (inventory.state === "ready") void getClientConfig().then((config) => setTmuxPrefix(config.tmuxPrefix));
   }, [inventory.state]);
+
+  useEffect(() => {
+    if (inventory.state !== "ready" && inventory.state !== "empty") return;
+    let cancelled = false;
+    let timer: number | undefined;
+    const refreshRecovery = async () => {
+      try {
+        const status = await getWorkspaceRecoveryStatus();
+        if (cancelled) return;
+        setRecoveryStatus(status);
+        if (status.requestPending && inventory.state === "empty")
+          timer = window.setTimeout(() => void refreshRecovery(), 1500);
+      } catch {
+        if (!cancelled) setRecoveryStatus(null);
+      }
+    };
+    void refreshRecovery();
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [inventory.state, recoveryStatus?.requestPending]);
 
   useEffect(() => {
     if (!activeId) return;
@@ -114,6 +146,22 @@ export default function App() {
       setCreateError(reason instanceof Error ? reason.message : "Unable to create session");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const restoreWorkspace = async () => {
+    setRestoreBusy(true);
+    setRestoreError("");
+    try {
+      await requestWorkspaceRestore();
+      setRecoveryStatus((current) => current
+        ? { ...current, requestPending: true, state: "requested" }
+        : current);
+      window.setTimeout(() => void inventory.refresh(), 1500);
+    } catch (reason) {
+      setRestoreError(reason instanceof Error ? reason.message : "Unable to request workspace restore");
+    } finally {
+      setRestoreBusy(false);
     }
   };
 
@@ -196,7 +244,25 @@ export default function App() {
           <section className="deck-empty" aria-live="polite">
             <h1>{emptyDeckTitle(inventory.state === "empty", detachedOnly, searchQuery)}</h1>
             <p>{emptyDeckDetail(inventory.state === "empty", detachedOnly, searchQuery)}</p>
-            {inventory.state === "empty" && <button onClick={inventory.refresh}>Refresh</button>}
+            {inventory.state === "empty" && (
+              <div className="empty-actions">
+                {recoveryStatus?.enabled && recoveryStatus.snapshotAvailable && (
+                  <button className="terminal-button" onClick={() => void restoreWorkspace()}
+                    disabled={restoreBusy || recoveryStatus.requestPending}>
+                    {restoreBusy || recoveryStatus.requestPending ? "Restore requested…" : "Restore saved workspace"}
+                  </button>
+                )}
+                <button onClick={inventory.refresh}>Refresh</button>
+              </div>
+            )}
+            {recoveryStatus?.snapshotSavedAt && inventory.state === "empty" && (
+              <small>Saved {new Date(recoveryStatus.snapshotSavedAt).toLocaleString()}</small>
+            )}
+            {restoreError && <p className="error-text" role="alert">{restoreError}</p>}
+            {recoveryStatus && recoveryStatus.state !== "idle" && recoveryStatus.state !== "requested" &&
+              recoveryStatus.state !== "no-snapshot" && recoveryStatus.state !== "restored" && (
+              <p className="error-text" role="alert">{recoveryStateMessage(recoveryStatus.state)}</p>
+            )}
           </section>
         )}
       </main>
@@ -256,4 +322,11 @@ function emptyDeckDetail(inventoryEmpty: boolean, detachedOnly: boolean, query: 
   if (detachedOnly && query.trim()) return `No detached session name contains “${query.trim()}”.`;
   if (detachedOnly) return "Every tmux session currently has a terminal attached.";
   return `No session name contains “${query.trim()}”.`;
+}
+
+function recoveryStateMessage(state: string) {
+  if (state === "blocked-live-sessions") return "Restore stopped because tmux sessions are already running.";
+  if (state === "invalid-snapshot") return "The saved workspace failed validation and was not restored.";
+  if (state === "invalid-request") return "The restore request failed validation.";
+  return "The saved workspace could not be restored.";
 }

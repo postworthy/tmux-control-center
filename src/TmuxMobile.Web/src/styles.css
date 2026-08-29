@@ -148,6 +148,7 @@ button:disabled { opacity: .35; cursor: default; }
 .deck-empty { min-height: 100dvh; display: grid; place-content: center; justify-items: center; padding: 110px 28px 28px; text-align: center; }
 .deck-empty h1 { margin-bottom: 4px; }
 .deck-empty p { max-width: 34rem; color: var(--muted); }
+.empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; }
 
 .center-state { height: 100dvh; padding: max(30px, env(safe-area-inset-top)) 24px max(30px, env(safe-area-inset-bottom)); display: grid; place-content: center; justify-items: center; text-align: center; }
 .center-state p { max-width: 34rem; color: var(--muted); }

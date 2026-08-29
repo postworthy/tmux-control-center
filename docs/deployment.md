@@ -52,6 +52,40 @@ server. Inspect the health history and restart count after a recovery event.
 
 The systemd unit deliberately leaves `PrivateTmp=false`: tmux normally stores its per-user server socket under `/tmp`, and a private mount namespace would make that socket invisible. Other filesystem hardening remains enabled.
 
+## Install workspace save and manual restore
+
+The Compose app cannot reconstruct host working directories itself. Install the
+host helper as the same account that owns tmux, replacing `tmuxuser` and editing
+the environment file's home, PATH, and state directory:
+
+```bash
+sudo install -o root -g root -m 0755 scripts/tmux-workspace-recovery.sh \
+  /usr/local/libexec/tmux-mobile-workspace-recovery
+sudo install -o root -g root -m 0644 deploy/systemd/tmux-mobile-workspace@.service \
+  /etc/systemd/system/
+sudo install -d -o root -g root -m 0755 /etc/tmux-mobile
+sudo install -o root -g tmuxuser -m 0640 \
+  deploy/systemd/tmux-mobile-workspace.env.example \
+  /etc/tmux-mobile/workspace-tmuxuser.env
+sudo systemctl daemon-reload
+sudo systemctl enable --now tmux-mobile-workspace@tmuxuser
+```
+
+Set `TMUX_WORKSPACE_STATE_DIR` to the same host path as
+`TMUX_MOBILE_WORKSPACE_DIR`. The helper snapshots every 60 seconds and once on
+clean service stop. Enabling or starting it does **not** restore. After reboot,
+leave tmux empty, sign in to the app, and press **Restore saved workspace**.
+The action recreates names, windows, panes, layouts, active selections, and
+working directories. Codex uses `codex resume --last`, Claude uses `claude
+--continue`, and all other panes return as shells. If an expected CLI is absent
+from the configured PATH, that pane falls back to a login shell.
+
+Inspect with `systemctl status tmux-mobile-workspace@tmuxuser` and
+`journalctl -u tmux-mobile-workspace@tmuxuser`. To roll back the helper, disable
+that unit and restore the prior app image; leave the state directory in place so
+the last snapshot remains recoverable. Do not delete or edit a snapshot during
+normal rollback.
+
 ## Build and install
 
 As the tmux owner:

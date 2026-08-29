@@ -62,6 +62,78 @@ public sealed class ApiTests
     }
 
     [Fact]
+    public async Task WorkspaceRecoveryStatusIsAuthenticatedAndDisabledByDefault()
+    {
+        await using var production = new TmuxFactory(authenticated: false);
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await CreateHttpsClient(production).GetAsync("/api/workspace-recovery")).StatusCode);
+
+        await using var development = new TmuxFactory(authenticated: true);
+        var status = await development.CreateClient()
+            .GetFromJsonAsync<JsonElement>("/api/workspace-recovery");
+        Assert.False(status.GetProperty("enabled").GetBoolean());
+        Assert.Equal("disabled", status.GetProperty("state").GetString());
+    }
+
+    [Fact]
+    public async Task WorkspaceRestoreRequiresEmptyTmuxAndCreatesOnlyFixedRequest()
+    {
+        await using var liveFactory = new TmuxFactory(authenticated: true,
+            workspaceRecovery: true);
+        liveFactory.WriteRecoverySnapshot();
+        var liveClient = liveFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+        var blocked = await SendWithCsrfAsync(liveClient, HttpMethod.Post,
+            "/api/workspace-recovery/restore", new { });
+        Assert.Equal(HttpStatusCode.Conflict, blocked.StatusCode);
+        Assert.False(File.Exists(liveFactory.RestoreRequestPath));
+
+        await using var emptyFactory = new TmuxFactory(authenticated: true,
+            workspaceRecovery: true, emptySessions: true);
+        emptyFactory.WriteRecoverySnapshot();
+        var emptyClient = emptyFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+        var accepted = await SendWithCsrfAsync(emptyClient, HttpMethod.Post,
+            "/api/workspace-recovery/restore", new { });
+        Assert.Equal(HttpStatusCode.Accepted, accepted.StatusCode);
+        var fields = (await File.ReadAllTextAsync(emptyFactory.RestoreRequestPath)).Trim().Split('\t');
+        Assert.Equal(3, fields.Length);
+        Assert.Equal("1", fields[0]);
+        Assert.True(Guid.TryParseExact(fields[1], "D", out _));
+        Assert.True(long.TryParse(fields[2], out _));
+        if (OperatingSystem.IsLinux())
+            Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite,
+                File.GetUnixFileMode(emptyFactory.RestoreRequestPath));
+        Assert.Contains(emptyFactory.AuditRecords,
+            record => record.Action == "workspace.restore.request" && record.Succeeded);
+    }
+
+    [Fact]
+    public async Task WorkspaceRestoreRequiresCsrfAndSnapshot()
+    {
+        await using var factory = new TmuxFactory(authenticated: true,
+            workspaceRecovery: true, emptySessions: true);
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await client.PostAsJsonAsync("/api/workspace-recovery/restore", new { })).StatusCode);
+        var missing = await SendWithCsrfAsync(client, HttpMethod.Post,
+            "/api/workspace-recovery/restore", new { });
+        Assert.Equal(HttpStatusCode.Conflict, missing.StatusCode);
+        Assert.Contains(factory.AuditRecords,
+            record => record.Action == "workspace.restore.request" && !record.Succeeded);
+    }
+
+    [Fact]
     public async Task AnonymousHealthCanOnlyUseLiveness()
     {
         await using var factory = new TmuxFactory(authenticated: false);
@@ -523,13 +595,17 @@ public sealed class ApiTests
 public sealed class TmuxFactory(bool authenticated,
     IReadOnlyDictionary<string, string?>? overrides = null,
     bool auditSucceeds = true,
-    bool killFails = false) : WebApplicationFactory<Program>
+    bool killFails = false,
+    bool workspaceRecovery = false,
+    bool emptySessions = false) : WebApplicationFactory<Program>
 {
-    private readonly FakeTmuxService fakeTmux = new(killFails);
+    private readonly FakeTmuxService fakeTmux = new(killFails, emptySessions);
     private readonly FakePseudoTerminalFactory fakePty = new();
     private readonly FakeAuditLogger fakeAudit = new(auditSucceeds);
     private readonly string auditPath = Path.Combine(Path.GetTempPath(),
         $"tmux-mobile-tests-{Guid.NewGuid():N}", "audit.jsonl");
+    private readonly string recoveryPath = Path.Combine(Path.GetTempPath(),
+        $"tmux-mobile-recovery-tests-{Guid.NewGuid():N}");
 
     public static readonly TmuxSession Session = new(
         SafeIdentifier.ForSession("$test"), "work", DateTimeOffset.UnixEpoch,
@@ -542,11 +618,26 @@ public sealed class TmuxFactory(bool authenticated,
     public int RenameCalls => fakeTmux.RenameCalls;
     public int CreateCalls => fakeTmux.CreateCalls;
     public int KillCalls => fakeTmux.KillCalls;
+    public string RestoreRequestPath => Path.Combine(recoveryPath, "restore.request");
+
+    public void WriteRecoverySnapshot()
+    {
+        Directory.CreateDirectory(recoveryPath);
+        if (OperatingSystem.IsLinux()) File.SetUnixFileMode(recoveryPath,
+            UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        var path = Path.Combine(recoveryPath, "workspace.v1.tsv");
+        File.WriteAllText(path, "tmux-mobile-workspace\t1\n");
+        if (OperatingSystem.IsLinux()) File.SetUnixFileMode(path,
+            UnixFileMode.UserRead | UnixFileMode.UserWrite);
+    }
     public sealed record HistoryCall(TerminalHistoryAction Action, int Pages);
     public sealed record AuditRecord(string Action, string Subject, string Target, bool Succeeded);
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        Directory.CreateDirectory(recoveryPath);
+        if (OperatingSystem.IsLinux()) File.SetUnixFileMode(recoveryPath,
+            UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         builder.UseEnvironment(authenticated ? "Development" : "Production");
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
@@ -557,7 +648,9 @@ public sealed class TmuxFactory(bool authenticated,
                 ["Authentication:ApiKey"] = "test-secret-at-least-24-characters",
                 ["Security:AllowedOrigins:0"] = authenticated ? "http://localhost" : "https://localhost",
                 ["Security:ExternalHttpsTermination"] = authenticated ? "false" : "true",
-                ["Audit:Destination"] = auditPath
+                ["Audit:Destination"] = auditPath,
+                ["WorkspaceRecovery:Enabled"] = workspaceRecovery ? "true" : "false",
+                ["WorkspaceRecovery:ControlDirectory"] = recoveryPath
             };
             if (overrides is not null)
                 foreach (var pair in overrides) values[pair.Key] = pair.Value;
@@ -656,9 +749,9 @@ public sealed class TmuxFactory(bool authenticated,
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
-    private sealed class FakeTmuxService(bool killFails) : ITmuxService
+    private sealed class FakeTmuxService(bool killFails, bool emptySessions) : ITmuxService
     {
-        private readonly List<TmuxSession> sessions = [Session];
+        private readonly List<TmuxSession> sessions = emptySessions ? [] : [Session];
         public ConcurrentQueue<HistoryCall> HistoryCalls { get; } = new();
         public int RenameCalls { get; private set; }
         public int CreateCalls { get; private set; }

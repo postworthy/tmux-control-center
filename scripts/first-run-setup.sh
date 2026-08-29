@@ -151,7 +151,8 @@ write_env() {
 
   umask 077
   mkdir -p -- "$(dirname -- "$env_file")" "$(dirname -- "$key_file")"
-  install -d -m 0700 "$repo_root/deploy/docker/state/keys" "$repo_root/deploy/docker/state/audit"
+  install -d -m 0700 "$repo_root/deploy/docker/state/keys" "$repo_root/deploy/docker/state/audit" \
+    "$repo_root/deploy/docker/state/workspace"
   env_tmp=$(mktemp "${env_file}.tmp.XXXXXX")
   key_tmp=$(mktemp "${key_file}.tmp.XXXXXX")
   trap 'rm -f -- "${env_tmp:-}" "${key_tmp:-}"' EXIT
@@ -173,6 +174,7 @@ write_env() {
     printf 'TMUX_SOCKET_NAME=%s\n' "$socket_name"
     printf 'TMUX_MOBILE_KEYS_DIR=./deploy/docker/state/keys\n'
     printf 'TMUX_MOBILE_AUDIT_DIR=./deploy/docker/state/audit\n'
+    printf 'TMUX_MOBILE_WORKSPACE_DIR=./deploy/docker/state/workspace\n'
     printf 'TMUX_MOBILE_TLS_CERT=./deploy/docker/secrets/tls.crt\n'
     printf 'TMUX_MOBILE_TLS_KEY=./deploy/docker/secrets/tls.key\n'
   } >"$env_tmp"

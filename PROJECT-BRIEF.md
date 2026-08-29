@@ -1,7 +1,7 @@
 # PROJECT-BRIEF
 
 Status: APPROVED
-Last updated: 2026-07-30
+Last updated: 2026-08-29
 
 ## Onboarding Mode
 
@@ -29,14 +29,17 @@ Last updated: 2026-07-30
 - Open a real PTY-backed xterm.js terminal and return to the same card.
 - Authenticate in production and keep terminal data out of browser persistence.
 - Recover cleanly from ordinary mobile network loss, sleep, and resume.
+- Save content-free tmux workspace metadata and let the owner explicitly restore
+  it from the app after a host reboot, resuming only local Codex and Claude.
 - Publish as a lightweight Docker Compose service whose host port binds only to
   an explicitly configured Tailscale IP.
 
 ## Out of Scope (Must Not Build Yet)
 
 - Multiple hosts or collaborative users.
-- Arbitrary command execution, filesystem browsing, process restart, or
-  destructive session actions.
+- Arbitrary command execution, filesystem browsing, automatic boot restore,
+  captured-command replay, remote process restart, or automatic restart of
+  tools other than local Codex and Claude Code.
 - Public ingress, hosted relays, push notifications, recording, and external AI.
 
 ## Constraints
@@ -61,6 +64,9 @@ Last updated: 2026-07-30
   product contract.
 - Confirmed by the user: production publishing means a lightweight Docker
   Compose deployment bound only to the Tailscale IP.
+- Confirmed by the user: reboot recovery preserves tmux names and directories,
+  resumes only local Codex and Claude after an explicit in-app action, and
+  restores other panes as shells rather than replaying their commands.
 - Corrected: physical iPhone validation is recommended evidence, but it is not a
   prerequisite for completing the repository-delivery goal.
 

@@ -226,6 +226,20 @@ Status: active
 - Preserve wheel routing, coalescing, focus neutrality, and backend contracts.
 - Planned commit: `feat(terminal): persist app scroll per session`
 
+## C021 — Restore tmux workspaces after reboot
+
+Status: active
+
+- Periodically save owner-only, content-free session/window/pane metadata on the
+  host; boot and service start remain idle.
+- Offer one authenticated in-app Restore action that reconstructs saved state
+  only when tmux has no live sessions.
+- Preserve names, directories, layouts, and active selections without saving
+  terminal output, argv, environment, credentials, or SSH destinations.
+- Resume only local Codex and Claude Code through fixed directory-scoped
+  commands; restore every other pane as a shell.
+- Planned commit: `feat(tmux): restore workspaces after reboot`
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.

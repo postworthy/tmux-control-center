@@ -50,6 +50,11 @@ This service controls terminals owned by its Linux account and must be treated a
   xterm's hidden keyboard textarea; reconnect and typing controls retain focus.
 - Service worker exclusions prevent caching APIs, health responses, captured output, or socket traffic.
 - Startup validation rejects disabled authentication and the legacy bypass in all environments, short/missing API keys, wildcard or non-origin values, insecure production origins, mismatched Hosts, unsafe proxy/listener combinations, relative tmux paths, invalid socket names, and invalid prefixes.
+- Workspace snapshots and bridge files are owner-only, non-symlink regular
+  files in an owner-private directory. Restore requires Admin authorization,
+  CSRF, rate limiting, an empty tmux server, and an explicit app action. The
+  request carries only version, generated ID, and timestamp; boot never causes
+  restore and the browser cannot supply a command or path.
 
 ## Secret and file permissions
 
@@ -63,6 +68,11 @@ sudo install -d -o tmuxuser -g tmuxuser -m 0700 /var/lib/tmux-mobile/keys /var/l
 ```
 
 Set `DataProtection__KeysDirectory=/var/lib/tmux-mobile/keys` and `Audit__Destination=/var/log/tmux-mobile/audit.jsonl`. Filesystem permissions protect cookie keys; use a certificate-backed ASP.NET Core key encryptor if the host threat model requires at-rest cryptographic protection.
+
+Protect the shared recovery directory with mode `0700` and its files with mode
+`0600`. The snapshot intentionally omits terminal content, argv, environment,
+credentials, and SSH destinations, but working directories and tmux names can
+still be sensitive metadata.
 
 On Linux the audit parent must be owner-only (`0700`) and an existing file must
 be owner-readable/writable only (`0600`). Startup fails if either grants group

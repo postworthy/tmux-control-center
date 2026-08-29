@@ -92,6 +92,12 @@ the user.
    forwarding the chosen HTTPS port to the loopback backend port.
    Do not change tailnet grants/ACLs or firewall policy without separate scope.
 
+   Install the repository workspace helper and its template unit as documented
+   in `docs/deployment.md`, with `TMUX_WORKSPACE_STATE_DIR` matching the
+   `TMUX_MOBILE_WORKSPACE_DIR` host path. Run it as the tmux owner. Starting or
+   enabling this service only saves and waits; it must never restore until the
+   authenticated owner presses Restore in the app.
+
 7. Verify without exposing the key:
 
    - Confirm `docker compose ... ps` reports healthy and inspect bounded app logs.
@@ -101,7 +107,8 @@ the user.
    - Request `/health/live` through the HTTPS MagicDNS origin and confirm 200.
    - Request backend `/` with the configured Host and confirm 426.
    - Have the user reveal the key themselves, sign in, and confirm authenticated
-     readiness plus session inventory.
+     readiness plus session inventory. Confirm the app shows snapshot status;
+     do not test restore against the owner's live default tmux server.
    - Require a browser or curl check from a second tailnet device. Treat local
      MagicDNS/hairpin failure as inconclusive, not proof of remote failure.
 

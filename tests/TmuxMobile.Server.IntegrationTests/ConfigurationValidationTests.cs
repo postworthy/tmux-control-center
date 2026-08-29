@@ -217,6 +217,22 @@ public sealed class ConfigurationValidationTests
         }).Failed);
     }
 
+    [Fact]
+    public void EnabledWorkspaceRecoveryRequiresAbsoluteControlDirectory()
+    {
+        var validator = Validator("Production");
+        Assert.True(validator.Validate(null, new WorkspaceRecoveryOptions
+        {
+            Enabled = true,
+            ControlDirectory = "deploy/docker/state/workspace"
+        }).Failed);
+        Assert.True(validator.Validate(null, new WorkspaceRecoveryOptions
+        {
+            Enabled = true,
+            ControlDirectory = Path.Combine(Path.GetTempPath(), "tmux-mobile-workspace")
+        }).Succeeded);
+    }
+
     private static SecurityConfigurationValidator Validator(string environment,
         IDictionary<string, string?>? values = null)
     {

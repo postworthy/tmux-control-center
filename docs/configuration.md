@@ -35,6 +35,8 @@ ASP.NET Core configuration applies in this order: checked-in JSON, environment-s
 | `ForwardedHeaders:KnownProxies` | loopback v4/v6 | Explicit IPs allowed to set forwarded scheme/address. |
 | `Audit:Destination` | `logs/audit.jsonl` | Use an absolute production path beneath an owner-only directory. Linux startup rejects group/other-accessible audit storage. |
 | `DataProtection:KeysDirectory` | `data-protection` | Persistent cookie keys; use an absolute protected production path. |
+| `WorkspaceRecovery:Enabled` | false | Enables status and the explicit app-triggered restore request bridge. Compose profiles enable it. |
+| `WorkspaceRecovery:ControlDirectory` | `workspace-recovery` | Must be absolute when enabled and owner-private (`0700`); snapshot, request, and status files are `0600`. The host helper and app container must share this exact directory. |
 | `DOTNET_GCNoAffinitize` | `1` in the image | Keeps server-GC threads schedulable across the container's available CPUs instead of hard-pinning each thread to one CPU. |
 | `TMUX_MOBILE_WATCHDOG_STARTUP_FAILURES` | `12` | Image health watchdog failure budget before first liveness success; integer 1–100. |
 | `TMUX_MOBILE_WATCHDOG_STEADY_FAILURES` | `6` | Failure budget after first liveness success; integer 1–100. At the threshold the watchdog terminates only the validated app child so Docker can restart it. |
@@ -57,6 +59,8 @@ ForwardedHeaders__Enabled=true
 ForwardedHeaders__KnownProxies__0=127.0.0.1
 DataProtection__KeysDirectory=/var/lib/tmux-mobile/keys
 Audit__Destination=/var/log/tmux-mobile/audit.jsonl
+WorkspaceRecovery__Enabled=true
+WorkspaceRecovery__ControlDirectory=/var/lib/tmux-mobile/workspace
 ```
 
 For direct Kestrel HTTPS, set `ASPNETCORE_URLS=https://127.0.0.1:5443` (or an explicitly chosen Tailscale address) plus `ASPNETCORE_Kestrel__Certificates__Default__Path` and `...__Password`. Do not set `0.0.0.0` casually; firewall and Tailscale policy must match the explicit exposure.

@@ -83,3 +83,16 @@ forwarded headers run first and the application rejects remaining HTTP
 application traffic. Anonymous liveness and loopback readiness are the only
 HTTP exceptions. This preserves the exact Tailscale-IP Docker bind while making
 the Serve backend unusable as an ordinary browser application origin.
+
+## D010 — Restore rebooted workspaces only after an app request
+
+Date: 2026-08-29
+
+Workspace recovery runs as the tmux owner on the host rather than inside the web
+container. Snapshots contain names, topology, layouts, directories, selection,
+and only a `codex`/`claude`/`shell` classification. Boot and service start never
+restore. One authenticated, authorized, CSRF-protected, no-arguments app action
+signals restoration, which proceeds only when tmux has no sessions. The two
+agent classes map to fixed directory-scoped resume commands; every other prior
+process, including SSH, returns as a shell. Terminal content, argv, environment,
+credentials, and remote targets are never persisted or replayed.

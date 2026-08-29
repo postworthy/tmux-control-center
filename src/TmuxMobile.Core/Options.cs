@@ -65,6 +65,13 @@ public sealed class DataProtectionSettings
     [Required] public string KeysDirectory { get; init; } = "data-protection";
 }
 
+public sealed class WorkspaceRecoveryOptions
+{
+    public const string Section = "WorkspaceRecovery";
+    public bool Enabled { get; init; }
+    [Required] public string ControlDirectory { get; init; } = "workspace-recovery";
+}
+
 public sealed class ForwardedHeaderSettings
 {
     public const string Section = "ForwardedHeaders";
