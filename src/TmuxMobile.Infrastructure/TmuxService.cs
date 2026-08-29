@@ -31,8 +31,12 @@ public sealed class TmuxService(
     private const string PaneFormat =
         "#{pane_id}" + TmuxParser.Separator +
         "#{session_id}" + TmuxParser.Separator +
+        "#{window_id}" + TmuxParser.Separator +
         "#{window_index}" + TmuxParser.Separator +
         "#{pane_index}" + TmuxParser.Separator +
+        "#{window_name}" + TmuxParser.Separator +
+        "#{?window_active,1,0}" + TmuxParser.Separator +
+        "#{window_layout}" + TmuxParser.Separator +
         "#{pane_title}" + TmuxParser.Separator +
         "#{pane_current_command}" + TmuxParser.Separator +
         "#{pane_current_path}" + TmuxParser.Separator +
@@ -130,12 +134,103 @@ public sealed class TmuxService(
     {
         var rawSession = await ResolveSessionAsync(sessionId, cancellationToken);
         if (rawSession is null) throw new TmuxNotFoundException("Session was not found.");
-        var output = await RunAsync(["list-panes", "-t", rawSession, "-F", PaneFormat], "tmux.list-panes",
+        var output = await RunAsync(["list-panes", "-s", "-t", rawSession, "-F", PaneFormat], "tmux.list-panes",
             cancellationToken);
         return TmuxParser.ParsePanes(output).Select(x => new TmuxPane(
             SafeIdentifier.ForPane(x.TmuxId), SafeIdentifier.ForSession(x.SessionTmuxId),
             x.WindowIndex, x.PaneIndex, x.Title, x.Command, x.WorkingDirectory, x.Active,
-            x.ProcessId, x.Width, x.Height)).ToArray();
+            x.ProcessId, x.Width, x.Height, SafeIdentifier.ForWindow(x.WindowTmuxId), x.WindowName,
+            x.WindowActive, x.WindowLayout)).ToArray();
+    }
+
+    public async Task<TmuxTopology> GetTopologyAsync(string sessionId, CancellationToken cancellationToken)
+    {
+        var panes = await GetPanesAsync(sessionId, cancellationToken);
+        var windows = panes.GroupBy(pane => pane.WindowId).Select(group =>
+        {
+            var first = group.First();
+            return new TmuxWindow(first.WindowId, sessionId, first.WindowIndex, first.WindowName,
+                first.IsWindowActive, first.WindowLayout, group.OrderBy(pane => pane.PaneIndex).ToArray());
+        }).OrderBy(window => window.Index).ToArray();
+        return new TmuxTopology(sessionId, windows);
+    }
+
+    public async Task<CreatedTmuxWindow> CreateWindowAsync(
+        string sessionId, string? name, CancellationToken cancellationToken)
+    {
+        var rawSession = await ResolveSessionAsync(sessionId, cancellationToken)
+            ?? throw new TmuxNotFoundException("Session was not found.");
+        var arguments = new List<string> { "new-window", "-d", "-P", "-F", "#{window_id}", "-t", rawSession };
+        if (!string.IsNullOrWhiteSpace(name)) arguments.AddRange(["-n", InputValidation.ValidateRename(name)]);
+        var raw = (await RunAsync(arguments, "tmux.create-window", cancellationToken)).Trim();
+        if (!IsRawWindow(raw)) throw new TmuxCommandException("tmux returned an invalid window identifier.");
+        return new CreatedTmuxWindow(SafeIdentifier.ForWindow(raw));
+    }
+
+    public async Task SelectWindowAsync(string windowId, CancellationToken cancellationToken)
+    {
+        var raw = await ResolveWindowAsync(windowId, cancellationToken)
+            ?? throw new TmuxNotFoundException("Window was not found.");
+        await RunAsync(["select-window", "-t", raw], "tmux.select-window", cancellationToken);
+    }
+
+    public async Task KillWindowAsync(string windowId, CancellationToken cancellationToken)
+    {
+        var raw = await ResolveWindowAsync(windowId, cancellationToken)
+            ?? throw new TmuxNotFoundException("Window was not found.");
+        var result = await RunAsync(["if-shell", "-F", "-t", raw,
+            "#{==:#{session_windows},1}", "display-message -p TMUXCTL_LAST_WINDOW",
+            $"kill-window -t {raw}"], "tmux.kill-window", cancellationToken);
+        if (result.Contains("TMUXCTL_LAST_WINDOW", StringComparison.Ordinal))
+            throw new TmuxConflictException("The final window cannot be closed because that would kill the session.");
+    }
+
+    public async Task<CreatedTmuxPane> SplitPaneAsync(
+        string paneId, TmuxSplitOrientation orientation, CancellationToken cancellationToken)
+    {
+        var raw = await ResolvePaneAsync(paneId, cancellationToken)
+            ?? throw new TmuxNotFoundException("Pane was not found.");
+        var splitFlag = orientation == TmuxSplitOrientation.Horizontal ? "-h" : "-v";
+        var created = (await RunAsync(["split-window", "-d", "-P", "-F", "#{pane_id}", splitFlag, "-t", raw],
+            "tmux.split-pane", cancellationToken)).Trim();
+        if (!IsRawPane(created)) throw new TmuxCommandException("tmux returned an invalid pane identifier.");
+        return new CreatedTmuxPane(SafeIdentifier.ForPane(created));
+    }
+
+    public async Task SelectPaneAsync(string paneId, CancellationToken cancellationToken)
+    {
+        var raw = await ResolvePaneAsync(paneId, cancellationToken)
+            ?? throw new TmuxNotFoundException("Pane was not found.");
+        await RunAsync(["select-pane", "-t", raw], "tmux.select-pane", cancellationToken);
+    }
+
+    public async Task ResizePaneAsync(
+        string paneId, TmuxResizeDirection direction, int cells, CancellationToken cancellationToken)
+    {
+        if (cells is < 1 or > 20) throw new ArgumentException("Pane resize must be between 1 and 20 cells.");
+        var raw = await ResolvePaneAsync(paneId, cancellationToken)
+            ?? throw new TmuxNotFoundException("Pane was not found.");
+        var flag = direction switch
+        {
+            TmuxResizeDirection.Left => "-L",
+            TmuxResizeDirection.Right => "-R",
+            TmuxResizeDirection.Up => "-U",
+            TmuxResizeDirection.Down => "-D",
+            _ => throw new ArgumentException("Pane resize direction is unsupported.")
+        };
+        await RunAsync(["resize-pane", flag, "-t", raw, cells.ToString()], "tmux.resize-pane", cancellationToken);
+    }
+
+    public async Task KillPaneAsync(string paneId, CancellationToken cancellationToken)
+    {
+        var raw = await ResolvePaneAsync(paneId, cancellationToken)
+            ?? throw new TmuxNotFoundException("Pane was not found.");
+        var result = await RunAsync(["if-shell", "-F", "-t", raw,
+            "#{&&:#{==:#{session_windows},1},#{==:#{window_panes},1}}",
+            "display-message -p TMUXCTL_LAST_PANE", $"kill-pane -t {raw}"],
+            "tmux.kill-pane", cancellationToken);
+        if (result.Contains("TMUXCTL_LAST_PANE", StringComparison.Ordinal))
+            throw new TmuxConflictException("The final pane cannot be closed because that would kill the session.");
     }
 
     public async Task<string> CapturePaneAsync(string paneId, int historyLines, CancellationToken cancellationToken)
@@ -245,6 +340,21 @@ public sealed class TmuxService(
         return output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault(raw => SafeIdentifier.ForPane(raw.Trim()) == safeId)?.Trim();
     }
+
+    private async Task<string?> ResolveWindowAsync(string safeId, CancellationToken cancellationToken)
+    {
+        if (!SafeIdentifier.IsWindow(safeId)) return null;
+        var output = await RunAsync(["list-windows", "-a", "-F", "#{window_id}"], "tmux.resolve-window",
+            cancellationToken, tolerateNoServer: true);
+        return output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault(raw => SafeIdentifier.ForWindow(raw.Trim()) == safeId)?.Trim();
+    }
+
+    private static bool IsRawWindow(string value) =>
+        value.Length > 1 && value[0] == '@' && int.TryParse(value.AsSpan(1), out _);
+
+    private static bool IsRawPane(string value) =>
+        value.Length > 1 && value[0] == '%' && int.TryParse(value.AsSpan(1), out _);
 
     public async Task<string?> ResolveRawSessionAsync(string safeId, CancellationToken cancellationToken) =>
         await ResolveSessionAsync(safeId, cancellationToken);

@@ -8,7 +8,8 @@ public sealed record RawSession(
     string Command, string WorkingDirectory, string Title, bool WindowActive, bool PaneActive);
 
 public sealed record RawPane(
-    string TmuxId, string SessionTmuxId, int WindowIndex, int PaneIndex, string Title,
+    string TmuxId, string SessionTmuxId, string WindowTmuxId, int WindowIndex, int PaneIndex,
+    string WindowName, bool WindowActive, string WindowLayout, string Title,
     string Command, string WorkingDirectory, bool Active, int ProcessId, int Width, int Height);
 
 public static class TmuxParser
@@ -36,10 +37,11 @@ public static class TmuxParser
         foreach (var line in Lines(output))
         {
             var fields = line.Split(Separator, StringSplitOptions.None);
-            if (fields.Length != 11) throw new FormatException($"Expected 11 pane fields, received {fields.Length}.");
-            result.Add(new RawPane(fields[0], fields[1], Int(fields[2], "window index"),
-                Int(fields[3], "pane index"), fields[4], fields[5], fields[6], Bool(fields[7]),
-                Int(fields[8], "pid"), Int(fields[9], "width"), Int(fields[10], "height")));
+            if (fields.Length != 15) throw new FormatException($"Expected 15 pane fields, received {fields.Length}.");
+            result.Add(new RawPane(fields[0], fields[1], fields[2], Int(fields[3], "window index"),
+                Int(fields[4], "pane index"), fields[5], Bool(fields[6]), fields[7], fields[8],
+                fields[9], fields[10], Bool(fields[11]), Int(fields[12], "pid"),
+                Int(fields[13], "width"), Int(fields[14], "height")));
         }
         return result;
     }

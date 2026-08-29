@@ -26,6 +26,11 @@ This service controls terminals owned by its Linux account and must be treated a
   separated `kill-session -t RAW_ID` invocation. The UI names the target and
   states irreversibility in a confirmation; detached state never triggers an
   automatic action.
+- Desktop topology accepts only opaque inventory-resolved window/pane IDs,
+  closed split/resize enums, a 1-20 cell bound, and fixed tmux operations. JSON
+  with extra fields is rejected, preventing a hidden command/options channel.
+  Final-window/final-pane close is atomically refused inside tmux so these
+  `Interact` operations cannot implicitly terminate a session.
 - Clipboard text is read only after the user taps Paste, remains in ephemeral
   terminal component state, and is cleared after send or cancel. Multiline and
   large pastes require confirmation, no Enter is appended, and serialized input

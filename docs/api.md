@@ -27,6 +27,8 @@ Requires CSRF and returns `204`.
 - `GET /api/sessions` — complete card-ready session records, including bounded preview.
 - `GET /api/sessions/{sessionId}` — one session or `404`.
 - `GET /api/sessions/{sessionId}/panes` — panes belonging to the validated session.
+- `GET /api/sessions/{sessionId}/topology` — authoritative ordered tmux windows
+  and their panes, using opaque `w_...` and `p_...` identifiers.
 - `GET /api/panes/{paneId}/capture?lines=200` — `{ "text": "...", "requestedLines": 200 }`. Lines are clamped to configured bounds.
 - `GET /api/config` — non-secret client settings, currently `{ "tmuxPrefix": "C-b" }`.
 
@@ -41,6 +43,15 @@ single-session DELETE, which requires `Admin`.
 - `POST /api/sessions` with `{ "name": "benchmark-qwen" }` creates one detached
   session and returns `201` with `{ "id": "s_...", "name": "benchmark-qwen" }`.
 - `POST /api/sessions/{sessionId}/rename` with `{ "name": "benchmark-qwen" }`
+- `POST /api/sessions/{sessionId}/windows` with `{ "name": "editor" }`; `name`
+  may be null or omitted to use tmux's default.
+- `POST /api/windows/{windowId}/select` and `DELETE /api/windows/{windowId}`.
+- `POST /api/panes/{paneId}/select`.
+- `POST /api/panes/{paneId}/split` with `{ "orientation": "horizontal" }` or
+  `vertical`.
+- `POST /api/panes/{paneId}/resize` with a direction (`left`, `right`, `up`, or
+  `down`) and `cells` from 1 through 20.
+- `DELETE /api/panes/{paneId}`.
 - `DELETE /api/sessions/{sessionId}` with no body terminates that one session and
   returns `204`; unknown targets return `404` and bounded tmux failures return `503`.
 - `POST /api/panes/{paneId}/keys` with `{ "keys": ["enter", "controlC"] }`
@@ -64,6 +75,13 @@ arbitrary command endpoint. Termination resolves the opaque ID against current
 tmux inventory immediately before invoking the fixed separated argument vector
 `tmux kill-session -t RAW_ID`; callers cannot provide a raw target, option, or
 command.
+
+Topology requests use a closed enum/field set and reject unmapped JSON fields;
+there is no command, executable, path, environment, raw target, layout string,
+or tmux option input. Window and pane targets are re-resolved from opaque IDs.
+Closing the final window or the final pane of the final window returns `409`:
+the check and mutation are one tmux command-queue operation so a topology close
+cannot implicitly kill the session.
 
 Workspace recovery has no caller-controlled command, path, target, environment,
 or agent field. The host service accepts only the fixed request record emitted

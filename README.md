@@ -39,7 +39,9 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
   WebSockets same-origin and keeps one real tmux client attached for each open
   terminal tab without changing the mobile PWA. Switching tabs preserves those
   attachments; closing a tab/window detaches its clients, and transient network
-  loss reconnects with bounded exponential backoff.
+  loss reconnects with bounded exponential backoff. Tmux-authoritative window
+  tabs and pane controls support selection, fixed horizontal/vertical splits,
+  bounded resize, and guarded close without exposing arbitrary commands.
 
 ## Development
 

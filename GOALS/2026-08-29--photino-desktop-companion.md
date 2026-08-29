@@ -89,7 +89,7 @@ existing mobile PWA.
 | 1. Transport/auth spike | completed | Photino reaches a configured test server, completes protected auth, lists inventory, attaches xterm.js, and detaches without a security exception. | 13 URL tests, frontend typecheck/build, isolated protected Photino/tmux runtime passed |
 | 2. Shell and profiles | completed | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser and offline/reconnect runtime |
 | 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
-| 4. Tmux topology | pending | Session/window/pane tabs and splits use fixed typed operations and round-trip across reconnect/mobile. | Contract/security tests and isolated topology round trip |
+| 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
 | 5. Desktop interaction | pending | Keyboard/mouse terminal workflows, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | Frontend interaction suite and owner Ubuntu acceptance |
 | 6. Cross-platform delivery | pending | Ubuntu/macOS source builds, launch evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, `./scripts/verify.sh`, Review Record |
 
@@ -123,6 +123,13 @@ the session remains running and becomes detached in the mobile PWA.
   detaches only its client, network loss detaches while sessions survive,
   reconnect creates one fresh client, and abrupt Photino loss cleans up the
   final client. Units 2 and 3 are complete.
+- 2026-08-29: added opaque window IDs, authoritative session topology, and a
+  closed set of create/select/split/resize/close operations with strict JSON,
+  CSRF, authorization, rate limiting, audit, stale-target rejection, and atomic
+  final-window/final-pane protection. The desktop maps these to subordinate
+  window tabs and pane controls. Isolated tmux and Photino runs proved all
+  operations, including corrected resize ordering and guarded close. Unit 4 is
+  complete.
 
 ## Evidence
 
@@ -147,10 +154,9 @@ the session remains running and becomes detached in the mobile PWA.
   `session_attached=0`, and left the session alive. The disposable container,
   tmux socket, Photino process, and X server were then removed/stopped.
 - Canonical gate: with the ignored local .NET 10 SDK cache, `./scripts/verify.sh`
-  exits 0 after the profile slice with 27 Core, 23 Infrastructure (four
-  expected opt-in skips), 48 Server integration, 21 Desktop, and five frontend
-  suites passing, followed by both Compose positive and fail-closed
-  configuration assertions.
+  exits 0 after Unit 4 with 27 Core, 26 Infrastructure (five expected opt-in
+  skips), 50 Server integration, 21 Desktop, and six frontend suites passing,
+  followed by both Compose positive and fail-closed configuration assertions.
 - Native profile runtime: `/tmp/tmuxctl-c022-profiles.pau3K9/profiles.json` was
   mode `0600` inside a mode-`0700` directory and contained only version, ID,
   label, and server URL. Photino connected profile `local` to the disposable
@@ -172,6 +178,20 @@ the session remains running and becomes detached in the mobile PWA.
   55999, then its native 12-second watchdog returned to the chooser with a
   server/network/TLS error and a usable profile form. The disposable app and X
   server were stopped and no settings were created.
+- Topology tests: 3 fixed-argv/parser tests and 2 server contract/security tests
+  cover opaque IDs, strict request fields, CSRF, stale targets, bounded enums,
+  auditing, and atomic final-close conflicts. The opt-in real tmux topology test
+  creates/selects windows, splits/selects/resizes/closes panes, closes a
+  non-final window, rejects both final close paths, and confirms session
+  survival.
+- Topology runtime: disposable images `sha256:d28959ed...` and corrected
+  `sha256:d144a06c...` served socket-isolated tmux 3.4. Photino rendered window
+  tabs and pane chips, created and selected `editor`, split it left/right and
+  top/bottom, selected and closed a pane, closed a non-final window, and visibly
+  refused final window/pane close while `has-session` remained successful. The
+  corrected resize control changed the active pane from 62 to 64 columns and
+  the sibling from 61 to 59, matching direct tmux inventory. Disposable
+  containers, sockets, Photino, Xvfb, and input harness files were removed.
 
 ## Discoveries
 
@@ -200,6 +220,9 @@ the session remains running and becomes detached in the mobile PWA.
 - Rendering only the selected terminal is not equivalent to keeping a desktop
   tab open: React unmount would detach the inactive tmux client. All open tab
   terminals must remain mounted and only their presentation may be hidden.
+- Tmux `resize-pane` accepts its numeric adjustment after the target options;
+  placing it before `-t` is parsed as an extra positional argument and fails.
+  The fixed service vector and regression test now encode the proven order.
 
 ## Decisions
 
@@ -218,6 +241,9 @@ the session remains running and becomes detached in the mobile PWA.
   directory; keep authentication entirely in the server-hosted page.
 - Retry inventory and terminal sockets with 1-30 second exponential backoff;
   treat server heartbeat JSON as control data, never terminal output.
+- Use opaque `w_`/`p_` targets and fixed typed topology actions. Refuse an
+  operation that would close the final session-bearing window/pane atomically
+  within tmux rather than relying on a racy read-then-write check.
 
 ## Retry State
 
@@ -227,9 +253,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Implement Unit 4's typed tmux window/pane topology: authoritative subordinate
-  window tabs and pane splits with create/select/resize/close operations that
-  round-trip through reconnect and remain visible to other tmux clients.
+- Complete Unit 5 desktop interaction: keyboard navigation, focus,
+  selection/copy/paste/context menu, independent windows, ordinary terminal
+  `exit`, explicit named session kill, resize, and owner Ubuntu acceptance.
 
 ## Pause Conditions
 
@@ -249,4 +275,6 @@ the session remains running and becomes detached in the mobile PWA.
   an isolated Photino runtime.
 - Units 2 and 3 complete: native profiles, offline/reconnect behavior, stable
   multi-tab attachments, clean detach, reconnect, and abrupt-loss cleanup are
-  implemented and runtime-proven. Units 4-6 remain active.
+  implemented and runtime-proven.
+- Unit 4 complete: authoritative tmux windows/panes and their guarded typed
+  operations are automated- and runtime-proven. Units 5-6 remain active.

@@ -12,7 +12,13 @@ public sealed class SafeIdentifierTests
         Assert.Equal(first, SafeIdentifier.ForSession("$12"));
         Assert.True(SafeIdentifier.IsSession(first));
         Assert.False(SafeIdentifier.IsPane(first));
+        Assert.False(SafeIdentifier.IsWindow(first));
         Assert.DoesNotContain("$12", first);
+
+        var window = SafeIdentifier.ForWindow("@4");
+        Assert.True(SafeIdentifier.IsWindow(window));
+        Assert.False(SafeIdentifier.IsSession(window));
+        Assert.DoesNotContain("@4", window);
     }
 
     [Theory]

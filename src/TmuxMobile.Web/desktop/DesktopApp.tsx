@@ -1,13 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DesktopTerminal, { type TerminalConnectionState } from "./DesktopTerminal";
+import TopologyBar from "./TopologyBar";
 import { reconnectDelay } from "./reconnect";
 import {
   UnauthorizedError,
   createSession,
+  createWindow,
   getSessions,
+  getTopology,
   inventoryWebSocketUrl,
   killSession,
+  killPane,
+  killWindow,
   login,
+  resizePane,
+  selectPane,
+  selectWindow,
+  splitPane,
+  type TmuxTopology,
   type InventorySnapshot,
   type TmuxSession
 } from "./desktopApi";
@@ -27,6 +37,8 @@ export default function DesktopApp() {
   const [error, setError] = useState<string | null>(null);
   const [connections, setConnections] = useState<Record<string, TerminalConnectionState>>({});
   const [inventoryConnected, setInventoryConnected] = useState(navigator.onLine);
+  const [topology, setTopology] = useState<TmuxTopology | null>(null);
+  const [topologyBusy, setTopologyBusy] = useState(false);
   const [nativeProfilesAvailable, setNativeProfilesAvailable] = useState(false);
 
   const showProfiles = () => {
@@ -101,6 +113,33 @@ export default function DesktopApp() {
   }, [authRequired, refresh]);
 
   const activeTab = useMemo(() => tabs.find(tab => tab.sessionId === activeId) ?? null, [tabs, activeId]);
+
+  const refreshTopology = useCallback(async (sessionId: string) => {
+    const next = await getTopology(sessionId);
+    if (sessionId === activeId) setTopology(next);
+  }, [activeId]);
+
+  useEffect(() => {
+    if (!activeId || authRequired || !inventoryConnected) { setTopology(null); return; }
+    let cancelled = false;
+    void getTopology(activeId).then(next => { if (!cancelled) setTopology(next); })
+      .catch(cause => { if (!cancelled) setError(cause instanceof Error ? cause.message : "Could not load tmux layout"); });
+    return () => { cancelled = true; };
+  }, [activeId, authRequired, inventoryConnected, sessions]);
+
+  const runTopology = async (operation: () => Promise<unknown>) => {
+    if (!activeId || topologyBusy) return;
+    setTopologyBusy(true);
+    try {
+      await operation();
+      await refreshTopology(activeId);
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not change tmux layout");
+    } finally {
+      setTopologyBusy(false);
+    }
+  };
 
   const open = (session: TmuxSession) => {
     setTabs(current => current.some(tab => tab.sessionId === session.id)
@@ -206,6 +245,24 @@ export default function DesktopApp() {
           {!inventoryConnected ? "server offline" : activeTab ? connections[activeTab.sessionId] ?? "connecting" : "no session"}
         </span>
       </nav>
+      {activeTab && <TopologyBar topology={topology?.sessionId === activeTab.sessionId ? topology : null}
+        busy={topologyBusy}
+        onCreateWindow={() => {
+          const name = window.prompt("New tmux window name (leave blank for the tmux default)");
+          if (name !== null) void runTopology(() => createWindow(activeTab.sessionId, name.trim() || undefined));
+        }}
+        onSelectWindow={id => void runTopology(() => selectWindow(id))}
+        onCloseWindow={(id, name) => {
+          if (window.confirm(`Close tmux window “${name}”? Running processes in it will end.`))
+            void runTopology(() => killWindow(id));
+        }}
+        onSelectPane={id => void runTopology(() => selectPane(id))}
+        onSplitPane={(id, orientation) => void runTopology(() => splitPane(id, orientation))}
+        onResizePane={(id, direction) => void runTopology(() => resizePane(id, direction))}
+        onClosePane={(id, index) => {
+          if (window.confirm(`Close tmux pane ${index}? Its running process will end.`))
+            void runTopology(() => killPane(id));
+        }} />}
       <div className="terminal-stage">
         {tabs.map(tab => <DesktopTerminal key={tab.sessionId} sessionId={tab.sessionId}
           active={tab.sessionId === activeId}

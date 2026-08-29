@@ -35,7 +35,7 @@ input:focus { border-color: #72d6a4; box-shadow: 0 0 0 1px #72d6a4; }
 .status.detached { background: #e2a65a; }
 .kill { color: #78828d; font-size: 18px; }
 .kill:hover { color: #ff7b72; }
-.workspace { position: relative; display: grid; grid-template-rows: 39px minmax(0, 1fr); min-width: 0; min-height: 0; }
+.workspace { position: relative; display: grid; grid-template-rows: 39px auto minmax(0, 1fr); min-width: 0; min-height: 0; }
 .tab-strip { display: flex; align-items: stretch; overflow: auto hidden; background: #171b20; border-bottom: 1px solid #30363d; }
 .tab { display: flex; min-width: 130px; max-width: 220px; border-right: 1px solid #30363d; }
 .tab.active { background: #111418; box-shadow: inset 0 2px #72d6a4; }
@@ -46,6 +46,25 @@ input:focus { border-color: #72d6a4; box-shadow: 0 0 0 1px #72d6a4; }
 .connection { align-self: center; margin-left: auto; padding: 0 12px; color: #8f99a5; font-size: 11px; white-space: nowrap; }
 .connection.connected { color: #72d6a4; }
 .connection.connecting { color: #e2a65a; }
+.connection.reconnecting { color: #e2a65a; }
+.topology-bar { min-width: 0; background: #15191e; border-bottom: 1px solid #30363d; }
+.window-strip, .pane-strip { display: flex; min-width: 0; min-height: 31px; align-items: stretch; overflow: auto hidden; }
+.window-strip { border-bottom: 1px solid #272d34; }
+.window-tab { display: flex; max-width: 220px; border-right: 1px solid #30363d; }
+.window-tab.active { background: #20262d; box-shadow: inset 0 -2px #72d6a4; }
+.window-tab button, .topology-add, .pane-chip, .pane-actions button { padding: 5px 9px; border: 0; background: transparent; cursor: pointer; }
+.window-tab button:first-child { overflow: hidden; min-width: 85px; text-overflow: ellipsis; white-space: nowrap; }
+.topology-add { width: 34px; color: #72d6a4; font-size: 17px; }
+.topology-close { color: #8f99a5; }
+.topology-close:hover { color: #ff7b72; }
+.topology-label { align-self: center; padding: 0 8px; color: #78828d; font-size: 10px; text-transform: uppercase; }
+.pane-chip { color: #aeb6bf; white-space: nowrap; border-right: 1px solid #272d34; }
+.pane-chip.active { color: #fff; background: #242a31; }
+.pane-chip small { margin-left: 5px; color: #78828d; }
+.pane-actions { display: flex; margin-left: auto; border-left: 1px solid #30363d; }
+.pane-actions button { min-width: 29px; color: #aeb6bf; }
+.pane-actions button:hover { color: #fff; background: #242a31; }
+.topology-bar button:disabled { opacity: .45; cursor: default; }
 .terminal-stage { position: relative; min-width: 0; min-height: 0; padding: 7px 0 0 7px; background: #111418; }
 .terminal-host { display: none; width: 100%; height: 100%; }
 .terminal-host.active { display: block; }

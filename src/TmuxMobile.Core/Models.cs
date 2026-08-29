@@ -35,7 +35,25 @@ public sealed record TmuxPane(
     bool IsActive,
     int ProcessId,
     int Width,
-    int Height);
+    int Height,
+    string WindowId = "",
+    string WindowName = "",
+    bool IsWindowActive = false,
+    string WindowLayout = "");
+
+public sealed record TmuxWindow(
+    string Id,
+    string SessionId,
+    int Index,
+    string Name,
+    bool IsActive,
+    string Layout,
+    IReadOnlyList<TmuxPane> Panes);
+
+public sealed record TmuxTopology(string SessionId, IReadOnlyList<TmuxWindow> Windows);
+
+public enum TmuxSplitOrientation { Horizontal, Vertical }
+public enum TmuxResizeDirection { Left, Right, Up, Down }
 
 public enum TmuxKey
 {
@@ -66,6 +84,8 @@ public sealed record ProcessResult(
 public sealed record TerminalSize(int Columns, int Rows);
 public sealed record InventorySnapshot(long Version, DateTimeOffset UpdatedAt, IReadOnlyList<TmuxSession> Sessions);
 public sealed record CreatedTmuxSession(string Id, string Name);
+public sealed record CreatedTmuxWindow(string Id);
+public sealed record CreatedTmuxPane(string Id);
 
 public sealed class TmuxNotFoundException(string message) : Exception(message);
 public sealed class TmuxConflictException(string message) : Exception(message);

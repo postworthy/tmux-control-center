@@ -11,6 +11,16 @@ public interface ITmuxService
     Task<CreatedTmuxSession> CreateSessionAsync(string name, CancellationToken cancellationToken);
     Task<TmuxSession?> GetSessionAsync(string sessionId, CancellationToken cancellationToken);
     Task<IReadOnlyList<TmuxPane>> GetPanesAsync(string sessionId, CancellationToken cancellationToken);
+    Task<TmuxTopology> GetTopologyAsync(string sessionId, CancellationToken cancellationToken);
+    Task<CreatedTmuxWindow> CreateWindowAsync(string sessionId, string? name, CancellationToken cancellationToken);
+    Task SelectWindowAsync(string windowId, CancellationToken cancellationToken);
+    Task KillWindowAsync(string windowId, CancellationToken cancellationToken);
+    Task<CreatedTmuxPane> SplitPaneAsync(string paneId, TmuxSplitOrientation orientation,
+        CancellationToken cancellationToken);
+    Task SelectPaneAsync(string paneId, CancellationToken cancellationToken);
+    Task ResizePaneAsync(string paneId, TmuxResizeDirection direction, int cells,
+        CancellationToken cancellationToken);
+    Task KillPaneAsync(string paneId, CancellationToken cancellationToken);
     Task<string> CapturePaneAsync(string paneId, int historyLines, CancellationToken cancellationToken);
     Task RenameSessionAsync(string sessionId, string newName, CancellationToken cancellationToken);
     Task KillSessionAsync(string sessionId, CancellationToken cancellationToken);

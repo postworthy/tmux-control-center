@@ -43,6 +43,70 @@ public sealed class ApiTests
     }
 
     [Fact]
+    public async Task TopologyEndpointsUseOpaqueTargetsFixedOperationsAndAudits()
+    {
+        await using var factory = new TmuxFactory(authenticated: true);
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+        var topology = await client.GetFromJsonAsync<TmuxTopology>(
+            $"/api/sessions/{TmuxFactory.Session.Id}/topology", JsonOptions);
+        var window = Assert.Single(topology!.Windows);
+        var pane = Assert.Single(window.Panes);
+        Assert.True(SafeIdentifier.IsWindow(window.Id));
+        Assert.True(SafeIdentifier.IsPane(pane.Id));
+
+        Assert.Equal(HttpStatusCode.OK, (await SendWithCsrfAsync(client, HttpMethod.Post,
+            $"/api/sessions/{TmuxFactory.Session.Id}/windows", new { name = "editor" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await SendWithCsrfAsync(client, HttpMethod.Post,
+            $"/api/windows/{window.Id}/select", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await SendWithCsrfAsync(client, HttpMethod.Post,
+            $"/api/panes/{pane.Id}/split", new { orientation = "horizontal" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await SendWithCsrfAsync(client, HttpMethod.Post,
+            $"/api/panes/{pane.Id}/select", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await SendWithCsrfAsync(client, HttpMethod.Post,
+            $"/api/panes/{pane.Id}/resize", new { direction = "right", cells = 3 })).StatusCode);
+
+        Assert.Equal(new[] { "create-window:editor", "select-window", "split:Horizontal",
+            "select-pane", "resize:Right:3" }, factory.TopologyCalls);
+        Assert.All(new[] { "window.create", "window.select", "pane.split", "pane.select", "pane.resize" },
+            action => Assert.Contains(factory.AuditRecords,
+                record => record.Action == action && record.Succeeded));
+    }
+
+    [Fact]
+    public async Task TopologyMutationsRejectCsrfStaleMalformedCommandAndFinalClose()
+    {
+        await using var factory = new TmuxFactory(authenticated: true);
+        var direct = CreateHttpsClient(factory);
+        Assert.Equal(HttpStatusCode.BadRequest, (await direct.PostAsJsonAsync(
+            $"/api/panes/{TmuxFactory.Session.CurrentPaneId}/resize",
+            new { direction = "left", cells = 2 })).StatusCode);
+
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+        var missingPane = SafeIdentifier.ForPane("%missing");
+        Assert.Equal(HttpStatusCode.NotFound, (await SendWithCsrfAsync(client, HttpMethod.Post,
+            $"/api/panes/{missingPane}/select", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await SendWithCsrfAsync(client, HttpMethod.Post,
+            $"/api/panes/{TmuxFactory.Session.CurrentPaneId}/resize",
+            new { direction = "left", cells = 0 })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await SendWithCsrfAsync(client, HttpMethod.Post,
+            $"/api/panes/{TmuxFactory.Session.CurrentPaneId}/split",
+            new { orientation = "horizontal", command = "run-shell attacker" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await SendWithCsrfAsync(client, HttpMethod.Delete,
+            $"/api/windows/{SafeIdentifier.ForWindow("@1")}", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await SendWithCsrfAsync(client, HttpMethod.Delete,
+            $"/api/panes/{TmuxFactory.Session.CurrentPaneId}", new { })).StatusCode);
+        Assert.DoesNotContain(factory.TopologyCalls, call => call.Contains("run-shell", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task InvalidTargetsReturnNotFound()
     {
         await using var factory = new TmuxFactory(authenticated: true);
@@ -613,6 +677,7 @@ public sealed class TmuxFactory(bool authenticated,
         "dotnet", "/srv/work", "build", SessionStatus.Active, "Running", "preview");
 
     public IReadOnlyList<HistoryCall> HistoryCalls => fakeTmux.HistoryCalls.ToArray();
+    public IReadOnlyList<string> TopologyCalls => fakeTmux.TopologyCalls.ToArray();
     public IReadOnlyList<AuditRecord> AuditRecords => fakeAudit.Records.ToArray();
     public long LastPtyInputLength => fakePty.Last?.InputLength ?? 0;
     public int RenameCalls => fakeTmux.RenameCalls;
@@ -753,6 +818,7 @@ public sealed class TmuxFactory(bool authenticated,
     {
         private readonly List<TmuxSession> sessions = emptySessions ? [] : [Session];
         public ConcurrentQueue<HistoryCall> HistoryCalls { get; } = new();
+        public ConcurrentQueue<string> TopologyCalls { get; } = new();
         public int RenameCalls { get; private set; }
         public int CreateCalls { get; private set; }
         public int KillCalls { get; private set; }
@@ -782,6 +848,62 @@ public sealed class TmuxFactory(bool authenticated,
             return Task.FromResult<IReadOnlyList<TmuxPane>>([
                 new(Session.CurrentPaneId, Session.Id, 0, 0, "pane", "dotnet", "/srv/work", true, 123, 80, 24)
             ]);
+        }
+        public async Task<TmuxTopology> GetTopologyAsync(string sessionId, CancellationToken cancellationToken)
+        {
+            var pane = (await GetPanesAsync(sessionId, cancellationToken)).Single() with
+            {
+                WindowId = SafeIdentifier.ForWindow("@1"),
+                WindowName = "main",
+                IsWindowActive = true,
+                WindowLayout = "layout"
+            };
+            return new(sessionId, [new(pane.WindowId, sessionId, 0, "main", true, "layout", [pane])]);
+        }
+        public Task<CreatedTmuxWindow> CreateWindowAsync(
+            string sessionId, string? name, CancellationToken cancellationToken)
+        {
+            if (sessionId != Session.Id) throw new TmuxNotFoundException("Missing");
+            if (!string.IsNullOrWhiteSpace(name)) InputValidation.ValidateRename(name);
+            TopologyCalls.Enqueue($"create-window:{name}");
+            return Task.FromResult(new CreatedTmuxWindow(SafeIdentifier.ForWindow("@2")));
+        }
+        public Task SelectWindowAsync(string windowId, CancellationToken cancellationToken)
+        {
+            if (windowId != SafeIdentifier.ForWindow("@1")) throw new TmuxNotFoundException("Missing");
+            TopologyCalls.Enqueue("select-window");
+            return Task.CompletedTask;
+        }
+        public Task KillWindowAsync(string windowId, CancellationToken cancellationToken)
+        {
+            if (windowId != SafeIdentifier.ForWindow("@1")) throw new TmuxNotFoundException("Missing");
+            throw new TmuxConflictException("The final window cannot be closed because that would kill the session.");
+        }
+        public Task<CreatedTmuxPane> SplitPaneAsync(
+            string paneId, TmuxSplitOrientation orientation, CancellationToken cancellationToken)
+        {
+            if (paneId != Session.CurrentPaneId) throw new TmuxNotFoundException("Missing");
+            TopologyCalls.Enqueue($"split:{orientation}");
+            return Task.FromResult(new CreatedTmuxPane(SafeIdentifier.ForPane("%2")));
+        }
+        public Task SelectPaneAsync(string paneId, CancellationToken cancellationToken)
+        {
+            if (paneId != Session.CurrentPaneId) throw new TmuxNotFoundException("Missing");
+            TopologyCalls.Enqueue("select-pane");
+            return Task.CompletedTask;
+        }
+        public Task ResizePaneAsync(
+            string paneId, TmuxResizeDirection direction, int cells, CancellationToken cancellationToken)
+        {
+            if (paneId != Session.CurrentPaneId) throw new TmuxNotFoundException("Missing");
+            if (cells is < 1 or > 20) throw new ArgumentException("Pane resize must be between 1 and 20 cells.");
+            TopologyCalls.Enqueue($"resize:{direction}:{cells}");
+            return Task.CompletedTask;
+        }
+        public Task KillPaneAsync(string paneId, CancellationToken cancellationToken)
+        {
+            if (paneId != Session.CurrentPaneId) throw new TmuxNotFoundException("Missing");
+            throw new TmuxConflictException("The final pane cannot be closed because that would kill the session.");
         }
         public Task<string> CapturePaneAsync(string paneId, int historyLines, CancellationToken cancellationToken)
         {

@@ -134,7 +134,10 @@ builder.Services.AddRateLimiter(options =>
         }));
 });
 builder.Services.ConfigureHttpJsonOptions(options =>
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase));
+    options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHsts(options =>
@@ -219,11 +222,12 @@ if (!app.Environment.IsDevelopment()) app.UseHsts();
 app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 {
     var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-    context.Response.StatusCode = exception is AntiforgeryValidationException
-        ? StatusCodes.Status400BadRequest : StatusCodes.Status500InternalServerError;
-    await Results.Problem(exception is AntiforgeryValidationException
-        ? "The CSRF token is missing or invalid."
-        : "The server could not complete the request.").ExecuteAsync(context);
+    var badRequest = exception is AntiforgeryValidationException or BadHttpRequestException or System.Text.Json.JsonException;
+    var statusCode = badRequest ? StatusCodes.Status400BadRequest : StatusCodes.Status500InternalServerError;
+    context.Response.StatusCode = statusCode;
+    await Results.Problem(badRequest
+        ? "The request is malformed or failed security validation."
+        : "The server could not complete the request.", statusCode: statusCode).ExecuteAsync(context);
 }));
 app.Use(async (context, next) =>
 {
@@ -440,6 +444,19 @@ sessions.MapGet("/{sessionId}/panes", async (string sessionId, ITmuxService tmux
     try { return Results.Ok(await tmux.GetPanesAsync(sessionId, cancellationToken)); }
     catch (TmuxNotFoundException) { return Results.NotFound(); }
 });
+sessions.MapGet("/{sessionId}/topology", async (
+    string sessionId, ITmuxService tmux, CancellationToken cancellationToken) =>
+{
+    try { return Results.Ok(await tmux.GetTopologyAsync(sessionId, cancellationToken)); }
+    catch (TmuxNotFoundException) { return Results.NotFound(); }
+});
+sessions.MapPost("/{sessionId}/windows", async (
+    string sessionId, CreateWindowRequest request, HttpContext context, ITmuxService tmux,
+    IInventoryStore inventory, IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+    await ExecuteTopologyActionAsync(context, antiforgery, auditLogger, inventory,
+        "window.create", sessionId, async cancellationToken =>
+            await tmux.CreateWindowAsync(sessionId, request.Name, cancellationToken)))
+    .RequireAuthorization("Interact").RequireRateLimiting("interact");
 sessions.MapDelete("/{sessionId}", async (
     string sessionId, HttpContext context, ITmuxService tmux, IInventoryStore inventory,
     IAntiforgery antiforgery, IAuditLogger auditLogger, ILogger<Program> logger) =>
@@ -521,6 +538,26 @@ sessions.MapPost("/{sessionId}/rename", async (
     }
 }).RequireAuthorization("Interact").RequireRateLimiting("interact");
 
+var windows = app.MapGroup("/api/windows").RequireAuthorization("Read");
+windows.MapPost("/{windowId}/select", async (
+    string windowId, HttpContext context, ITmuxService tmux, IInventoryStore inventory,
+    IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+    await ExecuteTopologyActionAsync(context, antiforgery, auditLogger, inventory,
+        "window.select", windowId, async cancellationToken =>
+        {
+            await tmux.SelectWindowAsync(windowId, cancellationToken);
+            return null;
+        })).RequireAuthorization("Interact").RequireRateLimiting("interact");
+windows.MapDelete("/{windowId}", async (
+    string windowId, HttpContext context, ITmuxService tmux, IInventoryStore inventory,
+    IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+    await ExecuteTopologyActionAsync(context, antiforgery, auditLogger, inventory,
+        "window.kill", windowId, async cancellationToken =>
+        {
+            await tmux.KillWindowAsync(windowId, cancellationToken);
+            return null;
+        })).RequireAuthorization("Interact").RequireRateLimiting("interact");
+
 var panes = app.MapGroup("/api/panes").RequireAuthorization("Read");
 panes.MapGet("/{paneId}/capture", async (
     string paneId, int? lines, ITmuxService tmux, IOptions<TmuxOptions> options,
@@ -530,6 +567,40 @@ panes.MapGet("/{paneId}/capture", async (
     try { return Results.Ok(new CaptureResponse(await tmux.CapturePaneAsync(paneId, count, cancellationToken), count)); }
     catch (TmuxNotFoundException) { return Results.NotFound(); }
 });
+panes.MapPost("/{paneId}/split", async (
+    string paneId, SplitPaneRequest request, HttpContext context, ITmuxService tmux,
+    IInventoryStore inventory, IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+    await ExecuteTopologyActionAsync(context, antiforgery, auditLogger, inventory,
+        "pane.split", paneId, async cancellationToken =>
+            await tmux.SplitPaneAsync(paneId, request.Orientation, cancellationToken)))
+    .RequireAuthorization("Interact").RequireRateLimiting("interact");
+panes.MapPost("/{paneId}/select", async (
+    string paneId, HttpContext context, ITmuxService tmux, IInventoryStore inventory,
+    IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+    await ExecuteTopologyActionAsync(context, antiforgery, auditLogger, inventory,
+        "pane.select", paneId, async cancellationToken =>
+        {
+            await tmux.SelectPaneAsync(paneId, cancellationToken);
+            return null;
+        })).RequireAuthorization("Interact").RequireRateLimiting("interact");
+panes.MapPost("/{paneId}/resize", async (
+    string paneId, ResizePaneRequest request, HttpContext context, ITmuxService tmux,
+    IInventoryStore inventory, IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+    await ExecuteTopologyActionAsync(context, antiforgery, auditLogger, inventory,
+        "pane.resize", paneId, async cancellationToken =>
+        {
+            await tmux.ResizePaneAsync(paneId, request.Direction, request.Cells, cancellationToken);
+            return null;
+        })).RequireAuthorization("Interact").RequireRateLimiting("interact");
+panes.MapDelete("/{paneId}", async (
+    string paneId, HttpContext context, ITmuxService tmux, IInventoryStore inventory,
+    IAntiforgery antiforgery, IAuditLogger auditLogger) =>
+    await ExecuteTopologyActionAsync(context, antiforgery, auditLogger, inventory,
+        "pane.kill", paneId, async cancellationToken =>
+        {
+            await tmux.KillPaneAsync(paneId, cancellationToken);
+            return null;
+        })).RequireAuthorization("Interact").RequireRateLimiting("interact");
 panes.MapPost("/{paneId}/keys", async (
     string paneId, KeysRequest request, HttpContext context, ITmuxService tmux,
     IAntiforgery antiforgery, IAuditLogger auditLogger) =>
@@ -645,5 +716,50 @@ static string PartitionKey(HttpContext context, bool includeIdentity)
 }
 
 static bool IsLoopback(IPAddress? address) => address is not null && IPAddress.IsLoopback(address);
+
+static async Task<IResult> ExecuteTopologyActionAsync(
+    HttpContext context, IAntiforgery antiforgery, IAuditLogger audit, IInventoryStore inventory,
+    string action, string target, Func<CancellationToken, Task<object?>> operation)
+{
+    try { await antiforgery.ValidateRequestAsync(context); }
+    catch (AntiforgeryValidationException)
+    {
+        await audit.WriteAsync(action, UserId(context.User), target, false, context.RequestAborted);
+        return Results.BadRequest(new { error = "The CSRF token is missing or invalid." });
+    }
+    try
+    {
+        var result = await operation(context.RequestAborted);
+        await inventory.RefreshAsync(context.RequestAborted);
+        await audit.WriteAsync(action, UserId(context.User), target, true, context.RequestAborted);
+        return result is null ? Results.NoContent() : Results.Ok(result);
+    }
+    catch (ArgumentException exception)
+    {
+        await audit.WriteAsync(action, UserId(context.User), target, false, context.RequestAborted);
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (TmuxNotFoundException)
+    {
+        await audit.WriteAsync(action, UserId(context.User), target, false, context.RequestAborted);
+        return Results.NotFound();
+    }
+    catch (TmuxConflictException exception)
+    {
+        await audit.WriteAsync(action, UserId(context.User), target, false, context.RequestAborted);
+        return Results.Conflict(new { error = exception.Message });
+    }
+    catch (TmuxCommandException)
+    {
+        await audit.WriteAsync(action, UserId(context.User), target, false, CancellationToken.None);
+        return Results.Problem("tmux could not apply the topology change.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+    catch
+    {
+        await audit.WriteAsync(action, UserId(context.User), target, false, CancellationToken.None);
+        throw;
+    }
+}
 
 public partial class Program;
