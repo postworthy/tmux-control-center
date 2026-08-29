@@ -1,7 +1,7 @@
 # Review Record: Workspace Reboot Recovery
 
 Date: 2026-08-29
-Review Boundary: C021 feature branch before host deployment
+Review Boundary: C021 feature branch and authorized host deployment
 Merge Method: eventual `git merge --no-ff feat/session-workspace-restore`
 Risk Class: T2 locally; T3 host deployment
 Related Proposal: `PROPOSALS/2026-08-29--workspace-reboot-recovery.md`
@@ -61,6 +61,24 @@ Related Proposal: `PROPOSALS/2026-08-29--workspace-reboot-recovery.md`
 - Live default-socket restore is intentionally not exercised because it would
   require terminating the owner's current sessions. The isolated test is the
   acceptance evidence for destructive reconstruction behavior.
+- System-wide installation was blocked by interactive sudo. The deployed
+  owner-owned cron watchdog starts the locked daemon at reboot and restarts it
+  within one minute; the installed user-systemd unit remains available for a
+  desktop login manager.
+
+## Deployment Evidence
+
+- Feature commit: `dbd9474` on `feat/session-workspace-restore`; no merge/push.
+- New image: `sha256:f48be26d7a6506714ade95056abb028dc5ac9fa94c6899c210cd58dfe2c6fcb5`.
+- Rollback tag: `tmux-mobile:rollback-before-workspace-20260829` at
+  `sha256:70b5dc05145a864f3b1e87a7df4b2c45e385c51dd8f01ca11f323b1ae04971db`.
+- Container healthy, zero restarts, workspace mount present, and only
+  `127.0.0.1:8780` is published.
+- HTTPS root and liveness returned 200; anonymous recovery returned 401; direct
+  backend returned 426. Authenticated live status reported enabled, idle,
+  snapshot available, and no pending request.
+- Owner daemon is active under the cron lock; snapshot mode is 0600. Existing
+  tmux session IDs `$0`, `$2`, and `$3` were unchanged by rollout.
 
 ## Rollback
 
@@ -71,4 +89,4 @@ Related Proposal: `PROPOSALS/2026-08-29--workspace-reboot-recovery.md`
 
 ## Decision
 
-Approved for the authorized host rollout. Merge and push are not approved.
+Approved and deployed. Merge and push are not approved.

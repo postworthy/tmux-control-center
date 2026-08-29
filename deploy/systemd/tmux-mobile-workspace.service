@@ -1,0 +1,17 @@
+[Unit]
+Description=Tmux Mobile workspace snapshot and app-requested recovery
+Documentation=https://github.com/postworthy/tmux-control-center
+After=default.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/tmux-mobile/workspace.env
+ExecStart=%h/.local/libexec/tmux-mobile-workspace-recovery run
+Restart=on-failure
+RestartSec=10s
+TimeoutStopSec=20s
+KillMode=process
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

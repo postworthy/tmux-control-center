@@ -1,6 +1,6 @@
 # Goal: Restore Tmux Workspaces After Reboot
 
-Status: active
+Status: completed
 Owner: Human Partner and AI Agent
 Risk: T2 locally; T3 host deployment
 Updated: 2026-08-29
@@ -23,25 +23,25 @@ latest directory-scoped conversations, while every other pane returns as a shell
 
 ## Acceptance Criteria
 
-- [ ] AC1 — Snapshots are atomic, owner-only, content-free, and contain only
+- [x] AC1 — Snapshots are atomic, owner-only, content-free, and contain only
   the approved metadata schema and three-value pane classification.
-  - Evidence: pending
-- [ ] AC2 — An isolated workspace round-trip preserves session/window names,
+  - Evidence: shell test validates mode 0600 and enum-only TSV without argv or output.
+- [x] AC2 — An isolated workspace round-trip preserves session/window names,
   pane directories/counts, layouts, and active selections.
-  - Evidence: pending
-- [ ] AC3 — Only Codex and Claude panes launch fixed resume commands; SSH and
+  - Evidence: real isolated tmux round-trip passed for one session, two windows, and three panes.
+- [x] AC3 — Only Codex and Claude panes launch fixed resume commands; SSH and
   every unknown program restore as shells, with no captured argv replay.
-  - Evidence: pending
-- [ ] AC4 — Boot/service start never restores; one protected in-app request can
+  - Evidence: fake executable markers proved `resume --last` and `--continue`; unknown command data was absent.
+- [x] AC4 — Boot/service start never restores; one protected in-app request can
   restore once, while corrupt snapshots create nothing, live sessions block
   restore, and failed partial restores clean up only newly created sessions.
-  - Evidence: pending
-- [ ] AC5 — The host service runs as the tmux owner, saves periodically and on
+  - Evidence: shell and 48-route integration tests passed corrupt/live/CSRF/auth/request guards.
+- [x] AC5 — The host service runs as the tmux owner, saves periodically and on
   stop, waits for explicit app requests, and daemon restart leaves tmux alive.
-  - Evidence: pending
-- [ ] AC6 — Focused/canonical verification, documentation, Change Review,
+  - Evidence: isolated daemon test preserved tmux; live owner daemon is locked, saving, and awaiting requests.
+- [x] AC6 — Focused/canonical verification, documentation, Change Review,
   local commits, host rollout, live app checks, and rollback evidence pass.
-  - Evidence: pending
+  - Evidence: Review Record, commits, live health/security checks, and rollback image are recorded below.
 
 ## Authority Envelope
 
@@ -68,7 +68,7 @@ latest directory-scoped conversations, while every other pane returns as a shell
 | 2. Snapshot thin slice | completed | Isolated tmux metadata saves atomically with mode 0600. | Focused shell test |
 | 3. Restore engine | completed | Isolated multi-pane state round-trips with fixed agent resumes. | Real isolated tmux test |
 | 4. App/host bridge | completed | Protected app action triggers one restore; boot remains idle and daemon restart preserves tmux. | API/systemd integration probe |
-| 5. Review and deploy | in progress | Gates pass and live service is installed, healthy, and reversible. | Canonical + live evidence |
+| 5. Review and deploy | completed | Gates pass and live service is installed, healthy, and reversible. | Canonical + live evidence |
 
 ## Progress
 
@@ -83,6 +83,9 @@ latest directory-scoped conversations, while every other pane returns as a shell
   action, empty-inventory UI, Compose state mount, host unit, and documentation.
 - 2026-08-29: focused real-tmux, server, frontend, setup, watchdog, Compose, and
   production-build verification passed; deployment review is next.
+- 2026-08-29: locally committed implementation as `dbd9474`, installed the
+  owner helper and boot watchdog, deployed image `sha256:f48be26...`, and
+  verified the live app without mutating the default tmux server.
 
 ## Evidence
 
@@ -96,6 +99,13 @@ latest directory-scoped conversations, while every other pane returns as a shell
   watchdog, Compose rendering, shell syntax, and `git diff --check` passed.
 - The opt-in PTY-only test attempt was blocked by the SDK test image lacking
   `/usr/bin/tmux`; equivalent recovery lifecycle coverage ran against host tmux.
+- Live: app container healthy with zero restarts; workspace mount is present;
+  HTTPS root/liveness 200; anonymous recovery 401; direct backend 426; the
+  authenticated recovery status is enabled/idle with a snapshot available.
+- Host: cron-supervised owner daemon and locks are active; snapshot is mode 0600
+  and captured three current sessions; `$0`, `$2`, and `$3` survived rollout.
+- Rollback image `tmux-mobile:rollback-before-workspace-20260829` points to
+  `sha256:70b5dc...`.
 
 ## Discoveries
 
@@ -123,8 +133,8 @@ latest directory-scoped conversations, while every other pane returns as a shell
 
 ## Next Action
 
-- Complete the Change Review, local feature commit, host helper installation,
-  Compose rollout, and non-destructive live verification.
+- Owner may use **Restore saved workspace** after a reboot when inventory is
+  empty. Desktop companion exploration is a separate future goal.
 
 ## Pause Conditions
 
@@ -134,4 +144,5 @@ latest directory-scoped conversations, while every other pane returns as a shell
 
 ## Outcomes
 
-- Implementation is verified locally; deployment is pending.
+- Manual in-app workspace restore is implemented, locally committed, deployed,
+  and ready for use. No merge or push occurred.

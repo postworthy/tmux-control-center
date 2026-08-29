@@ -86,6 +86,22 @@ that unit and restore the prior app image; leave the state directory in place so
 the last snapshot remains recoverable. Do not delete or edit a snapshot during
 normal rollback.
 
+If administrator access is unavailable on a desktop host, install the supplied
+user unit instead: copy the helper to `~/.local/libexec/`, the unit to
+`~/.config/systemd/user/`, and an edited environment file to
+`~/.config/tmux-mobile/workspace.env`; then enable
+`tmux-mobile-workspace.service` with `systemctl --user`. It starts when that
+user's desktop session starts. The helper takes an owner-only lock, so a second
+copy exits without racing the active daemon.
+
+For a headless user without a systemd user manager, the user-owned cron service
+may supervise the same daemon. Start from
+`deploy/cron/tmux-mobile-workspace.example`, replace its placeholders, and
+install it only after preserving any existing crontab entries. The `@reboot`
+entry starts immediately after boot; the minutely locked watchdog restarts a
+failed daemon without creating duplicates. This fallback also never restores on
+startup—the daemon merely saves and waits for an app request.
+
 ## Build and install
 
 As the tmux owner:

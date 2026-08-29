@@ -348,6 +348,12 @@ run_daemon() {
     return 1
   }
   prepare_state_directory || return 1
+  exec 9>"$STATE_DIR/daemon.lock" || return 1
+  chmod 0600 -- "$STATE_DIR/daemon.lock" || return 1
+  if ! flock -n 9; then
+    log "another recovery daemon already owns the state directory"
+    return 0
+  fi
   trap 'save_snapshot || true; exit 0' TERM INT
   log "daemon started; restore requires an explicit app request"
   local last_save=0 now

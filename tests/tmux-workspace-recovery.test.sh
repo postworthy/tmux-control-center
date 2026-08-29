@@ -118,6 +118,8 @@ wait "$daemon_pid"
 tmux -L "$socket_name" has-session
 
 grep -q '^KillMode=process$' "$repository_root/deploy/systemd/tmux-mobile-workspace@.service"
+grep -q '^KillMode=process$' "$repository_root/deploy/systemd/tmux-mobile-workspace.service"
+grep -q '^WantedBy=default.target$' "$repository_root/deploy/systemd/tmux-mobile-workspace.service"
 grep -q '^User=%i$' "$repository_root/deploy/systemd/tmux-mobile-workspace@.service"
 
 echo "tmux workspace recovery tests passed"
