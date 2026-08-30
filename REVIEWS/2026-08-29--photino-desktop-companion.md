@@ -10,10 +10,10 @@ Decision: not ready
 ## Branch
 
 - Source branch: `feat/c022-desktop-photino-client`
-- Target branch: `main` at `10b5648`
-- C022 baseline: `24077b6`; reviewed C022 range is `24077b6..66372ef`.
-- Actual merge base: `10b5648`. The target-boundary diff also contains the
-  earlier `005e182`, `dbd9474`, and `24077b6` changes.
+- Target branch: local `main` at `24077b6` after the owner-approved
+  predecessor-stack fast-forward.
+- C022 baseline and actual merge base: `24077b6`; the target-boundary diff now
+  contains only C022 changes.
 
 ## Commits in Scope
 
@@ -22,20 +22,25 @@ Decision: not ready
 - `16bdc44` `feat(desktop): add native server profiles`
 - `7be3911` `feat(desktop): preserve session tab attachments`
 - `08241ab` `feat(desktop): add authoritative tmux topology`
-- `69b4aeb` `feat(desktop): add native terminal interactions`
-- `ba103de` `build(desktop): add self-contained source targets`
-- `cbd5414` `docs(review): record Photino companion findings`
-- `66372ef` `feat(desktop): negotiate server capabilities`
+- `07b6d95` `feat(desktop): add native terminal interactions`
+- `7381dae` `build(desktop): add self-contained source targets`
+- `fc315a9` `docs(review): record Photino companion findings`
+- `8741bf4` `feat(desktop): negotiate server capabilities`
+- `4b0769f` `docs(review): close desktop compatibility finding`
+- `15ea494` `docs(desktop): add physical acceptance checklist`
+- `047c63f` `docs(goal): record desktop acceptance blocker`
 
 ## Git Conformance Checklist
 
 - [x] Source branch matches naming policy.
 - [x] No direct C022 commit was made to `main`.
 - [x] Commit subjects are conventional.
-- [ ] Every commit carries the required `Roadmap` and `Proposal` trailers.
-  `69b4aeb` carries only `Goal` and `Work-Unit` trailers.
-- [ ] The branch-to-`main` boundary contains only the approved C022
-  decomposition. Three earlier stacked commits are also in `main..HEAD`.
+- [x] Every commit carries the required `Roadmap` and `Proposal` trailers. The
+  owner authorized local history repair; rewritten commit `07b6d95` retains its
+  `Goal` and `Work-Unit` trailers and now carries both required scope trailers.
+- [x] The branch-to-`main` boundary contains only the approved C022
+  decomposition. Local `main`, the merge base, and the declared baseline all
+  resolve to `24077b6`.
 
 ## Change Summary
 
@@ -96,8 +101,8 @@ DOTNET_ROOT=/nonexistent DOTNET_MULTILEVEL_LOOKUP=0 \
 dotnet list TmuxMobile.sln package --vulnerable --include-transitive
 npm --prefix src/TmuxMobile.Web audit --omit=dev
 ./scripts/verify.sh
-git diff --check 24077b6..66372ef
-git log --format=full 24077b6..66372ef
+git diff --check main..HEAD
+git log --format=full main..HEAD
 git log --oneline main..HEAD
 ```
 
@@ -123,6 +128,16 @@ Results:
 - A real Photino probe against a disposable self-signed HTTPS endpoint rejected
   the certificate before remote navigation and rendered explicit TLS
   certificate/URL guidance in the native chooser.
+- The owner-approved history repair produced the same pre/post-rewrite HEAD tree
+  `e5f790766707e06a8b4a4249a1175991d56f2859`. Every C022 commit has the
+  required trailers, and after the predecessor-stack fast-forward
+  `git merge-base main HEAD` equals local `main` at `24077b6`.
+- The unqualified post-repair canonical attempt exits 145 after its shell
+  suites because the host default is SDK 8 while the repository pins .NET 10.
+  Re-running with the existing ignored repo-local SDK 10.0.302 exits 0: 27 Core,
+  26 Infrastructure plus five intentional skips, 34 Desktop, 51 Server
+  integration, all six frontend suites, the shell suites, and both Compose
+  assertions pass. No toolchain contract changed.
 
 ## Findings
 
@@ -136,29 +151,26 @@ Results:
    clipboard copy/paste, context menu, resize, sleep/wake, and mouse/keyboard
    feel. Synthetic Xvfb evidence is useful but cannot approve the subjective
    desktop terminal criterion.
-3. The declared merge boundary is not scope-clean. `git log main..HEAD` includes
-   the non-C022 commits `005e182`, `dbd9474`, and `24077b6`. Merge C022 only
-   after the owner chooses a stacked merge order or authorizes a clean C022
-   branch based on the intended target.
-
-### Non-blocking conformance
-
-1. Commit `69b4aeb` is missing the required `Roadmap` and `Proposal` trailers.
-   Correct the local history or explicitly waive this metadata requirement
-   before crossing the review boundary.
-
 No secret, terminal content, generated package output, installer, publication,
 live-session mutation, Tailscale change, auth exception, or caller-controlled
 tmux command was found in the reviewed C022 range.
 
 ### Resolved after initial review
 
-1. `66372ef` resolves the older-server compatibility finding with a shared
+1. Rewritten commit `8741bf4` resolves the older-server compatibility finding
+   with a shared
    protocol model, anonymous content-free rate-limited metadata endpoint, and
    native pre-navigation check. Eight native tests cover exact routing,
    forward-compatible versions, missing capabilities, 404/401, redirect
    refusal, malformed/oversized responses, and sanitized TLS failure; one
    server integration test verifies the exact response fields and cache policy.
+2. The owner selected predecessor-stack ordering. Local `main` was
+   fast-forwarded from `10b5648` through `005e182`, `dbd9474`, and `24077b6`,
+   making the C022 review boundary scope-clean without replaying its earlier
+   commits.
+3. The owner authorized local history repair. `69b4aeb` was replaced by
+   `07b6d95` with the required Roadmap and Proposal trailers, its descendants
+   were replayed, and the pre/post-rewrite tree hash remained unchanged.
 
 ## Risk, Compatibility, and Rollback
 
@@ -166,11 +178,11 @@ tmux command was found in the reviewed C022 range.
   adds guarded tmux topology mutations, even though the native shell itself is
   local and server management remains out of scope.
 - Server routes are additive; the root mobile PWA source and workspace-recovery
-  source are unchanged across `24077b6..66372ef`. Existing auth/origin/CSRF and
+  source are unchanged across `main..HEAD`. Existing auth/origin/CSRF and
   WebSocket controls are reused rather than relaxed.
 - No data/schema migration exists. Profile state is versioned, contains only
   ID/label/origin, and can be removed independently.
-- Roll back by reverting the nine C022 commits in reverse order or removing the
+- Roll back by reverting the C022 commits in reverse order or removing the
   additive desktop project/assets/routes and topology operations, then run
   `./scripts/verify.sh` and a mobile attach/detach/session-action smoke test.
   Do not remove or alter live tmux sessions as part of rollback.
@@ -188,7 +200,6 @@ tmux command was found in the reviewed C022 range.
 - Complete owner Ubuntu desktop interaction acceptance.
 - Follow `docs/desktop-acceptance.md` for both physical-platform checks and
   report only its sanitized evidence fields.
-- Resolve the stacked branch boundary and missing commit trailers.
-- Re-run focused and canonical verification, then update this Review Record to
-  a new readiness decision. Merge, push, CI, and publication remain explicitly
-  owner-controlled.
+- After physical acceptance, re-run canonical verification and update this
+  Review Record to a final readiness decision. Merge, push, CI, and publication
+  remain explicitly owner-controlled.

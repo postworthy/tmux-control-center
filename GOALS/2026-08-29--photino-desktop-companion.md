@@ -1,6 +1,6 @@
 # Goal: tmuxctl Photino Desktop Companion
 
-Status: blocked
+Status: paused
 Owner: Human Partner and AI Agent
 Risk: T2
 Updated: 2026-08-29
@@ -239,10 +239,10 @@ the session remains running and becomes detached in the mobile PWA.
   unchanged. Reverting the C022 commits removes the additive desktop/API
   surface, after which `./scripts/verify.sh` is the validation gate.
 - Change Review: `REVIEWS/2026-08-29--photino-desktop-companion.md` records a
-  `not ready` decision. Blocking evidence remains for actual Apple Silicon
-  launch, owner Ubuntu interaction acceptance, and the stacked branch-to-main
-  boundary. Commit `69b4aeb` also lacks the proposal-required Roadmap/Proposal
-  trailers. The earlier compatibility finding is resolved by `66372ef`.
+  `not ready` decision only because actual Apple Silicon launch and owner Ubuntu
+  interaction acceptance remain. The predecessor-stack boundary and required
+  commit trailers are resolved; the earlier compatibility finding is resolved
+  by rewritten commit `8741bf4`.
 - Capability tests and runtime: 8 new native cases cover the exact endpoint,
   forward-compatible versions, missing features, old-server 404/401, redirect
   refusal, malformed/oversized bodies, and sanitized TLS failure. The anonymous
@@ -269,6 +269,22 @@ the session remains running and becomes detached in the mobile PWA.
   context-menu, resize, network, sleep/wake, exit/kill, PWA-regression, privacy,
   and sanitized-report steps without asking the owner to disclose secrets or
   terminal content.
+- 2026-08-29: the owner selected predecessor-stack ordering and authorized local
+  history repair. Local `main` now ends at the declared C022 baseline
+  `24077b6`; the C022 merge base is scope-clean. Rewritten interaction commit
+  `07b6d95` carries all required trailers, and replaying its descendants
+  preserved the exact pre/post-rewrite HEAD tree hash
+  `e5f790766707e06a8b4a4249a1175991d56f2859`.
+- 2026-08-29: the unqualified post-repair canonical attempt exited 145 after
+  its shell suites because the host default is SDK 8 and the repository pins
+  .NET 10. Re-running through the existing ignored repo-local SDK 10.0.302
+  exits 0: 27 Core, 26 Infrastructure plus five intentional skips, 34 Desktop,
+  51 Server integration, all six frontend suites, the shell suites, and both
+  Compose assertions pass. No toolchain contract changed. The goal is paused
+  only for physical Ubuntu and Apple Silicon acceptance. The optional
+  `pnpm goal:status` adapter is unavailable because this repository has no root
+  package manifest; direct status inspection confirms C022 is paused and no
+  goal is marked active.
 
 ## Discoveries
 
@@ -309,9 +325,9 @@ the session remains running and becomes detached in the mobile PWA.
   content: native `HttpClient` uses the operating-system TLS validation,
   disables redirects, bounds the response to 16 KiB, accepts additive future
   metadata, and requires all version-1 capabilities before WebView navigation.
-- The current feature branch is stacked on three locally committed C018-C021
-  changes absent from `main`. The declared C022 merge boundary is not clean
-  until the owner selects the stack order or authorizes a clean branch base.
+- The owner-approved predecessor-stack fast-forward makes local `main`, the
+  C022 merge base, and the declared baseline all resolve to `24077b6`; only C022
+  commits remain in `main..HEAD`.
 
 ## Decisions
 
@@ -341,22 +357,17 @@ the session remains running and becomes detached in the mobile PWA.
 - Last failure: the first content-free endpoint test falsely matched the valid
   feature name `session-tabs-v1`; replacing the substring assertion with an
   exact three-field JSON assertion made the unchanged implementation pass 51/51.
-- Blocked audit: the same external completion boundary has remained across
-  three consecutive goal turns. The first review identified Apple Silicon,
-  owner Ubuntu, stacked-branch, and history-metadata requirements; the second
-  turn closed every remaining local compatibility/TLS/documentation gap; this
-  third audit finds no authorized local action that can produce physical-device
-  evidence or change owner-controlled git history/merge state.
-- Unblock conditions: the owner chooses the predecessor-stack versus clean-base
-  branch strategy, authorizes either local history repair for `69b4aeb` or a
-  trailer waiver, and supplies or authorizes the Ubuntu/Apple Silicon acceptance
-  evidence described in `docs/desktop-acceptance.md`.
+- Resume evidence: the owner chose predecessor-stack ordering and authorized
+  local history repair. Both Git findings are resolved with an unchanged source
+  tree and a passing canonical gate.
+- Remaining boundary: physical Ubuntu interaction and actual Apple Silicon
+  launch evidence described in `docs/desktop-acceptance.md` cannot be produced
+  by the current headless Linux execution environment.
 
 ## Next Action
 
-- On owner resume, apply the selected branch/history decision and incorporate
-  the documented Apple Silicon/Ubuntu acceptance results, then re-run the
-  canonical gate and C022 Change Review.
+- Obtain and incorporate the sanitized Ubuntu and Apple Silicon results from
+  `docs/desktop-acceptance.md`, then issue the final C022 Change Review decision.
 
 ## Pause Conditions
 
@@ -383,7 +394,7 @@ the session remains running and becomes detached in the mobile PWA.
   windows, guarded clipboard paths, exact-name kill, ordinary `exit`, and
   authoritative tab cleanup are implemented and locally runtime-proven. Unit 6
   and physical owner/platform acceptance remain active.
-- Unit 6 is blocked only at owner/external boundaries: local source builds,
+- Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch, compatibility, TLS, tests, docs, rollback, and review evidence
-  are complete; Apple Silicon launch, owner Ubuntu acceptance, branch ordering,
-  and commit-trailer disposition remain required.
+  are complete; branch ordering and commit metadata are resolved, while Apple
+  Silicon launch and owner Ubuntu acceptance remain required.
