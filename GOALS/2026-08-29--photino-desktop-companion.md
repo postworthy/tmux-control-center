@@ -285,6 +285,14 @@ the session remains running and becomes detached in the mobile PWA.
   `pnpm goal:status` adapter is unavailable because this repository has no root
   package manifest; direct status inspection confirms C022 is paused and no
   goal is marked active.
+- 2026-08-29: the first physical Ubuntu connection attempt stopped in the
+  native capability preflight with its sanitized generic connection error.
+  `RCA/2026-08-29--desktop-magicdns-preflight-failure.md` proves the host has
+  Tailscale DNS acceptance disabled, so its own MagicDNS origin does not resolve
+  normally even though forcing the hostname to the current Tailscale IP reaches
+  Kestrel through valid TLS. That forced request also proves the deployed image
+  predates C022 because the capability path returns mobile HTML rather than
+  protocol JSON. No network or deployment state was changed.
 
 ## Discoveries
 
@@ -328,6 +336,10 @@ the session remains running and becomes detached in the mobile PWA.
 - The owner-approved predecessor-stack fast-forward makes local `main`, the
   C022 merge base, and the declared baseline all resolve to `24077b6`; only C022
   commits remain in `main..HEAD`.
+- A same-host Tailscale Serve URL still depends on operating-system MagicDNS
+  resolution. `tailscale status` and a forced-address HTTPS request do not prove
+  that the native app can resolve the saved hostname; physical preflight must
+  check Tailscale DNS acceptance and a normal resolver lookup separately.
 
 ## Decisions
 
@@ -352,11 +364,13 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Retry State
 
-- Current attempt: 0
+- Current attempt: 1
 - Maximum attempts per unchanged failure: 2
-- Last failure: the first content-free endpoint test falsely matched the valid
-  feature name `session-tabs-v1`; replacing the substring assertion with an
-  exact three-field JSON assertion made the unchanged implementation pass 51/51.
+- Last failure: the first physical Ubuntu compatibility attempt could not
+  resolve the MagicDNS origin because Tailscale DNS acceptance is disabled. A
+  forced-address request then showed the deployed server is also pre-C022. The
+  supported causes and verification gap are recorded in the related RCA; an
+  unchanged retry is not useful.
 - Resume evidence: the owner chose predecessor-stack ordering and authorized
   local history repair. Both Git findings are resolved with an unchanged source
   tree and a passing canonical gate.
@@ -366,8 +380,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Obtain and incorporate the sanitized Ubuntu and Apple Silicon results from
-  `docs/desktop-acceptance.md`, then issue the final C022 Change Review decision.
+- Obtain explicit owner approval for the Tailscale DNS and C022 deployment
+  corrections recorded in the RCA, then validate normal capability resolution
+  before resuming physical acceptance.
 
 ## Pause Conditions
 

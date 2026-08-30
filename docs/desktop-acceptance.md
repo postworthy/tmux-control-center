@@ -26,12 +26,21 @@ Verify that the already-running server advertises desktop protocol 1 before
 opening the client:
 
 ```bash
+tailscale dns status
+getent ahosts YOUR-TMUXCTL-MAGICDNS-HOST
 curl --fail https://YOUR-TMUXCTL-SERVER/api/desktop/capabilities
 ```
 
+`tailscale dns status` must report that Tailscale DNS is enabled on the client,
+and the operating-system lookup must return the current Tailscale address. A
+successful `tailscale status`, Serve mapping, or curl request using `--resolve`
+does not replace this check because the desktop app uses normal operating-system
+DNS resolution.
+
 The response must contain protocol version 1 and the `session-tabs-v1`,
 `terminal-websocket-v1`, and `tmux-topology-v1` features. A 404 means the server
-must be updated before this desktop build can connect.
+must be updated before this desktop build can connect. An HTML response also
+means the deployed server predates this capability contract and must be updated.
 
 ## Ubuntu x64
 
