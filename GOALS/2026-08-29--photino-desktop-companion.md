@@ -115,6 +115,17 @@ the session remains running and becomes detached in the mobile PWA.
   correction raises global/per-owner defaults to ten, adds rejection evidence,
   and adds a capacity/release regression test. The focused test and canonical
   verification pass; deployment remains at the owner boundary.
+- 2026-08-30: the owner authorized the capacity correction build and deployment.
+  The prior live image `sha256:0370d1bc...` is preserved as
+  `tmux-mobile:pre-terminal-capacity-20260830`. Corrected image
+  `sha256:1fbc3c0a...` passed Compose validation and the isolated host/container
+  tmux 3.4 socket probe, then replaced only the app service. It is healthy with
+  zero restarts, publishes only on host loopback, reports the bounded 10/10
+  capacity, serves HTTPS root/liveness/protocol metadata, and retains direct
+  backend denial. All seven sessions and windows survived unchanged. With both
+  desktop clients reconnected, a third owner terminal attached successfully and
+  sent mobile history controls; the affected session's attachment count changed
+  from two to three, proving the previously rejected desktop-plus-mobile path.
 - 2026-08-29: owner approved Photino/xterm.js, remote-server-only operation,
   configured Tailscale URL, tmux-authoritative session/window/pane mapping, real
   attachment state, detach-on-close, normal `exit`, explicit list-based kill,
@@ -181,6 +192,19 @@ the session remains running and becomes detached in the mobile PWA.
   The canonical `./scripts/verify.sh` exits 0 with 27 Core, 26 Infrastructure
   plus five intentional skips, 56 Server integration, 41 Desktop, twelve
   frontend suites, shell suites, and Compose assertions passing.
+- Mobile capacity deployment: Compose image
+  `tmux-mobile:terminal-capacity-b655763` resolves to
+  `sha256:1fbc3c0ade52cb57d0ea5fcd845ab6ebf89cd9e7c2be03bfddaf7770cb59e5a6`;
+  rollback tag `tmux-mobile:pre-terminal-capacity-20260830` resolves to prior
+  digest `sha256:0370d1bc8a0bb1dc9043c7a39d0a6081835057ede9c34c902395c3ecfc28558d`.
+  `scripts/first-run-setup.sh probe-tmux` passed on an isolated tmux 3.4 socket.
+  Live HTTPS root, liveness, and desktop capabilities returned 200; the backend
+  returned 426 with the configured Host; Docker exposes only
+  `127.0.0.1:8780`; health is `healthy` with restart count zero. Pre/post tmux
+  inventory retains the same seven session IDs, names, and window counts. Live
+  server process evidence shows three owner PTY clients, and audit/log evidence
+  records the third successful terminal connection plus mobile history actions
+  while the two persistent desktop clients remain present.
 - Product approval: owner accepted every recommended first-cut behavior in the
   2026-08-29 design discussion.
 - Planning validation: `git diff --check` passed; all required goal sections are
@@ -580,12 +604,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Verify the bounded terminal-capacity correction locally. Deployment remains
-  an explicit owner boundary; until then, closing one desktop terminal tab frees
-  a lease and restores mobile terminal access. After deployment, physically
-  prove a mobile terminal while at least two desktop tabs remain connected,
-  then resume rename/right-click/layout acceptance. Apple Silicon
-  launch/pinning remains external.
+- Resume owner acceptance for rename, right-click, and layout behavior with the
+  now-proven concurrent mobile terminal path. Apple Silicon launch/pinning
+  remains external.
 
 ## Pause Conditions
 

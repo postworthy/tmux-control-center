@@ -11,8 +11,12 @@ Updated: 2026-08-30
   `RCA/2026-08-30--desktop-terminal-capacity-blocks-mobile.md`; a bounded source
   correction raises global/per-owner capacity to ten and records rejected
   capacity attempts. Its focused regression test and canonical verification
-  pass; separately approved deployment remains pending. Closing one desktop tab
-  is the immediate non-deployment recovery.
+  pass. The owner authorized deployment: corrected image `sha256:1fbc3c0a...`
+  is live, healthy, and at zero restarts, with prior image `sha256:0370d1bc...`
+  preserved as `tmux-mobile:pre-terminal-capacity-20260830`. Seven sessions and
+  their windows survived unchanged. Two persistent desktop clients plus a third
+  successful mobile attachment and mobile history actions now prove the exact
+  previously failing concurrency path.
 - C022 is implemented locally on `feat/c022-desktop-photino-client` and paused
   at its owner/external completion boundary. The
   .NET 10/Photino shell connects to an already-running tmuxctl server and serves
