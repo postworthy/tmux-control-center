@@ -11,7 +11,7 @@ Decision: not ready
 
 - Source branch: `feat/c022-desktop-photino-client`
 - Target branch: `main` at `10b5648`
-- C022 baseline: `24077b6`; reviewed C022 range is `24077b6..ba103de`.
+- C022 baseline: `24077b6`; reviewed C022 range is `24077b6..66372ef`.
 - Actual merge base: `10b5648`. The target-boundary diff also contains the
   earlier `005e182`, `dbd9474`, and `24077b6` changes.
 
@@ -24,6 +24,8 @@ Decision: not ready
 - `08241ab` `feat(desktop): add authoritative tmux topology`
 - `69b4aeb` `feat(desktop): add native terminal interactions`
 - `ba103de` `build(desktop): add self-contained source targets`
+- `cbd5414` `docs(review): record Photino companion findings`
+- `66372ef` `feat(desktop): negotiate server capabilities`
 
 ## Git Conformance Checklist
 
@@ -49,10 +51,14 @@ Decision: not ready
   CSRF, strict JSON, stale-target handling, and audit coverage.
 - Adds reproducible `linux-x64` and `osx-arm64` source-build commands while
   leaving installers, signing, server launch, and publication out of scope.
+- Adds a shared version-1 desktop capability contract and a bounded native
+  preflight that refuses redirects and incompatible/older servers before any
+  remote UI is loaded.
 
 ## Acceptance Checklist
 
-- [x] AC2 implementation: URL/profile validation, protected same-origin login,
+- [x] AC2 implementation: URL/profile validation, compatibility preflight,
+  protected same-origin login,
   owner-only metadata storage, offline watchdog, and bounded reconnect are
   implemented and focused/runtime tested. Physical sleep and invalid-TLS
   behavior remain part of owner acceptance below.
@@ -71,15 +77,15 @@ Decision: not ready
   clients, tab cycling, detach shortcut, `exit`, and named kill. Owner Ubuntu
   acceptance and direct selection/copy/paste/context-menu/sleep checks remain.
 - [ ] AC7: security, focused tests, dependency/license review, canonical
-  verification, docs, and rollback inspection pass, but the review boundary and
-  compatibility finding below prevent the Change Review from passing.
+  verification, docs, and rollback inspection pass, but the review/merge
+  boundary findings below prevent the Change Review from passing.
 
 ## Verification Evidence
 
 Commands run:
 
 ```bash
-dotnet test tests/TmuxCtl.Desktop.Tests/TmuxCtl.Desktop.Tests.csproj --no-restore
+dotnet test tests/TmuxCtl.Desktop.Tests/TmuxCtl.Desktop.Tests.csproj
 npm --prefix src/TmuxMobile.Web run typecheck
 npm --prefix src/TmuxMobile.Web run test:unit
 scripts/build-desktop.sh linux-x64 /tmp/tmuxctl-c022-publish-linux-x64
@@ -89,17 +95,17 @@ DOTNET_ROOT=/nonexistent DOTNET_MULTILEVEL_LOOKUP=0 \
 dotnet list TmuxMobile.sln package --vulnerable --include-transitive
 npm --prefix src/TmuxMobile.Web audit --omit=dev
 ./scripts/verify.sh
-git diff --check 24077b6..ba103de
-git log --format=full 24077b6..ba103de
+git diff --check 24077b6..66372ef
+git log --format=full 24077b6..66372ef
 git log --oneline main..HEAD
 ```
 
 Results:
 
-- 26/26 desktop tests and all six frontend suites pass.
+- 34/34 desktop tests and all six frontend suites pass.
 - The canonical command exits 0: shell setup/watchdog/recovery suites, 27 Core,
-  26 Infrastructure plus five intentional opt-in skips, 50 Server integration,
-  26 Desktop, six frontend suites, and Compose positive/fail-closed assertions.
+  26 Infrastructure plus five intentional opt-in skips, 51 Server integration,
+  34 Desktop, six frontend suites, and Compose positive/fail-closed assertions.
 - Current self-contained outputs are 80 MiB `linux-x64` and 84 MiB
   `osx-arm64`. File inspection reports the expected x86-64 ELF and arm64 Mach-O
   launchers; Linux Photino linkage has no missing dependency. The Linux bundle
@@ -109,6 +115,10 @@ Results:
   4.0.16 and Apache-2.0 are recorded in `THIRD_PARTY_NOTICES.md`.
 - Isolated runtime evidence and cleanup details are recorded in
   `GOALS/2026-08-29--photino-desktop-companion.md`.
+- A real Photino old-server probe received 404 from the exact compatibility
+  endpoint, loaded no remote page, and rendered an explicit server-update
+  message. An isolated current image returned protocol 1, after which Photino
+  loaded `/desktop/` and established its inventory WebSocket.
 
 ## Findings
 
@@ -126,12 +136,6 @@ Results:
    the non-C022 commits `005e182`, `dbd9474`, and `24077b6`. Merge C022 only
    after the owner chooses a stacked merge order or authorizes a clean C022
    branch based on the intended target.
-4. The proposal requires older-server capability negotiation with an actionable
-   compatibility message. The shell currently relies on a generic 12-second
-   connection watchdog (`src/TmuxCtl.Desktop/Program.cs`) and the desktop API
-   reports generic HTTP errors (`src/TmuxMobile.Web/desktop/desktopApi.ts`);
-   there is no explicit server capability/version contract. Implement and test
-   that contract or obtain an approved proposal revision before review passes.
 
 ### Non-blocking conformance
 
@@ -143,17 +147,26 @@ No secret, terminal content, generated package output, installer, publication,
 live-session mutation, Tailscale change, auth exception, or caller-controlled
 tmux command was found in the reviewed C022 range.
 
+### Resolved after initial review
+
+1. `66372ef` resolves the older-server compatibility finding with a shared
+   protocol model, anonymous content-free rate-limited metadata endpoint, and
+   native pre-navigation check. Eight native tests cover exact routing,
+   forward-compatible versions, missing capabilities, 404/401, redirect
+   refusal, malformed/oversized responses, and sanitized TLS failure; one
+   server integration test verifies the exact response fields and cache policy.
+
 ## Risk, Compatibility, and Rollback
 
 - T2 remains appropriate because the feature creates real PTY attachments and
   adds guarded tmux topology mutations, even though the native shell itself is
   local and server management remains out of scope.
 - Server routes are additive; the root mobile PWA source and workspace-recovery
-  source are unchanged across `24077b6..ba103de`. Existing auth/origin/CSRF and
+  source are unchanged across `24077b6..66372ef`. Existing auth/origin/CSRF and
   WebSocket controls are reused rather than relaxed.
 - No data/schema migration exists. Profile state is versioned, contains only
   ID/label/origin, and can be removed independently.
-- Roll back by reverting the seven C022 commits in reverse order or removing the
+- Roll back by reverting the nine C022 commits in reverse order or removing the
   additive desktop project/assets/routes and topology operations, then run
   `./scripts/verify.sh` and a mobile attach/detach/session-action smoke test.
   Do not remove or alter live tmux sessions as part of rollback.
@@ -170,7 +183,6 @@ tmux command was found in the reviewed C022 range.
 - Obtain actual Apple Silicon launch/connection evidence.
 - Complete owner Ubuntu desktop interaction acceptance.
 - Resolve the stacked branch boundary and missing commit trailers.
-- Add or formally revise the older-server capability-negotiation requirement.
 - Re-run focused and canonical verification, then update this Review Record to
   a new readiness decision. Merge, push, CI, and publication remain explicitly
   owner-controlled.

@@ -230,7 +230,7 @@ the session remains running and becomes detached in the mobile PWA.
   packages in all eight projects; `npm audit --omit=dev` reports zero
   vulnerabilities. `THIRD_PARTY_NOTICES.md` records Photino.NET 4.0.16 and its
   Apache-2.0 license.
-- Final canonical gate: `./scripts/verify.sh` exited 0 with shell recovery and
+- Pre-capability canonical gate: `./scripts/verify.sh` exited 0 with shell recovery and
   watchdog suites, 27 Core, 26 Infrastructure plus five intentional opt-in
   skips, 50 Server integration, 26 Desktop, six frontend suites, and both
   Compose configuration boundaries passing.
@@ -240,9 +240,9 @@ the session remains running and becomes detached in the mobile PWA.
   surface, after which `./scripts/verify.sh` is the validation gate.
 - Change Review: `REVIEWS/2026-08-29--photino-desktop-companion.md` records a
   `not ready` decision. Blocking evidence remains for actual Apple Silicon
-  launch, owner Ubuntu interaction acceptance, the stacked branch-to-main
-  boundary, and the proposal-required older-server capability contract. Commit
-  `69b4aeb` also lacks the proposal-required Roadmap/Proposal trailers.
+  launch, owner Ubuntu interaction acceptance, and the stacked branch-to-main
+  boundary. Commit `69b4aeb` also lacks the proposal-required Roadmap/Proposal
+  trailers. The earlier compatibility finding is resolved by `66372ef`.
 - Capability tests and runtime: 8 new native cases cover the exact endpoint,
   forward-compatible versions, missing features, old-server 404/401, redirect
   refusal, malformed/oversized bodies, and sanitized TLS failure. The anonymous
