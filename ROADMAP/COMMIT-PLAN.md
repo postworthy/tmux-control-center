@@ -242,7 +242,7 @@ Status: active
 
 ## C022 — tmuxctl Photino desktop companion
 
-Status: context-menu correction deployed; desktop rename verified locally and authorized for deployment
+Status: context-menu correction and desktop rename deployed; physical acceptance pending
 
 - Add a self-contained .NET 10/Photino desktop client with a desktop-specific
   xterm.js interface for Ubuntu x64 and Apple Silicon macOS.

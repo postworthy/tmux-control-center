@@ -559,11 +559,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Build and deploy the owner-authorized desktop rename image, preserving the
-  single-context-menu image as its rollback point. Then the owner physically
-  confirms rename updates the sidebar, every open tab, tmux, and the mobile PWA
-  without reconnecting the terminal, alongside the outstanding right-click and
-  layout checks. Apple Silicon launch/pinning remains external.
+- Owner closes older tmuxctl windows and physically confirms rename updates the
+  sidebar, every open tab, tmux, and the mobile PWA without reconnecting the
+  terminal, alongside the outstanding right-click and layout checks. Apple
+  Silicon launch/pinning remains external.
 
 ## Pause Conditions
 
@@ -622,7 +621,14 @@ the session remains running and becomes detached in the mobile PWA.
   reconciliation and stable unchanged state. Production bundle inspection, all
   twelve frontend suites, 41 Desktop, 55 Server integration, 27 Core, 26
   Infrastructure plus five intentional skips, shell suites, and Compose
-  assertions pass. Authorized deployment is next.
+  assertions pass. Owner-authorized image `sha256:0370d1bc...` is now live,
+  healthy, and at zero restarts; the prior single-menu image
+  `sha256:07d570a1...` is preserved as
+  `tmux-mobile:pre-desktop-rename-20260830`. Served JS contains both rename UI
+  markers and no duplicate-menu markers, compatibility remains protocol 1,
+  direct backend traffic remains denied with 426, bounded startup logs contain
+  no failure, and all six sessions retain their exact pre-rollout window and
+  attachment counts. Physical owner acceptance remains.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch/identity, Ubuntu launcher, Apple Silicon app-bundle structure,
   compatibility, TLS, tests, docs, rollback, and review evidence are complete;

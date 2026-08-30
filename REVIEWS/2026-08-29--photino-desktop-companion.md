@@ -216,7 +216,11 @@ Results:
   coverage verifies renamed labels and stable mounted state. Production bundle
   inspection and canonical verification pass with twelve frontend suites, 41
   Desktop, 55 Server integration, 27 Core, and 26 Infrastructure tests plus five
-  intentional skips. The owner authorized deployment; physical convergence and
+  intentional skips. Owner-authorized image `sha256:0370d1bc...` is live,
+  healthy, and at zero restarts; prior image `sha256:07d570a1...` is preserved
+  as `tmux-mobile:pre-desktop-rename-20260830`. Served rename markers,
+  duplicate-menu absence, protocol 1, backend 426 denial, bounded logs, and the
+  exact six-session pre/post inventory pass. Physical convergence and
   attachment checks remain.
 
 ## Findings
