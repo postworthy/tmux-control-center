@@ -107,6 +107,14 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Progress
 
+- 2026-08-30: mobile PWA feedback showed session inventory remained available
+  while every terminal attachment fell into Reconnect whenever two desktop tabs
+  were open. RCA proved the unchanged per-owner terminal lease limit of two was
+  fully consumed by the desktop's persistent attachments, and the silent 429
+  rejection preceded terminal audit and PTY startup. The bounded local
+  correction raises global/per-owner defaults to ten, adds rejection evidence,
+  and adds a capacity/release regression test. The focused test and canonical
+  verification pass; deployment remains at the owner boundary.
 - 2026-08-29: owner approved Photino/xterm.js, remote-server-only operation,
   configured Tailscale URL, tmux-authoritative session/window/pane mapping, real
   attachment state, detach-on-close, normal `exit`, explicit list-based kill,
@@ -164,6 +172,15 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Evidence
 
+- Mobile capacity RCA: the live container had two server-owned `tmux
+  attach-session` children while effective per-owner capacity was two. The
+  owner's `2026-08-30T14:11:54Z` login and inventory connection succeeded, but
+  no terminal attempt reached audit because the lease-rejection branch returned
+  429 first. `TerminalConnectionLimiterTests` passes and proves ten bounded
+  same-owner leases, rejection of the eleventh, and lease reuse after disposal.
+  The canonical `./scripts/verify.sh` exits 0 with 27 Core, 26 Infrastructure
+  plus five intentional skips, 56 Server integration, 41 Desktop, twelve
+  frontend suites, shell suites, and Compose assertions passing.
 - Product approval: owner accepted every recommended first-cut behavior in the
   2026-08-29 design discussion.
 - Planning validation: `git diff --check` passed; all required goal sections are
@@ -468,6 +485,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Discoveries
 
+- Persistent desktop tabs and mobile terminals share the same authenticated
+  owner identity and therefore the same per-user terminal lease bucket. Any
+  desktop concurrency contract must reserve enough bounded capacity for mobile
+  use and be verified with both clients attached concurrently.
 - Existing secure-cookie, CSRF, origin, and WebSocket assumptions are designed
   for a same-origin PWA. Photino remote-auth topology must be proven before the
   desktop asset-serving architecture is selected.
@@ -559,10 +580,12 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner closes older tmuxctl windows and physically confirms rename updates the
-  sidebar, every open tab, tmux, and the mobile PWA without reconnecting the
-  terminal, alongside the outstanding right-click and layout checks. Apple
-  Silicon launch/pinning remains external.
+- Verify the bounded terminal-capacity correction locally. Deployment remains
+  an explicit owner boundary; until then, closing one desktop terminal tab frees
+  a lease and restores mobile terminal access. After deployment, physically
+  prove a mobile terminal while at least two desktop tabs remain connected,
+  then resume rename/right-click/layout acceptance. Apple Silicon
+  launch/pinning remains external.
 
 ## Pause Conditions
 

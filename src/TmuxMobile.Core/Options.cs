@@ -36,8 +36,8 @@ public sealed class SecurityOptions
     public bool ExternalHttpsTermination { get; init; }
     [Range(1024, 1_048_576)] public int MaxRequestBodyBytes { get; init; } = 65_536;
     [Range(256, 65_536)] public int MaxWebSocketMessageBytes { get; init; } = 16_384;
-    [Range(1, 100)] public int MaxTerminalConnections { get; init; } = 4;
-    [Range(1, 10)] public int MaxTerminalConnectionsPerUser { get; init; } = 2;
+    [Range(1, 100)] public int MaxTerminalConnections { get; init; } = 10;
+    [Range(1, 10)] public int MaxTerminalConnectionsPerUser { get; init; } = 10;
     [Range(1, 1440)] public int TerminalIdleTimeoutMinutes { get; init; } = 30;
     [Range(1, 1000)] public int MaxTerminalInputMessagesPerSecond { get; init; } = 64;
     [Range(1024, 1_048_576)] public int MaxTerminalInputBytesPerSecond { get; init; } = 262_144;

@@ -4,6 +4,15 @@ Updated: 2026-08-30
 
 ## Current
 
+- The owner reported that the PWA lists sessions but every mobile terminal falls
+  into Reconnect after the desktop rollout. Live evidence shows two persistent
+  desktop tmux clients consume the unchanged per-owner limit of two, so the
+  mobile WebSocket receives a silent pre-handler 429. RCA is recorded in
+  `RCA/2026-08-30--desktop-terminal-capacity-blocks-mobile.md`; a bounded source
+  correction raises global/per-owner capacity to ten and records rejected
+  capacity attempts. Its focused regression test and canonical verification
+  pass; separately approved deployment remains pending. Closing one desktop tab
+  is the immediate non-deployment recovery.
 - C022 is implemented locally on `feat/c022-desktop-photino-client` and paused
   at its owner/external completion boundary. The
   .NET 10/Photino shell connects to an already-running tmuxctl server and serves

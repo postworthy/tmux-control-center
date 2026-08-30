@@ -60,6 +60,10 @@ public sealed class WebSocketHandlers(
             security.MaxTerminalConnectionsPerUser);
         if (lease is null)
         {
+            logger.LogWarning(
+                "Terminal connection capacity reached for {User} on {SessionId}; global limit {GlobalLimit}, per-user limit {PerUserLimit}",
+                user, sessionId, security.MaxTerminalConnections, security.MaxTerminalConnectionsPerUser);
+            await audit.WriteAsync("terminal.connect", user, sessionId, false, context.RequestAborted);
             context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             return;
         }
