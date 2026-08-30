@@ -9,5 +9,5 @@
     "outDir": ".test-dist",
     "skipLibCheck": true
   },
-  "include": ["src/applicationScrollPreference.ts", "src/sessionFilter.ts", "src/terminalInput.ts", "src/terminalScroll.ts", "desktop/fontZoom.ts", "desktop/reconnect.ts", "tests/**/*.test.ts"]
+  "include": ["src/applicationScrollPreference.ts", "src/sessionFilter.ts", "src/terminalInput.ts", "src/terminalScroll.ts", "desktop/fontZoom.ts", "desktop/reconnect.ts", "desktop/terminalLayout.ts", "desktop/terminalWheel.ts", "tests/**/*.test.ts"]
 }

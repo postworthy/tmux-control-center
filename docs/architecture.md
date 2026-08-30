@@ -57,15 +57,21 @@ it. Closing a tab or cleanly closing the window closes its socket and disposes
 only its PTY attach client; abrupt loss is detected by the server's 20-second
 heartbeat at the latest. The tmux session and other clients remain alive.
 Inventory and terminal connections retry with exponential backoff capped at 30
-seconds, and tmux inventory remains authoritative for attached state. Later
-C022 units extend this same mapping so top-level desktop tabs, subordinate tabs,
-and splits correspond to tmux sessions, windows, and panes.
+seconds, and tmux inventory remains authoritative for attached state. The
+desktop keeps one permanent session-tab row. Tmux windows and panes remain
+authoritative and are controlled through ordinary tmux interaction inside the
+terminal; the typed topology API remains available for a future compact,
+opt-in presentation rather than consuming permanent terminal height.
 
-The desktop xterm host captures Ctrl-modified wheel events before WebView page
-zoom or xterm scroll handling, changes font size one point at a time within an
-8–32px bound, then refits xterm and reports its new rows and columns through the
-existing terminal resize envelope. Unmodified wheel events are not intercepted,
-and this desktop-only behavior does not enter the mobile terminal component.
+The desktop xterm host captures wheel events before WebView or xterm local
+scroll handling. Ctrl-modified input changes font size one point at a time
+within an 8–32px bound; unmodified input is coalesced to at most four typed tmux
+history operations per second. Initial activation and viewport changes use an
+immediate animation-frame fit plus delayed settled-layout fits, with observers
+on both the host and terminal stage and explicit window/fullscreen/visibility
+triggers. Each successful dimension change is reported through the existing
+terminal resize envelope. This desktop-only behavior does not enter the mobile
+terminal component.
 
 Workspace recovery adds a deliberately narrow side channel beside the tmux
 socket. A host daemon running as the tmux owner writes an atomic metadata-only

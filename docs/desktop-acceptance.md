@@ -65,16 +65,19 @@ Complete these checks with disposable tmux sessions:
    while both tmux sessions remain alive.
 5. Pop the remaining session into a native window. Type independently in both
    windows, close the child, and confirm the root window and session survive.
-6. Create and select a tmux window; split panes horizontally and vertically;
-   select, resize, and close a non-final pane/window. Confirm another tmux client
-   sees the same topology and final-pane/window close is refused.
+6. Confirm only one session-tab row is present above the terminal. Use ordinary
+   tmux keys inside the terminal to create/select a window and split/select panes;
+   confirm another tmux client sees the same authoritative topology. Collapse
+   the left sidebar and confirm only its narrow icon rail remains, then expand it.
 7. Select terminal text and copy it with Ctrl+Shift+C. Paste a harmless sentinel
    with Ctrl+Shift+V; multiline paste must ask for confirmation. Right-click and
    verify the native context menu appears. Hold Ctrl while scrolling the mouse
    wheel in both directions and confirm terminal text grows and shrinks within
    bounded limits without scrolling terminal content; release Ctrl and confirm
-   ordinary wheel behavior remains unchanged. Resize the window and confirm
-   the active tmux client dimensions follow it.
+   wheel up/down navigates tmux history. Select a newly opened session and
+   confirm xterm is visible without first resizing the native window. Maximize,
+   enter/leave fullscreen, and resize the window; at every transition confirm
+   xterm fills the terminal area and the active tmux client dimensions follow it.
 8. Temporarily disconnect the client from its Tailscale network, reconnect, and
    then suspend/resume the workstation. Confirm the UI reports offline/reconnect
    states, creates no duplicate attachment, and the tmux sessions survive.

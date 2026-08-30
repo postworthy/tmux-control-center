@@ -30,10 +30,21 @@ Updated: 2026-08-29
   Tailscale changes, merge, push, and remote CI remain owner-controlled.
   Physical testing then identified missing Ctrl+mouse-wheel text zoom. The
   owner-approved local correction now provides desktop-only 8–32px bounded
-  zoom, preserves unmodified wheel behavior, refits xterm/tmux dimensions, and
-  passes focused tests, the production desktop build, and canonical
-  verification. It is not yet deployed; live redeployment remains an explicit
-  owner-controlled boundary.
+  zoom, routes unmodified wheel input to tmux history, refits xterm/tmux
+  dimensions, and passes focused tests, the production desktop build, and
+  canonical verification. It is not yet deployed; live redeployment remains an
+  explicit owner-controlled boundary.
+  Continued Ubuntu acceptance also found local-xterm wheel history, initial and
+  fullscreen fit failures, excessive permanent topology rows, and no sidebar
+  collapse. The owner explicitly revised the first-cut desktop contract to one
+  session-tab row plus a collapsible icon rail. The RCA-backed implementation
+  now uses bounded/coalesced history requests, settled-layout refitting, one
+  permanent session row, and the narrow icon rail. Typecheck, the production
+  desktop build, all nine frontend suites, 27 core tests, 34 desktop-shell tests,
+  26 infrastructure tests (5 opt-in skips), 51 server integration tests, and the
+  canonical gate pass. The correction is locally complete and awaits explicit
+  deployment approval plus physical Ubuntu acceptance; the currently deployed
+  image remains unchanged.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation

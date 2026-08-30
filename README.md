@@ -39,14 +39,16 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
   WebSockets same-origin and keeps one real tmux client attached for each open
   terminal tab without changing the mobile PWA. Switching tabs preserves those
   attachments; closing a tab/window detaches its clients, and transient network
-  loss reconnects with bounded exponential backoff. Tmux-authoritative window
-  tabs and pane controls support selection, fixed horizontal/vertical splits,
-  bounded resize, and guarded close without exposing arbitrary commands.
-  Desktop shortcuts include Ctrl+PageUp/PageDown for session tabs,
-  Ctrl+Shift+W to detach the active tab, and Ctrl+Shift+C/V for terminal
-  selection copy and guarded paste. Ctrl+mouse-wheel adjusts terminal text size
-  within bounded limits while an unmodified wheel retains ordinary terminal
-  behavior. A pop-out control opens a session in an independent native window.
+  loss reconnects with bounded exponential backoff. One compact tab row maps
+  desktop tabs to tmux sessions; tmux windows and panes remain available through
+  ordinary tmux interaction inside the terminal. The session sidebar collapses
+  to a narrow desktop icon rail. Desktop shortcuts include Ctrl+PageUp/PageDown
+  for session tabs, Ctrl+Shift+W to detach the active tab, and Ctrl+Shift+C/V for
+  terminal selection copy and guarded paste. Ctrl+mouse-wheel adjusts terminal
+  text size within bounded limits while an unmodified wheel navigates
+  authoritative tmux history. Initial selection, maximize, and fullscreen
+  transitions refit the terminal to the available viewport. A pop-out control
+  opens a session in an independent native window.
   Explicit session kill requires typing the exact session name; terminal `exit`
   keeps ordinary tmux semantics.
 

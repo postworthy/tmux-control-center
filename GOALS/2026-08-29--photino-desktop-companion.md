@@ -44,19 +44,21 @@ existing mobile PWA.
   within the documented heartbeat bound while the session and other clients
   remain alive and inventory/mobile attached state converges.
   - Evidence: pending
-- [ ] AC4 — One desktop session tab presents authoritative tmux window tabs and
-  pane splits; create/select/resize/close operations survive reconnect and are
-  visible from the PWA or another tmux client.
+- [ ] AC4 — One desktop session tab is the primary workspace's only persistent
+  tab row; tmux windows and panes remain authoritative and usable inside the
+  attached terminal without permanent subordinate window/pane chrome, and their
+  state survives reconnect and remains visible from another tmux client.
   - Evidence: pending
 - [ ] AC5 — Session listing, selection, creation, detach, and named-confirmation
   kill work only on inventory-resolved targets; closing UI never kills a
   session, and typed `exit` retains ordinary tmux pane/window/session behavior.
   - Evidence: pending
 - [ ] AC6 — Desktop keyboard navigation, independent windows, focus, selection,
-  copy/paste, context menus, resize, bounded Ctrl+mouse-wheel text zoom, and
-  reconnect pass automated interaction checks and owner Ubuntu acceptance
-  without mobile cards, swipe navigation, touch shortcuts, or oversized mobile
-  controls.
+  copy/paste, context menus, coalesced unmodified-wheel tmux history, reliable
+  initial/maximized/fullscreen fitting, resize, bounded Ctrl+mouse-wheel text
+  zoom, collapsible icon-rail navigation, and reconnect pass automated
+  interaction checks and owner Ubuntu acceptance without mobile cards, swipe
+  navigation, touch shortcuts, or oversized mobile controls.
   - Evidence: pending
 - [ ] AC7 — Every new operation rejects unauthorized, cross-origin,
   rate-limited, stale, malformed, and caller-command-bearing requests; focused
@@ -91,7 +93,7 @@ existing mobile PWA.
 | 2. Shell and profiles | completed | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser and offline/reconnect runtime |
 | 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
 | 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
-| 5. Desktop interaction | completed | Keyboard/mouse terminal workflows, bounded Ctrl+wheel text zoom, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | Focused zoom tests, seven frontend suites, isolated keyboard/pop-out/exit/named-kill runtime; owner acceptance remains at the goal boundary |
+| 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input, bounded Ctrl+wheel text zoom, single-row chrome, collapsible sidebar, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | Focused layout/wheel tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
 | 6. Cross-platform delivery | in progress | Ubuntu/macOS source builds, launch evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, `./scripts/verify.sh`, Review Record |
 
 Thin slice: complete Unit 3 so an Ubuntu desktop app can select a saved server,
@@ -205,10 +207,10 @@ the session remains running and becomes detached in the mobile PWA.
   corrected resize control changed the active pane from 62 to 64 columns and
   the sibling from 61 to 59, matching direct tmux inventory. Disposable
   containers, sockets, Photino, Xvfb, and input harness files were removed.
-- Desktop interaction tests: 26/26 native tests validate URL/profile behavior,
+- Desktop interaction tests: 34/34 native tests validate URL/profile behavior,
   strict native commands, and opaque session pop-out targets; frontend
-  typecheck and all six suites pass, including bounded input serialization and
-  reconnect behavior.
+  typecheck and all nine suites pass, including bounded input serialization,
+  layout/history correction, and reconnect behavior.
 - Desktop interaction runtime: disposable image `sha256:f9a39844...` and
   socket `c022_interaction` hosted `alpha`, `beta`, and `gamma`. Opening alpha
   and beta produced distinct PTY clients 206 and 211. Ctrl+PageUp changed the
@@ -223,6 +225,14 @@ the session remains running and becomes detached in the mobile PWA.
   one point, unmodified wheel bypasses zoom, invalid state recovers safely, and
   8px/32px bounds hold. TypeScript compilation and the production desktop bundle
   pass; physical wheel behavior remains in owner acceptance.
+- Desktop corrective interaction: unmodified wheel input is now coalesced into
+  typed authoritative tmux-history requests no faster than the server's
+  four-operation-per-second limit. Xterm fitting waits for measurable geometry,
+  retries after WebKit layout settles, observes both host and stage, and responds
+  to window, fullscreen, and visibility transitions. The primary surface now
+  has one session-tab row and a 48px collapsed sidebar icon rail. Two new focused
+  suites pass alongside all nine frontend suites; the production desktop build
+  and canonical repository gate pass. Physical behavior remains owner acceptance.
 - Source delivery: `scripts/build-desktop.sh` produced current self-contained
   outputs for `linux-x64` (80 MiB) and `osx-arm64` (84 MiB). `file` identified
   the launchers as x86-64 ELF and arm64 Mach-O respectively, the macOS Photino
@@ -317,6 +327,14 @@ the session remains running and becomes detached in the mobile PWA.
   desktop build, all seven frontend suites including the new modifier/bounds
   cases, and the canonical repository gate pass. The change is local and awaits
   a separately approved live redeployment plus owner interaction acceptance.
+- 2026-08-29: continued physical acceptance found that unmodified wheel input
+  does not navigate tmux history, initial and fullscreen xterm fitting depend on
+  a later manual window resize, the permanent session/window/pane hierarchy is
+  too dense, and the sidebar cannot collapse. The owner explicitly superseded
+  the three-row presentation with one session-tab row and requested a VS Code-
+  style icon rail. `RCA/2026-08-29--desktop-layout-and-history-acceptance.md`
+  traces the fit lifecycle, wheel route, prior contract mismatch, and missing
+  physical verification before corrective implementation.
 
 ## Discoveries
 
@@ -369,8 +387,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 - Use .NET 10/Photino and xterm.js; do not build or embed a native terminal in
   this cut.
-- Keep tmux authoritative: desktop session tab = tmux session, subordinate tab
-  = tmux window, split = tmux pane.
+- Keep tmux authoritative: a desktop tab maps to a tmux session. Tmux windows
+  and panes remain available through ordinary tmux interaction inside xterm;
+  retain their typed API for a future compact opt-in surface, not permanent rows.
 - Close detaches app-owned clients; explicit named confirmation kills a session;
   terminal input is never interpreted as an app lifecycle command.
 - Target Ubuntu x64 and Apple Silicon macOS source builds before installers or
@@ -405,8 +424,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Obtain owner approval to rebuild and redeploy the verified Ctrl+wheel change,
-  then have the owner retest zoom on Ubuntu against the unchanged `:8443` origin.
+- After explicit owner approval, deploy the locally verified correction and run
+  the focused Ubuntu interaction checks for history, initial/fullscreen fit,
+  single-row chrome, and sidebar collapse. Apple Silicon launch remains external.
 
 ## Pause Conditions
 
@@ -429,10 +449,12 @@ the session remains running and becomes detached in the mobile PWA.
   implemented and runtime-proven.
 - Unit 4 complete: authoritative tmux windows/panes and their guarded typed
   operations are automated- and runtime-proven. Units 5-6 remain active.
-- Unit 5 implementation complete: conventional desktop shortcuts, independent
-  windows, guarded clipboard paths, bounded Ctrl+wheel font zoom, exact-name
-  kill, ordinary `exit`, and authoritative tab cleanup are implemented and
-  locally verified. Unit 6 and physical owner/platform acceptance remain active.
+- Unit 5 implementation complete locally: conventional desktop shortcuts,
+  independent windows, guarded clipboard paths, authoritative wheel history,
+  settled initial/fullscreen fitting, bounded Ctrl+wheel font zoom, single-row
+  chrome, collapsed icon rail, exact-name kill, ordinary `exit`, and authoritative
+  tab cleanup are implemented and verified. Deployment and physical owner
+  acceptance remain paused at their explicit boundaries.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch, compatibility, TLS, tests, docs, rollback, and review evidence
   are complete; branch ordering and commit metadata are resolved, while Apple

@@ -1,23 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DesktopTerminal, { type TerminalConnectionState } from "./DesktopTerminal";
-import TopologyBar from "./TopologyBar";
 import { reconnectDelay } from "./reconnect";
 import {
   UnauthorizedError,
   createSession,
-  createWindow,
   getSessions,
-  getTopology,
   inventoryWebSocketUrl,
   killSession,
-  killPane,
-  killWindow,
   login,
-  resizePane,
-  selectPane,
-  selectWindow,
-  splitPane,
-  type TmuxTopology,
   type InventorySnapshot,
   type TmuxSession
 } from "./desktopApi";
@@ -38,9 +28,9 @@ export default function DesktopApp() {
   const [connections, setConnections] = useState<Record<string, TerminalConnectionState>>({});
   const [inventoryConnected, setInventoryConnected] = useState(navigator.onLine);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
-  const [topology, setTopology] = useState<TmuxTopology | null>(null);
-  const [topologyBusy, setTopologyBusy] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const deepLinkOpened = useRef(false);
+  const newSessionInput = useRef<HTMLInputElement>(null);
   const [nativeProfilesAvailable, setNativeProfilesAvailable] = useState(false);
 
   const showProfiles = () => {
@@ -133,33 +123,6 @@ export default function DesktopApp() {
       return next.length === current.length ? current : next;
     });
   }, [activeId, inventoryConnected, inventoryLoaded, sessions, tabs]);
-
-  const refreshTopology = useCallback(async (sessionId: string) => {
-    const next = await getTopology(sessionId);
-    if (sessionId === activeId) setTopology(next);
-  }, [activeId]);
-
-  useEffect(() => {
-    if (!activeId || authRequired || !inventoryConnected) { setTopology(null); return; }
-    let cancelled = false;
-    void getTopology(activeId).then(next => { if (!cancelled) setTopology(next); })
-      .catch(cause => { if (!cancelled) setError(cause instanceof Error ? cause.message : "Could not load tmux layout"); });
-    return () => { cancelled = true; };
-  }, [activeId, authRequired, inventoryConnected, sessions]);
-
-  const runTopology = async (operation: () => Promise<unknown>) => {
-    if (!activeId || topologyBusy) return;
-    setTopologyBusy(true);
-    try {
-      await operation();
-      await refreshTopology(activeId);
-      await refresh();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not change tmux layout");
-    } finally {
-      setTopologyBusy(false);
-    }
-  };
 
   const open = (session: TmuxSession) => {
     setTabs(current => current.some(tab => tab.sessionId === session.id)
@@ -266,25 +229,42 @@ export default function DesktopApp() {
     </main>;
   }
 
-  return <main className="desktop-shell">
+  return <main className={sidebarCollapsed ? "desktop-shell sidebar-collapsed" : "desktop-shell"}>
     <aside className="session-sidebar">
-      <header><div className="brand-mark">tmuxctl</div><span>{location.host}</span>
-        {nativeProfilesAvailable && <button className="servers-button" onClick={showProfiles}>Servers</button>}
-      </header>
-      <form className="new-session" onSubmit={submitCreate}>
-        <input aria-label="New session name" placeholder="New session" value={newName}
-          onChange={event => setNewName(event.target.value)} />
-        <button title="Create session" type="submit">+</button>
-      </form>
-      <div className="session-list" aria-label="Tmux sessions">
-        {sessions.map(session => <div className="session-row" key={session.id}>
-          <button className="session-open" onClick={() => open(session)}>
-            <span className={session.isAttached ? "status attached" : "status detached"} />
-            <span><strong>{session.name}</strong><small>{session.windowCount} windows · {session.paneCount} panes</small></span>
-          </button>
-          <button className="kill" title={`Kill ${session.name}`} onClick={() => void terminate(session)}>×</button>
-        </div>)}
-      </div>
+      {sidebarCollapsed ? <nav className="sidebar-icon-rail" aria-label="Collapsed sidebar">
+        <button title="Show sessions" aria-label="Show sessions" onClick={() => setSidebarCollapsed(false)}>
+          <span aria-hidden="true">☰</span>
+        </button>
+        <button title="Create session" aria-label="Create session" onClick={() => {
+          setSidebarCollapsed(false);
+          window.requestAnimationFrame(() => newSessionInput.current?.focus());
+        }}>
+          <span aria-hidden="true">+</span>
+        </button>
+        {nativeProfilesAvailable && <button className="rail-servers" title="Servers" aria-label="Servers" onClick={showProfiles}>
+          <span aria-hidden="true">⚙</span>
+        </button>}
+      </nav> : <>
+        <header><div className="sidebar-heading"><div className="brand-mark">tmuxctl</div><span>{location.host}</span></div>
+          <button className="sidebar-collapse" title="Collapse sidebar" aria-label="Collapse sidebar"
+            onClick={() => setSidebarCollapsed(true)}>‹</button>
+          {nativeProfilesAvailable && <button className="servers-button" onClick={showProfiles}>Servers</button>}
+        </header>
+        <form className="new-session" onSubmit={submitCreate}>
+          <input ref={newSessionInput} aria-label="New session name" placeholder="New session" value={newName}
+            onChange={event => setNewName(event.target.value)} />
+          <button title="Create session" type="submit">+</button>
+        </form>
+        <div className="session-list" aria-label="Tmux sessions">
+          {sessions.map(session => <div className="session-row" key={session.id}>
+            <button className="session-open" onClick={() => open(session)}>
+              <span className={session.isAttached ? "status attached" : "status detached"} />
+              <span><strong>{session.name}</strong><small>{session.windowCount} windows · {session.paneCount} panes</small></span>
+            </button>
+            <button className="kill" title={`Kill ${session.name}`} onClick={() => void terminate(session)}>×</button>
+          </div>)}
+        </div>
+      </>}
     </aside>
     <section className="workspace">
       <nav className="tab-strip" aria-label="Open sessions">
@@ -298,24 +278,6 @@ export default function DesktopApp() {
           {!inventoryConnected ? "server offline" : activeTab ? connections[activeTab.sessionId] ?? "connecting" : "no session"}
         </span>
       </nav>
-      {activeTab && <TopologyBar topology={topology?.sessionId === activeTab.sessionId ? topology : null}
-        busy={topologyBusy}
-        onCreateWindow={() => {
-          const name = window.prompt("New tmux window name (leave blank for the tmux default)");
-          if (name !== null) void runTopology(() => createWindow(activeTab.sessionId, name.trim() || undefined));
-        }}
-        onSelectWindow={id => void runTopology(() => selectWindow(id))}
-        onCloseWindow={(id, name) => {
-          if (window.confirm(`Close tmux window “${name}”? Running processes in it will end.`))
-            void runTopology(() => killWindow(id));
-        }}
-        onSelectPane={id => void runTopology(() => selectPane(id))}
-        onSplitPane={(id, orientation) => void runTopology(() => splitPane(id, orientation))}
-        onResizePane={(id, direction) => void runTopology(() => resizePane(id, direction))}
-        onClosePane={(id, index) => {
-          if (window.confirm(`Close tmux pane ${index}? Its running process will end.`))
-            void runTopology(() => killPane(id));
-        }} />}
       <div className="terminal-stage">
         {tabs.map(tab => <DesktopTerminal key={tab.sessionId} sessionId={tab.sessionId}
           active={tab.sessionId === activeId}

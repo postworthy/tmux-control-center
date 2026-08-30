@@ -4,6 +4,8 @@ import { FitAddon } from "@xterm/addon-fit";
 import { terminalWebSocketUrl } from "./desktopApi";
 import { DEFAULT_TERMINAL_FONT_SIZE, terminalFontSizeForWheel } from "./fontZoom";
 import { isTerminalPing, reconnectDelay } from "./reconnect";
+import { SETTLED_TERMINAL_REFIT_DELAYS, terminalHostCanBeFit } from "./terminalLayout";
+import { DESKTOP_HISTORY_FLUSH_MILLISECONDS, historyRequestFromWheelDelta } from "./terminalWheel";
 import { MAX_PASTE_BYTES, pasteByteLength, requiresPasteConfirmation, serializeTerminalInput } from "../src/terminalInput";
 
 export type TerminalConnectionState = "connecting" | "connected" | "reconnecting" | "disconnected";
@@ -18,23 +20,22 @@ interface Props {
 export default function DesktopTerminal({ sessionId, active, onConnectionState, onError }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
-  const fitRef = useRef<FitAddon | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const refitRef = useRef<(() => void) | null>(null);
+  const activeRef = useRef(active);
   const connectionCallbackRef = useRef(onConnectionState);
   const errorCallbackRef = useRef(onError);
 
   useEffect(() => { connectionCallbackRef.current = onConnectionState; }, [onConnectionState]);
   useEffect(() => { errorCallbackRef.current = onError; }, [onError]);
+  activeRef.current = active;
 
   useEffect(() => {
     if (!active) return;
+    refitRef.current?.();
     const frame = window.requestAnimationFrame(() => {
-      fitRef.current?.fit();
-      const socket = socketRef.current;
+      refitRef.current?.();
       const terminal = terminalRef.current;
-      if (socket?.readyState === WebSocket.OPEN && terminal) {
-        socket.send(JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }));
-      }
       terminal?.focus();
     });
     return () => window.cancelAnimationFrame(frame);
@@ -58,35 +59,76 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
     terminal.loadAddon(fit);
     terminal.open(hostRef.current!);
     terminalRef.current = terminal;
-    fitRef.current = fit;
-    fit.fit();
 
     const encoder = new TextEncoder();
     let stopped = false;
     let retryAttempt = 0;
     let retryTimer = 0;
-    const resize = () => {
-      if (!hostRef.current?.classList.contains("active")) return;
+    let fitFrame = 0;
+    let lastResize = "";
+    let historyWheelDelta = 0;
+    let historyTimer = 0;
+    const settleTimers = new Set<number>();
+    const fitAndResize = () => {
+      fitFrame = 0;
+      const host = hostRef.current;
+      if (stopped || !activeRef.current || !host ||
+          !terminalHostCanBeFit(host.clientWidth, host.clientHeight)) return;
       fit.fit();
       const socket = socketRef.current;
       if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }));
+        const dimensions = `${terminal.cols}x${terminal.rows}`;
+        if (dimensions !== lastResize) {
+          lastResize = dimensions;
+          socket.send(JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }));
+        }
       }
     };
-    const zoomWheel = (event: WheelEvent) => {
+    const queueFit = () => {
+      if (!fitFrame) fitFrame = window.requestAnimationFrame(fitAndResize);
+    };
+    const scheduleSettledFit = () => {
+      queueFit();
+      if (settleTimers.size) return;
+      for (const delay of SETTLED_TERMINAL_REFIT_DELAYS) {
+        const timer = window.setTimeout(() => {
+          settleTimers.delete(timer);
+          queueFit();
+        }, delay);
+        settleTimers.add(timer);
+      }
+    };
+    refitRef.current = scheduleSettledFit;
+    const flushHistoryWheel = () => {
+      historyTimer = 0;
+      const request = historyRequestFromWheelDelta(historyWheelDelta);
+      historyWheelDelta = 0;
+      const socket = socketRef.current;
+      if (request && socket?.readyState === WebSocket.OPEN) socket.send(request);
+    };
+    const terminalWheel = (event: WheelEvent) => {
       const current = terminal.options.fontSize ?? DEFAULT_TERMINAL_FONT_SIZE;
       const next = terminalFontSizeForWheel(current, event.deltaY, event.ctrlKey);
-      if (next === null) return;
+      if (next === null) {
+        if (!Number.isFinite(event.deltaY) || event.deltaY === 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        historyWheelDelta += event.deltaY;
+        if (!historyTimer)
+          historyTimer = window.setTimeout(flushHistoryWheel, DESKTOP_HISTORY_FLUSH_MILLISECONDS);
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
       if (next === current) return;
       terminal.options.fontSize = next;
-      resize();
+      scheduleSettledFit();
     };
     const terminalHost = hostRef.current!;
-    terminalHost.addEventListener("wheel", zoomWheel, { capture: true, passive: false });
-    const observer = new ResizeObserver(resize);
+    terminalHost.addEventListener("wheel", terminalWheel, { capture: true, passive: false });
+    const observer = new ResizeObserver(scheduleSettledFit);
     observer.observe(terminalHost);
+    if (terminalHost.parentElement) observer.observe(terminalHost.parentElement);
     const input = terminal.onData(data => {
       const socket = socketRef.current;
       if (socket?.readyState === WebSocket.OPEN) socket.send(encoder.encode(data));
@@ -133,9 +175,10 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       socketRef.current = socket;
       socket.addEventListener("open", () => {
         retryAttempt = 0;
+        lastResize = "";
         connectionCallbackRef.current("connected");
-        resize();
-        if (hostRef.current?.classList.contains("active")) terminal.focus();
+        scheduleSettledFit();
+        if (activeRef.current) terminal.focus();
       });
       socket.addEventListener("message", event => {
         if (event.data instanceof ArrayBuffer) terminal.write(new Uint8Array(event.data));
@@ -160,24 +203,36 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       socketRef.current?.close(1001, "Desktop offline");
     };
     const pageHide = () => socketRef.current?.close(1000, "Desktop window closed");
+    const viewportChanged = () => scheduleSettledFit();
+    const visibilityChanged = () => { if (!document.hidden) scheduleSettledFit(); };
     window.addEventListener("online", online);
     window.addEventListener("offline", offline);
     window.addEventListener("pagehide", pageHide);
+    window.addEventListener("resize", viewportChanged);
+    document.addEventListener("fullscreenchange", viewportChanged);
+    document.addEventListener("visibilitychange", visibilityChanged);
+    scheduleSettledFit();
     connect();
 
     return () => {
       stopped = true;
       window.clearTimeout(retryTimer);
+      window.clearTimeout(historyTimer);
+      if (fitFrame) window.cancelAnimationFrame(fitFrame);
+      for (const timer of settleTimers) window.clearTimeout(timer);
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offline);
       window.removeEventListener("pagehide", pageHide);
-      terminalHost.removeEventListener("wheel", zoomWheel, true);
+      window.removeEventListener("resize", viewportChanged);
+      document.removeEventListener("fullscreenchange", viewportChanged);
+      document.removeEventListener("visibilitychange", visibilityChanged);
+      terminalHost.removeEventListener("wheel", terminalWheel, true);
       observer.disconnect();
       input.dispose();
       socketRef.current?.close(1000, "Desktop tab closed");
       socketRef.current = null;
       terminalRef.current = null;
-      fitRef.current = null;
+      refitRef.current = null;
       terminal.dispose();
     };
   }, [sessionId]);

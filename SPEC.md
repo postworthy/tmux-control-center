@@ -95,9 +95,11 @@ Status: Approved
   validated URL, reuse the server's authentication, authorization, CSRF,
   origin, and rate-limit protections, and never persist terminal content or a
   plaintext login secret in application settings.
-- FR25: represent one tmux session as one top-level desktop session tab, expose
-  tmux windows as subordinate tabs, and expose real tmux panes as splits so the
-  same topology persists and remains visible to mobile and other tmux clients.
+- FR25: represent one tmux session as one top-level desktop session tab and keep
+  that as the primary workspace's only persistent tab row. Tmux windows and
+  panes remain authoritative and usable through normal tmux terminal interaction
+  without always-visible subordinate window/pane chrome; typed topology APIs
+  remain available for a future compact opt-in surface.
 - FR26: enumerate, select, create, detach from, and explicitly kill sessions,
   and create/select/close tmux windows and panes only through typed,
   inventory-resolved, authorized, audited, and rate-limited operations rather
@@ -112,9 +114,11 @@ Status: Approved
   action in the session list.
 - FR29: make the desktop interface behave like a conventional Linux terminal
   with keyboard-driven tabs, splits, focus, selection, copy/paste, context
-  menus, resizing, bounded Ctrl+mouse-wheel text zoom, and reconnection states,
-  without rendering the PWA's mobile cards, swipe navigation, touch shortcut
-  bar, or oversized mobile controls.
+  menus, authoritative tmux-history mouse-wheel scrolling, resizing, reliable
+  initial/maximized/fullscreen fitting, bounded Ctrl+mouse-wheel text zoom, a
+  collapsible icon-rail sidebar, and reconnection states, without rendering the
+  PWA's mobile cards, swipe navigation, touch shortcut bar, or oversized mobile
+  controls.
 - FR30: provide documented repository-source build and test commands that
   produce self-contained `linux-x64` and `osx-arm64` desktop outputs without a
   preinstalled .NET runtime; native installers and published binaries are not
@@ -208,17 +212,19 @@ Status: Approved
   inventory attachment state; closing its tab, closing the desktop window, or
   losing the client unexpectedly removes only its owned attachment within the
   bounded timeout while the session and any other client remain alive.
-- [ ] AC22: one session tab renders tmux window tabs and real tmux pane splits;
-  create, select, resize, and close actions update authoritative tmux topology
-  and are visible after reconnect and from the mobile client.
+- [ ] AC22: one session tab is the only persistent tab row in the primary
+  workspace; tmux windows and panes remain authoritative and usable through the
+  attached terminal, and their state remains visible after reconnect and from
+  another tmux client without permanent subordinate chrome.
 - [ ] AC23: session creation and named-confirmation termination operate on only
   the inventory-resolved target, while closing a tab merely detaches and typed
   `exit` retains normal tmux pane/window/session semantics.
 - [ ] AC24: keyboard navigation, focus, selection, copy/paste, context menu,
-  terminal resize, bounded Ctrl+mouse-wheel text zoom, reconnect, and
-  independent desktop windows pass automated interaction checks and owner
-  acceptance on Ubuntu without exposing the mobile card deck or touch shortcut
-  controls.
+  authoritative unmodified-wheel history, terminal resize, reliable initial and
+  maximize/fullscreen fitting, bounded Ctrl+mouse-wheel text zoom, collapsible
+  icon-rail navigation, reconnect, and independent desktop windows pass
+  automated interaction checks and owner acceptance on Ubuntu without exposing
+  the mobile card deck or touch shortcut controls.
 - [ ] AC25: all new server operations reject unauthorized, cross-origin,
   rate-limited, stale, malformed, or caller-command-bearing requests; focused
   security/integration tests and canonical `./scripts/verify.sh` pass, docs
