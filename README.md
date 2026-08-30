@@ -102,6 +102,11 @@ with an update message. If the compatible initial page cannot load, the native
 shell returns to the chooser after 12 seconds with server, network, and TLS
 troubleshooting context.
 
+Session tabs can be dragged between editor groups. Dropping near a group's
+left/right or top/bottom edge shows snap guidance and creates a corresponding
+client-side split; a center drop moves the tab into that group and empty groups
+collapse. These editor groups do not create tmux panes or extra attachments.
+
 ## Production build
 
 ```bash

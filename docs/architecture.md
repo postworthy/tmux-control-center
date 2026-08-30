@@ -57,11 +57,14 @@ it. Closing a tab or cleanly closing the window closes its socket and disposes
 only its PTY attach client; abrupt loss is detected by the server's 20-second
 heartbeat at the latest. The tmux session and other clients remain alive.
 Inventory and terminal connections retry with exponential backoff capped at 30
-seconds, and tmux inventory remains authoritative for attached state. The
-desktop keeps one permanent session-tab row. Tmux windows and panes remain
-authoritative and are controlled through ordinary tmux interaction inside the
-terminal; the typed topology API remains available for a future compact,
-opt-in presentation rather than consuming permanent terminal height.
+seconds, and tmux inventory remains authoritative for attached state. Session
+tabs may be moved between nested client-side editor groups, with edge drops
+creating left/right or top/bottom splits and empty groups collapsing. Grouping
+does not create tmux panes or duplicate attachments: every session appears once
+and retains one terminal WebSocket. Tmux windows and panes remain authoritative
+and are controlled through ordinary tmux interaction inside the terminal; the
+typed topology API remains available for a future compact, opt-in presentation
+rather than consuming permanent terminal height.
 
 The desktop xterm host captures wheel events before WebView or xterm local
 scroll handling. Ctrl-modified input changes font size one point at a time

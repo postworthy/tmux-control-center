@@ -152,6 +152,16 @@ Results:
   deployed. Its pure tests cover modifier bypass, both directions, invalid-state
   recovery, and 8px/32px clamps; TypeScript compilation, the production desktop
   build, all seven frontend suites, and canonical verification pass.
+- The owner-reported post-capability pop-out failure is recorded in
+  `RCA/2026-08-30--desktop-popout-stuck-in-capability-check.md`. The local
+  correction replaces nested async capability navigation with a validated,
+  cache-busted known-compatible child startup URI. The owner also revised AC22
+  to draggable nested session editor groups. Pure tests cover five snap zones,
+  horizontal/vertical nesting, center moves, unique membership, pruning, and
+  empty-group collapse. The current canonical gate passes 39 Desktop, 55 Server
+  integration, 27 Core, 26 Infrastructure plus five intentional skips, and
+  eleven frontend suites. Native physical confirmation and deployment remain
+  pending.
 
 ## Findings
 
@@ -212,6 +222,8 @@ tmux command was found in the reviewed C022 range.
 
 - Obtain actual Apple Silicon launch/connection evidence.
 - Complete owner Ubuntu desktop interaction acceptance.
+- After explicit deployment approval, confirm a pop-out advances beyond its
+  compatibility page and drag-snap session groups behave correctly on Ubuntu.
 - After explicit approval, deploy and physically verify bounded Ctrl+wheel text
   zoom while confirming unmodified wheel behavior remains unchanged.
 - Follow `docs/desktop-acceptance.md` for both physical-platform checks and

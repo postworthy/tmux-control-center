@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import DesktopTerminal, { type TerminalConnectionState } from "./DesktopTerminal";
+import { useCallback, useEffect, useRef, useState } from "react";
+import DesktopWorkspace, { type DesktopTab } from "./DesktopWorkspace";
+import { type TerminalConnectionState } from "./DesktopTerminal";
 import { reconnectDelay } from "./reconnect";
 import {
   UnauthorizedError,
@@ -14,11 +15,21 @@ import {
   type TmuxSession
 } from "./desktopApi";
 import { activePaneId, sessionIconLabel } from "./desktopNavigation";
-
-interface OpenTab {
-  sessionId: string;
-  name: string;
-}
+import {
+  activateWorkspaceSession,
+  closeWorkspaceSession,
+  createWorkspace,
+  dropZoneForPoint,
+  groupForSession,
+  moveWorkspaceSession,
+  openWorkspaceSession,
+  pruneWorkspaceSessions,
+  workspaceGroup,
+  workspaceGroups,
+  type WorkspaceDropZone,
+  type WorkspaceGroup,
+  type WorkspaceNode
+} from "./workspaceLayout";
 
 interface TerminalMenu {
   sessionId: string;
@@ -28,8 +39,12 @@ interface TerminalMenu {
 
 export default function DesktopApp() {
   const [sessions, setSessions] = useState<TmuxSession[]>([]);
-  const [tabs, setTabs] = useState<OpenTab[]>([]);
+  const [tabs, setTabs] = useState<DesktopTab[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [layout, setLayout] = useState<WorkspaceNode>(() => createWorkspace("group-0"));
+  const [focusedGroupId, setFocusedGroupId] = useState("group-0");
+  const [draggingSessionId, setDraggingSessionId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ groupId: string; zone: WorkspaceDropZone } | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [newName, setNewName] = useState("");
@@ -40,6 +55,7 @@ export default function DesktopApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [terminalMenu, setTerminalMenu] = useState<TerminalMenu | null>(null);
   const deepLinkOpened = useRef(false);
+  const layoutId = useRef(1);
   const newSessionInput = useRef<HTMLInputElement>(null);
   const [nativeProfilesAvailable, setNativeProfilesAvailable] = useState(false);
 
@@ -121,22 +137,29 @@ export default function DesktopApp() {
     };
   }, [authRequired, refresh]);
 
-  const activeTab = useMemo(() => tabs.find(tab => tab.sessionId === activeId) ?? null, [tabs, activeId]);
-
   useEffect(() => {
     if (!inventoryLoaded || !inventoryConnected) return;
     const live = new Set(sessions.map(session => session.id));
-    if (activeId && !live.has(activeId))
-      setActiveId(tabs.filter(tab => live.has(tab.sessionId)).at(-1)?.sessionId ?? null);
+    setLayout(current => {
+      const next = pruneWorkspaceSessions(current, live);
+      const focused = workspaceGroup(next, focusedGroupId) ?? workspaceGroups(next)[0];
+      if (focused.id !== focusedGroupId) setFocusedGroupId(focused.id);
+      if (!activeId || !live.has(activeId)) setActiveId(focused.activeId);
+      return next;
+    });
     setTabs(current => {
       const next = current.filter(tab => live.has(tab.sessionId));
       return next.length === current.length ? current : next;
     });
-  }, [activeId, inventoryConnected, inventoryLoaded, sessions, tabs]);
+  }, [activeId, focusedGroupId, inventoryConnected, inventoryLoaded, sessions]);
 
   const open = (session: TmuxSession) => {
+    const groupId = groupForSession(layout, session.id)?.id ??
+      workspaceGroup(layout, focusedGroupId)?.id ?? workspaceGroups(layout)[0].id;
     setTabs(current => current.some(tab => tab.sessionId === session.id)
       ? current : [...current, { sessionId: session.id, name: session.name }]);
+    setLayout(current => openWorkspaceSession(current, groupId, session.id));
+    setFocusedGroupId(groupId);
     setActiveId(session.id);
   };
 
@@ -150,10 +173,12 @@ export default function DesktopApp() {
   }, [sessions]);
 
   const close = (sessionId: string) => {
-    setTabs(current => {
-      const index = current.findIndex(tab => tab.sessionId === sessionId);
-      const next = current.filter(tab => tab.sessionId !== sessionId);
-      if (activeId === sessionId) setActiveId(next[Math.max(0, index - 1)]?.sessionId ?? null);
+    setTabs(current => current.filter(tab => tab.sessionId !== sessionId));
+    setLayout(current => {
+      const next = closeWorkspaceSession(current, sessionId);
+      const focused = workspaceGroup(next, focusedGroupId) ?? workspaceGroups(next)[0];
+      if (focused.id !== focusedGroupId) setFocusedGroupId(focused.id);
+      if (activeId === sessionId) setActiveId(focused.activeId);
       return next;
     });
     setConnections(current => {
@@ -166,6 +191,48 @@ export default function DesktopApp() {
   const updateConnection = useCallback((sessionId: string, state: TerminalConnectionState) => {
     setConnections(current => current[sessionId] === state ? current : { ...current, [sessionId]: state });
   }, []);
+
+  const focusGroup = (group: WorkspaceGroup) => {
+    setFocusedGroupId(group.id);
+    setActiveId(group.activeId);
+  };
+
+  const activateTab = (groupId: string, sessionId: string) => {
+    setLayout(current => activateWorkspaceSession(current, groupId, sessionId));
+    setFocusedGroupId(groupId);
+    setActiveId(sessionId);
+  };
+
+  const dragOverGroup = (groupId: string, event: React.DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    const bounds = event.currentTarget.getBoundingClientRect();
+    setDropTarget({
+      groupId,
+      zone: dropZoneForPoint(bounds.width, bounds.height,
+        event.clientX - bounds.left, event.clientY - bounds.top)
+    });
+  };
+
+  const dragLeaveGroup = (groupId: string, event: React.DragEvent<HTMLElement>) => {
+    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+    setDropTarget(current => current?.groupId === groupId ? null : current);
+  };
+
+  const dropIntoGroup = (groupId: string, event: React.DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    const sessionId = draggingSessionId ?? event.dataTransfer.getData("text/plain");
+    const zone = dropTarget?.groupId === groupId ? dropTarget.zone : "center";
+    setDraggingSessionId(null);
+    setDropTarget(null);
+    if (!tabs.some(tab => tab.sessionId === sessionId)) return;
+    const newGroupId = `group-${layoutId.current++}`;
+    const newSplitId = `split-${layoutId.current++}`;
+    setLayout(current => moveWorkspaceSession(current, sessionId, groupId, zone, newGroupId, newSplitId));
+    const destinationGroupId = zone === "center" ? groupId : newGroupId;
+    setFocusedGroupId(destinationGroupId);
+    setActiveId(sessionId);
+  };
 
   useEffect(() => {
     if (!terminalMenu) return;
@@ -214,15 +281,17 @@ export default function DesktopApp() {
       }
       if (event.ctrlKey && (event.code === "PageUp" || event.code === "PageDown")) {
         event.preventDefault();
-        const index = tabs.findIndex(tab => tab.sessionId === activeId);
-        if (index < 0 || tabs.length < 2) return;
+        const group = workspaceGroup(layout, focusedGroupId);
+        if (!group || group.tabIds.length < 2) return;
+        const index = group.tabIds.indexOf(activeId);
+        if (index < 0) return;
         const offset = event.code === "PageUp" ? -1 : 1;
-        setActiveId(tabs[(index + offset + tabs.length) % tabs.length].sessionId);
+        activateTab(group.id, group.tabIds[(index + offset + group.tabIds.length) % group.tabIds.length]);
       }
     };
     window.addEventListener("keydown", keydown, true);
     return () => window.removeEventListener("keydown", keydown, true);
-  }, [activeId, tabs]);
+  }, [activeId, focusedGroupId, layout]);
 
   const submitLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -323,25 +392,17 @@ export default function DesktopApp() {
       </>}
     </aside>
     <section className="workspace">
-      <nav className="tab-strip" aria-label="Open sessions">
-        {tabs.map(tab => <div className={tab.sessionId === activeId ? "tab active" : "tab"} key={tab.sessionId}>
-          <button onClick={() => setActiveId(tab.sessionId)}>{tab.name}</button>
-          {nativeProfilesAvailable && <button className="tab-popout" title={`Open ${tab.name} in a new window`}
-            aria-label={`Open ${tab.name} in a new window`} onClick={() => openSessionWindow(tab.sessionId)}>↗</button>}
-          <button className="tab-close" aria-label={`Detach ${tab.name}`} onClick={() => close(tab.sessionId)}>×</button>
-        </div>)}
-        <span className={`connection ${activeTab ? connections[activeTab.sessionId] ?? "connecting" : ""}`}>
-          {!inventoryConnected ? "server offline" : activeTab ? connections[activeTab.sessionId] ?? "connecting" : "no session"}
-        </span>
-      </nav>
-      <div className="terminal-stage">
-        {tabs.map(tab => <DesktopTerminal key={tab.sessionId} sessionId={tab.sessionId}
-          active={tab.sessionId === activeId}
-          onConnectionState={state => updateConnection(tab.sessionId, state)}
-          onContextMenu={(x, y) => showTerminalMenu(tab.sessionId, x, y)}
-          onError={setError} />)}
-        {!activeTab && <div className="empty-state"><h1>Select a session</h1><p>Open an existing tmux session from the sidebar.</p></div>}
-      </div>
+      <DesktopWorkspace layout={layout} tabs={tabs} connections={connections}
+        inventoryConnected={inventoryConnected} focusedGroupId={focusedGroupId}
+        draggingSessionId={draggingSessionId} dropTarget={dropTarget}
+        nativeProfilesAvailable={nativeProfilesAvailable}
+        onFocusGroup={focusGroup} onActivate={activateTab} onClose={close}
+        onPopout={openSessionWindow} onConnectionState={updateConnection}
+        onContextMenu={showTerminalMenu}
+        onDragStart={setDraggingSessionId}
+        onDragEnd={() => { setDraggingSessionId(null); setDropTarget(null); }}
+        onDragOver={dragOverGroup} onDragLeave={dragLeaveGroup} onDrop={dropIntoGroup}
+        onError={setError} />
       {terminalMenu && <div className="terminal-menu-layer" onMouseDown={() => setTerminalMenu(null)}>
         <div className="terminal-menu" role="menu" aria-label="Terminal actions"
           style={{ left: terminalMenu.x, top: terminalMenu.y }} onMouseDown={event => event.stopPropagation()}>

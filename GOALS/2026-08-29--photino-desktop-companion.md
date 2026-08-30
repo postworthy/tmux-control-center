@@ -44,10 +44,10 @@ existing mobile PWA.
   within the documented heartbeat bound while the session and other clients
   remain alive and inventory/mobile attached state converges.
   - Evidence: pending
-- [ ] AC4 — One desktop session tab is the primary workspace's only persistent
-  tab row; tmux windows and panes remain authoritative and usable inside the
-  attached terminal without permanent subordinate window/pane chrome, and their
-  state survives reconnect and remains visible from another tmux client.
+- [ ] AC4 — Desktop session tabs move between nested editor groups and create
+  left/right or top/bottom client-side splits through visible snap guidance;
+  every session appears once with one attachment, empty groups collapse, and
+  tmux windows/panes remain authoritative without subordinate topology chrome.
   - Evidence: pending
 - [ ] AC5 — Session listing, selection, creation, detach, and named-confirmation
   kill work only on inventory-resolved targets; closing UI never kills a
@@ -56,9 +56,9 @@ existing mobile PWA.
 - [ ] AC6 — Desktop keyboard navigation, independent windows, focus, selection,
   copy/paste, context menus, coalesced unmodified-wheel tmux history, reliable
   initial/maximized/fullscreen fitting, resize, bounded Ctrl+mouse-wheel text
-  zoom, collapsible icon-rail navigation, and reconnect pass automated
-  interaction checks and owner Ubuntu acceptance without mobile cards, swipe
-  navigation, touch shortcuts, or oversized mobile controls.
+  zoom, collapsible icon-rail navigation, draggable split groups, and reconnect
+  pass automated interaction checks and owner Ubuntu acceptance without mobile
+  cards, swipe navigation, touch shortcuts, or oversized mobile controls.
   - Evidence: pending
 - [ ] AC7 — Every new operation rejects unauthorized, cross-origin,
   rate-limited, stale, malformed, and caller-command-bearing requests; focused
@@ -93,7 +93,7 @@ existing mobile PWA.
 | 2. Shell and profiles | completed | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser and offline/reconnect runtime |
 | 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
 | 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
-| 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input, bounded Ctrl+wheel text zoom, single-row chrome, collapsible sidebar, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | Focused layout/wheel tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
+| 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input, bounded Ctrl+wheel text zoom, draggable nested session groups, collapsible sidebar, working pop-outs, create/kill, ordinary exit, and recovery meet AC4-AC6. | Focused layout/wheel/pop-out tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
 | 6. Cross-platform delivery | in progress | Ubuntu/macOS source builds, launch evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, `./scripts/verify.sh`, Review Record |
 
 Thin slice: complete Unit 3 so an Ubuntu desktop app can select a saved server,
@@ -150,6 +150,12 @@ the session remains running and becomes detached in the mobile PWA.
   geometry detection, terminal right-click horizontal/vertical split actions,
   and per-session collapsed-rail icons, then deployed the corrected server and
   rebuilt the self-contained Ubuntu launcher.
+- 2026-08-30: physical Ubuntu feedback showed post-capability native pop-outs
+  stuck on their progress document and requested VS Code-style session editor
+  groups. RCA traced the pop-out regression to asynchronous navigation inside a
+  blocking child-window loop. The local correction deep-links known-compatible
+  child windows and adds draggable nested left/right and top/bottom groups with
+  visible snap guidance, unique session membership, and empty-group collapse.
 
 ## Evidence
 
@@ -249,6 +255,15 @@ the session remains running and becomes detached in the mobile PWA.
   Desktop, and ten frontend suites. Live image `sha256:54ce005...` is healthy
   with zero restarts, serves bundle `index-BuJxit0H.js`, and preserves image
   `sha256:ba16379...` as `tmux-mobile:pre-desktop-native-resize-20260830`.
+- Desktop group/pop-out correction: four native navigation cases prove pop-outs
+  retain strict opaque targets and receive a cache-busted session deep link
+  without a second progress-state negotiation. Pure workspace tests prove
+  side-by-side and stacked nesting, center moves, all five snap zones, unique
+  membership, stale-session pruning, and empty-group collapse. Canonical
+  verification passes with 39 Desktop, 55 Server integration, 27 Core, 26
+  Infrastructure plus five intentional skips, and eleven frontend suites. The
+  self-contained Ubuntu launcher builds locally; native interaction and live
+  deployment remain at the owner boundary.
 - Source delivery: `scripts/build-desktop.sh` produced current self-contained
   outputs for `linux-x64` (80 MiB) and `osx-arm64` (84 MiB). `file` identified
   the launchers as x86-64 ELF and arm64 Mach-O respectively, the macOS Photino
@@ -430,6 +445,11 @@ the session remains running and becomes detached in the mobile PWA.
   resolution. `tailscale status` and a forced-address HTTPS request do not prove
   that the native app can resolve the saved hostname; physical preflight must
   check Tailscale DNS acceptance and a normal resolver lookup separately.
+- Photino child `WaitForClose()` can pump a child window from a parent callback,
+  but an async capability continuation that later invokes into that nested
+  lifecycle can leave the child on its intermediate page. A pop-out requested
+  by an already-ready page must use that established compatibility result and
+  provide its startup navigation before entering the child loop.
 
 ## Decisions
 
@@ -472,10 +492,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner launches the rebuilt cache-busting Ubuntu client and checks native
-  drag/maximize resize, right-click pane splits, and collapsed per-session
-  icons together with the earlier Ctrl+wheel, single-row, and collapse checks.
-  Apple Silicon launch remains external.
+- Owner authorizes replacement of the live Compose app with the verified
+  pop-out/session-group build; then the rebuilt Ubuntu client is physically
+  checked for child navigation and drag-snap layouts. Apple Silicon launch
+  remains external.
 
 ## Pause Conditions
 

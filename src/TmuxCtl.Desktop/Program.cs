@@ -126,6 +126,17 @@ public static class Program
                 generation, selected, sessionId, connectionCancellation.Token);
         }
 
+        private void ConnectKnownCompatible(DesktopServerUrl selected, string sessionId)
+        {
+            CancelPendingConnection();
+            profilesVisible = false;
+            server = selected;
+            Interlocked.Increment(ref navigationGeneration);
+            window.SetTitle($"tmuxctl — {selected.ServerUri.Host}");
+            window.Load(DesktopPopoutNavigation.Create(
+                selected, sessionId, Guid.NewGuid().ToString("N")).AbsoluteUri);
+        }
+
         private async Task NavigateAfterCapabilityCheckAsync(
             int generation, DesktopServerUrl selected, string? sessionId, CancellationToken cancellationToken)
         {
@@ -175,7 +186,7 @@ public static class Program
             var child = new DesktopWindowController(childWindow, profiles, capabilityProbe);
             Windows.Add(child);
             childWindow.RegisterWebMessageReceivedHandler(child.HandleMessage);
-            child.Connect(server, sessionId);
+            child.ConnectKnownCompatible(server, sessionId!);
             childWindow.WaitForClose();
             child.Dispose();
             Windows.Remove(child);

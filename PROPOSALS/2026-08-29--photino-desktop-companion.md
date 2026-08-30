@@ -29,9 +29,11 @@ In scope:
   existing server security and stores no plaintext login secret in app settings.
 - Session listing, selection, creation, real attachment, detach, reconnect, and
   explicit named-confirmation termination.
-- One persistent top-level desktop tab row mapped to tmux sessions. Tmux windows
+- Desktop session tabs that can move between nested editor groups or create
+  left/right and top/bottom client-side splits through visible drag-drop snap
+  guidance. Each session remains unique and owns one attachment. Tmux windows
   and panes remain authoritative inside normal tmux terminal interaction; closed
-  typed topology operations remain additive but no longer consume permanent
+  typed topology operations remain additive but do not consume permanent
   subordinate rows in the primary workspace.
 - Bounded stale-client cleanup, desktop keyboard/mouse interaction including
   coalesced authoritative tmux-history wheel input, reliable initial/fullscreen
@@ -134,8 +136,8 @@ review record finds no blocking issue.
 5. Lifecycle and desktop interaction — heartbeat/stale cleanup, reconnect,
    multiple windows, shortcuts, selection, clipboard, context menu, settled
    layout fitting, coalesced tmux-history wheel input, bounded Ctrl+mouse-wheel
-   text zoom, collapsible icon-rail navigation, and explicit session create/kill
-   behavior — Risk T2.
+   text zoom, collapsible icon-rail navigation, draggable nested session editor
+   groups with snap guidance, and explicit session create/kill behavior — Risk T2.
 6. Cross-platform delivery — deterministic source builds, Linux/macOS launch
    evidence, documentation, canonical verification, rollback, and review — Risk
    T1 locally; external macOS CI or push requires separate approval.
@@ -174,8 +176,9 @@ detach/session-action smoke test.
 - Risk: embedded-webview origins conflict with secure cookies, CSRF, or
   WebSockets. Mitigation: make this the first spike; do not add exceptions until
   a least-privilege architecture is demonstrated and reviewed.
-- Risk: UI layout diverges from tmux and becomes stale. Mitigation: keep tmux
-  authoritative and derive all tabs/splits from refreshed inventory.
+- Risk: client editor-group layout is confused with tmux topology or duplicates
+  attachments. Mitigation: keep session grouping device-ephemeral, enforce one
+  group membership per session, and keep tmux windows/panes authoritative.
 - Risk: app crashes leave false attached state. Mitigation: connection-owned
   PTYs, heartbeat expiry, idempotent cleanup, and real-tmux abrupt-loss tests.
 - Risk: closing UI kills work. Mitigation: detach only owned clients and test

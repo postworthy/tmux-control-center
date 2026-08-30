@@ -63,15 +63,21 @@ Complete these checks with disposable tmux sessions:
 4. With xterm focused, use Ctrl+PageUp and Ctrl+PageDown to cycle session tabs.
    Use Ctrl+Shift+W to close one tab and confirm only that attachment disappears
    while both tmux sessions remain alive.
-5. Pop the remaining session into a native window. Type independently in both
-   windows, close the child, and confirm the root window and session survive.
-6. Confirm only one session-tab row is present above the terminal. Use ordinary
-   tmux keys inside the terminal to create/select a window and split/select panes;
-   confirm another tmux client sees the same authoritative topology. Collapse
+5. Pop the remaining session into a native window. Confirm the child advances
+   beyond **Checking server compatibility**, opens the requested session, and
+   accepts independent input. Close the child and confirm the root window and
+   session survive.
+6. Open at least three session tabs. Drag one tab toward the left/right edge and
+   confirm visible snap guidance creates a side-by-side editor group; drag
+   another toward the top/bottom edge to create a nested stacked group. Move a
+   tab through the center target into another group and confirm its empty prior
+   group collapses. Verify each session has exactly one desktop attachment. Use
+   ordinary tmux keys inside a terminal to split tmux panes and confirm that
+   topology remains distinct and authoritative from another client. Collapse
    the left sidebar and confirm only its narrow icon rail remains, then expand it.
 7. Select terminal text and copy it with Ctrl+Shift+C. Paste a harmless sentinel
    with Ctrl+Shift+V; multiline paste must ask for confirmation. Right-click and
-   verify the native context menu appears. Hold Ctrl while scrolling the mouse
+   verify the terminal split menu appears. Hold Ctrl while scrolling the mouse
    wheel in both directions and confirm terminal text grows and shrinks within
    bounded limits without scrolling terminal content; release Ctrl and confirm
    wheel up/down navigates tmux history. Select a newly opened session and

@@ -72,7 +72,18 @@ Updated: 2026-08-30
   unchanged Serve boundary; `sha256:ba16379...` is preserved as
   `tmux-mobile:pre-desktop-native-resize-20260830`. The Ubuntu launcher was
   rebuilt at `artifacts/desktop/linux-x64/tmuxctl`; owner physical acceptance is
-  the next boundary.
+  the next boundary. The next acceptance pass found native pop-outs stuck on
+  their compatibility progress page and requested VS Code-style split session
+  groups. RCA identifies the later async capability transition inside the
+  earlier blocking child lifecycle. The local correction initializes pop-outs
+  directly from the parent page's established compatible connection and adds
+  ephemeral nested editor groups with left/right/top/bottom drag snap guidance,
+  center moves, unique session membership, and empty-group collapse. The revised
+  contract, architecture, and acceptance plan distinguish these client groups
+  from authoritative tmux panes. Canonical verification passes 39 desktop, 55
+  server, 27 core, 26 infrastructure (5 opt-in skips), and eleven frontend
+  suites; the self-contained Ubuntu launcher is rebuilt. This revision is not
+  deployed pending the owner-controlled production boundary.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation
