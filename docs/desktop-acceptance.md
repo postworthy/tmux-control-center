@@ -63,7 +63,9 @@ Complete these checks with disposable tmux sessions:
 2. Connect to the intended server and authenticate in the server-hosted login
    screen. Return with **Servers**, reconnect, and confirm no key is prefilled.
 3. Create two disposable sessions. Open both and confirm the mobile PWA or
-   another tmux client reports two additional attachments.
+   another tmux client reports two additional attachments. Rename one from its
+   sidebar control and confirm the sidebar, its open tab, tmux, and the mobile
+   PWA converge on the new name without changing its attachment count.
 4. With xterm focused, use Ctrl+PageUp and Ctrl+PageDown to cycle session tabs.
    Use Ctrl+Shift+W to close one tab and confirm only that attachment disappears
    while both tmux sessions remain alive.

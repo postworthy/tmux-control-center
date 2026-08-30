@@ -1,4 +1,4 @@
-import type { InventorySnapshot, TmuxSession } from "../src/types";
+import type { InventorySnapshot, TmuxSession } from "../src/types.js";
 
 let csrfToken: string | null = null;
 
@@ -84,6 +84,14 @@ export const killPane = (paneId: string) =>
 
 export async function createSession(name: string): Promise<{ id: string; name: string }> {
   return request("/api/sessions", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+    headers: { "X-CSRF-TOKEN": await csrf() }
+  });
+}
+
+export async function renameSession(sessionId: string, name: string): Promise<void> {
+  await request(`/api/sessions/${encodeURIComponent(sessionId)}/rename`, {
     method: "POST",
     body: JSON.stringify({ name }),
     headers: { "X-CSRF-TOKEN": await csrf() }

@@ -27,8 +27,8 @@ In scope:
   URL; Tailscale connectivity and the remote server are prerequisites.
 - A proven remote authentication/CSRF/origin/WebSocket topology that preserves
   existing server security and stores no plaintext login secret in app settings.
-- Session listing, selection, creation, real attachment, detach, reconnect, and
-  explicit named-confirmation termination.
+- Session listing, selection, creation, validated rename, real attachment,
+  detach, reconnect, and explicit named-confirmation termination.
 - Desktop session tabs that create nested editor layouts through one global set
   of five labeled center/left/right/top/bottom drag targets. Edge targets add a
   root-relative split; center or an explicit **Single view** action returns all
@@ -81,8 +81,9 @@ Out of scope:
   return all tabs to one standard session-tab row; tmux windows and panes remain
   authoritative through the attached terminal and round-trip across reconnect
   and other tmux clients without permanent subordinate chrome.
-- [ ] Creation, detach, ordinary `exit`, and explicit confirmed session kill
-  retain their distinct tmux semantics and operate only on validated targets.
+- [ ] Creation, validated rename, detach, ordinary `exit`, and explicit
+  confirmed session kill retain their distinct tmux semantics and operate only
+  on validated targets; rename updates open labels without reconnecting.
 - [ ] Desktop interaction acceptance includes coalesced unmodified-wheel tmux
   history, reliable initial/maximized/fullscreen fit, bounded Ctrl+mouse-wheel
   text zoom, and an accessible collapsed icon rail; focused security/integration

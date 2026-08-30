@@ -51,9 +51,11 @@ existing mobile PWA.
   session appears once with one attachment and tmux windows/panes remain
   authoritative without subordinate topology chrome.
   - Evidence: pending
-- [ ] AC5 — Session listing, selection, creation, detach, and named-confirmation
-  kill work only on inventory-resolved targets; closing UI never kills a
-  session, and typed `exit` retains ordinary tmux pane/window/session behavior.
+- [ ] AC5 — Session listing, selection, creation, validated rename, detach, and
+  named-confirmation kill work only on inventory-resolved targets; rename
+  updates the sidebar and every open tab without reconnecting, closing UI never
+  kills a session, and typed `exit` retains ordinary tmux pane/window/session
+  behavior.
   - Evidence: pending
 - [ ] AC6 — Desktop keyboard navigation, independent windows, focus, selection,
   copy/paste, one tmux-owned right-click menu without a duplicate tmuxctl
@@ -96,7 +98,7 @@ existing mobile PWA.
 | 2. Shell and profiles | completed | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser and offline/reconnect runtime |
 | 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
 | 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
-| 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input, bounded Ctrl+wheel text zoom, one global five-zone split overlay, single-view reset, collapsible sidebar, working pop-outs, create/kill, ordinary exit, and recovery meet AC4-AC6. | Focused layout/wheel/pop-out tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
+| 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input, bounded Ctrl+wheel text zoom, one global five-zone split overlay, single-view reset, collapsible sidebar, working pop-outs, create/rename/kill, ordinary exit, and recovery meet AC4-AC6. | Focused layout/wheel/pop-out tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
 | 6. Cross-platform delivery | in progress | Ubuntu executable/launcher and macOS app-bundle source builds carry the PWA icon; launch/pinning evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, bundle/launcher checks, `./scripts/verify.sh`, Review Record |
 
 Thin slice: complete Unit 3 so an Ubuntu desktop app can select a saved server,
@@ -557,11 +559,11 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner authorizes replacement of the live Compose app with the verified
-  single-context-menu build. Then the owner closes older tmuxctl windows and
-  physically confirms right click opens only tmux's full menu, alongside the
-  outstanding five-zone/single-view checks. Apple Silicon launch/pinning
-  remains external.
+- Build and deploy the owner-authorized desktop rename image, preserving the
+  single-context-menu image as its rollback point. Then the owner physically
+  confirms rename updates the sidebar, every open tab, tmux, and the mobile PWA
+  without reconnecting the terminal, alongside the outstanding right-click and
+  layout checks. Apple Silicon launch/pinning remains external.
 
 ## Pause Conditions
 
@@ -605,8 +607,22 @@ the session remains running and becomes detached in the mobile PWA.
   while retaining xterm/tmux event propagation and the typed topology API.
   Focused typecheck, all eleven frontend suites,
   the negative delivery guard, a production bundle without the removed menu
-  strings, and canonical verification pass. Redeployment and physical
-  acceptance remain.
+  strings, and canonical verification pass. Owner-approved image
+  `sha256:07d570a1...` is now live, healthy, and at zero restarts; predecessor
+  `sha256:a7f2997f...` is preserved as
+  `tmux-mobile:pre-single-context-menu-20260830`. The served bundle contains no
+  removed menu markers and all six sessions retain their recorded window and
+  attachment counts. Physical acceptance remains.
+- The owner requested desktop session rename and authorized its follow-up
+  rollout. The implementation reuses the existing opaque-ID, CSRF-protected,
+  rate-limited, audited rename endpoint; the expanded sidebar exposes a pencil
+  control, and inventory reconciliation changes every open label without
+  unmounting xterm. A direct request-contract test proves encoded target, fixed
+  POST route, name-only JSON, and CSRF header; navigation tests prove label
+  reconciliation and stable unchanged state. Production bundle inspection, all
+  twelve frontend suites, 41 Desktop, 55 Server integration, 27 Core, 26
+  Infrastructure plus five intentional skips, shell suites, and Compose
+  assertions pass. Authorized deployment is next.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch/identity, Ubuntu launcher, Apple Silicon app-bundle structure,
   compatibility, TLS, tests, docs, rollback, and review evidence are complete;

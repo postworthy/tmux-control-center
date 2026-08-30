@@ -205,7 +205,19 @@ Results:
   menu chrome while retaining xterm/tmux mouse input and the additive typed
   topology API. Typecheck, all eleven frontend suites,
   the desktop delivery guard, a production bundle inspection, and canonical
-  verification pass; deployment and physical confirmation remain.
+  verification pass. Owner-approved image `sha256:07d570a1...` is live,
+  healthy, and at zero restarts; predecessor `sha256:a7f2997f...` is preserved
+  as `tmux-mobile:pre-single-context-menu-20260830`. Served duplicate-menu
+  markers are absent and all six sessions retain their recorded state;
+  physical confirmation remains.
+- Desktop rename reuses the pre-existing protected server operation rather than
+  expanding server authority. The new request-contract test verifies encoded
+  opaque ID, fixed POST route, name-only body, and CSRF token; tab reconciliation
+  coverage verifies renamed labels and stable mounted state. Production bundle
+  inspection and canonical verification pass with twelve frontend suites, 41
+  Desktop, 55 Server integration, 27 Core, and 26 Infrastructure tests plus five
+  intentional skips. The owner authorized deployment; physical convergence and
+  attachment checks remain.
 
 ## Findings
 

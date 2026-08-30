@@ -1,4 +1,4 @@
-import { activePaneId, sessionIconLabel } from "../desktop/desktopNavigation.js";
+import { activePaneId, reconcileDesktopTabs, sessionIconLabel } from "../desktop/desktopNavigation.js";
 
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -22,5 +22,12 @@ const topology = {
 assert(activePaneId(topology) === "%2", "Split targets the active pane in the active window.");
 assert(activePaneId({ sessionId: "empty", windows: [] }) === null,
   "Missing topology does not invent a pane target.");
+
+const tabs = [{ sessionId: "alpha", name: "alpha" }, { sessionId: "stale", name: "stale" }];
+const reconciled = reconcileDesktopTabs(tabs, [{ id: "alpha", name: "renamed-alpha" }]);
+assert(reconciled.length === 1 && reconciled[0].name === "renamed-alpha",
+  "Inventory rename updates open tab labels while stale sessions are removed.");
+assert(reconcileDesktopTabs(reconciled, [{ id: "alpha", name: "renamed-alpha" }]) === reconciled,
+  "Unchanged inventory preserves the existing tab collection.");
 
 console.log("desktop navigation tests passed");

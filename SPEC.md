@@ -104,7 +104,7 @@ Status: Approved
   remain authoritative and usable through normal tmux terminal interaction
   without always-visible subordinate window/pane chrome; typed topology APIs
   remain available for a future compact opt-in surface.
-- FR26: enumerate, select, create, detach from, and explicitly kill sessions,
+- FR26: enumerate, select, create, rename, detach from, and explicitly kill sessions,
   and create/select/close tmux windows and panes only through typed,
   inventory-resolved, authorized, audited, and rate-limited operations rather
   than arbitrary tmux or shell commands.
@@ -227,9 +227,11 @@ Status: Approved
   drop or **Single view** action restores one standard tab group. Each session
   appears once and remains one attachment throughout, and tmux windows/panes
   remain authoritative without permanent subordinate topology chrome.
-- [ ] AC23: session creation and named-confirmation termination operate on only
-  the inventory-resolved target, while closing a tab merely detaches and typed
-  `exit` retains normal tmux pane/window/session semantics.
+- [ ] AC23: session creation, validated rename, and named-confirmation
+  termination operate on only the inventory-resolved target; a successful
+  rename updates the sidebar and every open tab without reconnecting its
+  terminal, while closing a tab merely detaches and typed `exit` retains normal
+  tmux pane/window/session semantics.
 - [ ] AC24: keyboard navigation, focus, selection, copy/paste, one tmux-owned
   right-click menu with no overlapping tmuxctl menu,
   authoritative unmodified-wheel history, terminal resize, reliable initial and

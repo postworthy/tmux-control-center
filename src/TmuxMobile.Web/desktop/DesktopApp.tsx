@@ -9,10 +9,11 @@ import {
   inventoryWebSocketUrl,
   killSession,
   login,
+  renameSession,
   type InventorySnapshot,
   type TmuxSession
 } from "./desktopApi";
-import { sessionIconLabel } from "./desktopNavigation";
+import { reconcileDesktopTabs, sessionIconLabel } from "./desktopNavigation";
 import {
   activateWorkspaceSession,
   closeWorkspaceSession,
@@ -139,10 +140,7 @@ export default function DesktopApp() {
       if (!activeId || !live.has(activeId)) setActiveId(focused.activeId);
       return next;
     });
-    setTabs(current => {
-      const next = current.filter(tab => live.has(tab.sessionId));
-      return next.length === current.length ? current : next;
-    });
+    setTabs(current => reconcileDesktopTabs(current, sessions));
   }, [activeId, focusedGroupId, inventoryConnected, inventoryLoaded, sessions]);
 
   const open = (session: TmuxSession) => {
@@ -294,6 +292,20 @@ export default function DesktopApp() {
     }
   };
 
+  const rename = async (session: TmuxSession) => {
+    const requested = window.prompt("Rename tmux session", session.name);
+    if (requested === null) return;
+    const name = requested.trim();
+    if (!name || name === session.name) return;
+    try {
+      await renameSession(session.id, name);
+      setTabs(current => current.map(tab => tab.sessionId === session.id ? { ...tab, name } : tab));
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not rename session");
+    }
+  };
+
   if (authRequired) {
     return <main className="login-shell">
       <form className="login-card" onSubmit={submitLogin}>
@@ -355,6 +367,8 @@ export default function DesktopApp() {
               <span className={session.isAttached ? "status attached" : "status detached"} />
               <span><strong>{session.name}</strong><small>{session.windowCount} windows · {session.paneCount} panes</small></span>
             </button>
+            <button className="rename" title={`Rename ${session.name}`}
+              aria-label={`Rename ${session.name}`} onClick={() => void rename(session)}>✎</button>
             <button className="kill" title={`Kill ${session.name}`} onClick={() => void terminate(session)}>×</button>
           </div>)}
         </div>

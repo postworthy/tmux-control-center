@@ -75,6 +75,12 @@ and are controlled through ordinary tmux interaction inside the terminal; the
 typed topology API remains available for a future compact, opt-in presentation
 rather than consuming permanent terminal height.
 
+Desktop rename calls the existing same-origin, antiforgery-protected session
+rename endpoint with the opaque inventory ID and validated name. The inventory
+stream remains authoritative for sidebar and tab labels; reconciling a changed
+name updates mounted tab metadata without unmounting xterm or reconnecting its
+terminal WebSocket.
+
 The desktop xterm host captures wheel events before WebView or xterm local
 scroll handling. Ctrl-modified input changes font size one point at a time
 within an 8–32px bound; unmodified input is coalesced to at most four typed tmux
