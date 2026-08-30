@@ -178,6 +178,13 @@ Results:
   `RCA/2026-08-30--desktop-root-layout-tested-before-redeployment.md` records
   the artifact-boundary mismatch and requires live-selector evidence before
   another physical claim.
+- The explicitly approved follow-up rollout now closes that deployment gap:
+  healthy zero-restart image `sha256:a2d7f313...` serves corrected
+  `index-KHTt-Jmq.css` with the direct-root selector, while predecessor
+  `sha256:8be95175...` is rollback-tagged. Compatibility, exact session state,
+  HTTPS/direct-backend boundaries, bounded logs, and the installed validated
+  PWA-derived Ubuntu launcher pass. Only physical layout/icon acceptance remains
+  for this correction.
 
 ## Findings
 
@@ -238,9 +245,8 @@ tmux command was found in the reviewed C022 range.
 
 - Obtain actual Apple Silicon launch/connection evidence.
 - Complete owner Ubuntu desktop interaction acceptance.
-- After an explicitly approved corrective deployment, register the Ubuntu
-  launcher and confirm both PWA-derived dock identity and full-size initial
-  unsplit workspace geometry.
+- From Ubuntu Applications, confirm both PWA-derived dock identity and full-size
+  initial unsplit workspace geometry.
 - The owner-authorized corrective deployment is live as healthy image
   `sha256:8be95175...` with zero restarts. Rollback image
   `tmux-mobile:pre-desktop-session-groups-20260830` preserves

@@ -57,3 +57,23 @@ Related Commit(s): `2044254`, `e179c83`
   expected release marker or corrected selector.
 - Handoff: distinguish native-only rebuild instructions from server UI
   redeployment instructions whenever one requested change spans both artifacts.
+
+## Resolution Evidence
+
+- The owner explicitly approved deployment and launcher installation. Prior
+  image `sha256:8be95175...` is preserved as
+  `tmux-mobile:pre-root-layout-rollback-20260830`.
+- Image `sha256:a2d7f313...` passed Compose validation, in-image selector
+  inspection, and the isolated host/container tmux 3.4 compatibility probe
+  before replacing only the app service. It is healthy with zero restarts.
+- The cache-busted live HTTPS document now references `index-KHTt-Jmq.css`, and
+  those served bytes contain
+  `.workspace-layout>.workspace-group,.workspace-layout>.workspace-split{flex:1
+  1 0}`. Protocol metadata remains 200, direct backend traffic remains 426,
+  bounded logs contain no error, and all six session/window/attachment counts
+  match the immediate predeployment snapshot.
+- `/home/landon/.local/share/applications/tmuxctl.desktop` is installed with
+  mode `0644`, executable and icon paths resolve, `StartupWMClass=Tmuxctl`
+  matches the observed GTK class, desktop-file validation exits zero, and the
+  installed PNG is byte-identical to the PWA 512px icon. Physical rendering and
+  full-workspace acceptance remain owner checks.

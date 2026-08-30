@@ -61,4 +61,10 @@ Related Commit(s): `2044254`
 - Canonical `./scripts/verify.sh` passes 41 Desktop, 55 Server integration, 27
   Core, 26 Infrastructure tests plus five intentional skips, all frontend and
   shell suites, and both Compose assertions. Physical Ubuntu confirmation
-  remains required after the corrected server bundle is explicitly deployed.
+  remains required.
+- After explicit owner approval, corrected image `sha256:a2d7f313...` passed the
+  isolated host/container tmux 3.4 probe and replaced only the Compose app
+  service. It is healthy with zero restarts; the cache-busted live document now
+  references `index-KHTt-Jmq.css`, whose served bytes contain the required
+  direct-root flex selector. All six tmux sessions and their predeployment
+  attachment counts remain unchanged.

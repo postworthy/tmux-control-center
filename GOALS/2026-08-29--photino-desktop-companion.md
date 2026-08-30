@@ -435,6 +435,19 @@ the session remains running and becomes detached in the mobile PWA.
   No new source correction or deployment was performed; the next attempt must
   verify the live stylesheet after explicitly approved replacement and before
   physical retest.
+- 2026-08-30: the owner explicitly authorized the pending server deployment and
+  Ubuntu launcher installation. Prior image `sha256:8be95175...` is preserved
+  as `tmux-mobile:pre-root-layout-rollback-20260830`. Corrected image
+  `sha256:a2d7f313...` passed Compose validation, in-image selector inspection,
+  and the isolated tmux 3.4 probe before replacing only the app service. It is
+  healthy with zero restarts; HTTPS protocol metadata remains 200, direct HTTP
+  remains 426, bounded logs contain no error, and all six session/window/
+  attachment counts match the immediate predeployment snapshot. The live
+  cache-busted document references `index-KHTt-Jmq.css`, whose served bytes
+  contain the required direct-root selector. The mode-`0644` Ubuntu launcher is
+  installed under the user's application data, passes desktop-file validation,
+  declares the observed `Tmuxctl` GTK class, and resolves to the executable plus
+  a PNG byte-identical to the PWA icon.
 
 ## Discoveries
 
@@ -529,10 +542,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner authorizes deployment of the corrected desktop CSS bundle. Afterward,
-  the owner registers the rebuilt Ubuntu launcher and physically confirms the
-  PWA icon appears in the dock and the first unsplit session fills the complete
-  workspace. Apple Silicon launch/pinning remains external.
+- Owner closes every older tmuxctl window, opens tmuxctl from Ubuntu's
+  Applications view, pins it with **Add to Favorites**, and physically confirms
+  the PWA icon appears in the dock and the first unsplit session fills the
+  complete workspace. Apple Silicon launch/pinning remains external.
 
 ## Pause Conditions
 
@@ -559,11 +572,10 @@ the session remains running and becomes detached in the mobile PWA.
   independent windows, guarded clipboard paths, authoritative wheel history,
   settled initial/fullscreen fitting, bounded Ctrl+wheel font zoom, single-row
   chrome, collapsed icon rail, exact-name kill, ordinary `exit`, and authoritative
-  tab cleanup are implemented and verified. The latest root-group sizing
-  correction is verified locally and awaits redeployment and physical owner
-  acceptance.
+  tab cleanup are implemented and verified. The root-group sizing correction is
+  live with served-selector evidence and awaits physical owner acceptance.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch/identity, Ubuntu launcher, Apple Silicon app-bundle structure,
   compatibility, TLS, tests, docs, rollback, and review evidence are complete;
-  actual Ubuntu pinning, Apple Silicon launch/pinning, and owner interaction
-  acceptance remain required.
+  the Ubuntu launcher is installed, while actual Ubuntu pinning, Apple Silicon
+  launch/pinning, and owner interaction acceptance remain required.
