@@ -233,6 +233,11 @@ the session remains running and becomes detached in the mobile PWA.
   diff confirms existing mobile source and workspace-recovery source are
   unchanged. Reverting the C022 commits removes the additive desktop/API
   surface, after which `./scripts/verify.sh` is the validation gate.
+- Change Review: `REVIEWS/2026-08-29--photino-desktop-companion.md` records a
+  `not ready` decision. Blocking evidence remains for actual Apple Silicon
+  launch, owner Ubuntu interaction acceptance, the stacked branch-to-main
+  boundary, and the proposal-required older-server capability contract. Commit
+  `69b4aeb` also lacks the proposal-required Roadmap/Proposal trailers.
 
 ## Discoveries
 
@@ -264,6 +269,14 @@ the session remains running and becomes detached in the mobile PWA.
 - Tmux `resize-pane` accepts its numeric adjustment after the target options;
   placing it before `-t` is parsed as an extra positional argument and fails.
   The fixed service vector and regression test now encode the proven order.
+- Server-hosted desktop assets make same-origin security simple, but an older
+  server cannot render the compatibility UI at all. The native shell therefore
+  needs an explicit pre-navigation capability check and actionable version
+  error to meet the approved compatibility note; a generic navigation timeout
+  is insufficient.
+- The current feature branch is stacked on three locally committed C018-C021
+  changes absent from `main`. The declared C022 merge boundary is not clean
+  until the owner selects the stack order or authorizes a clean branch base.
 
 ## Decisions
 
@@ -294,10 +307,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Complete Unit 6 cross-platform delivery: rebuild both self-contained source
-  outputs, launch the Linux artifact without an installed .NET runtime, record
-  the Apple Silicon hardware/approved-CI boundary, run the canonical gate, and
-  perform the C022 Change Review.
+- Resolve the review findings: add the approved server capability/version
+  contract, then obtain owner direction for the stacked branch boundary and
+  external Apple Silicon/Ubuntu acceptance evidence before re-review.
 
 ## Pause Conditions
 
