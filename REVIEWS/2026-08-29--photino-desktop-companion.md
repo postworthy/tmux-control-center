@@ -171,6 +171,13 @@ Results:
   Desktop, 55 Server integration, 27 Core, 26 Infrastructure plus five
   intentional skips, and eleven frontend suites. Redeployment and physical
   icon/layout acceptance remain explicit owner boundaries.
+- Follow-up screenshots do not invalidate that correction: the native client
+  was rebuilt, but the server-hosted frontend remained on image
+  `sha256:8be95175...` and live stylesheet `index-BgbL6qd-.css`, which lacks the
+  direct-root rule. RCA
+  `RCA/2026-08-30--desktop-root-layout-tested-before-redeployment.md` records
+  the artifact-boundary mismatch and requires live-selector evidence before
+  another physical claim.
 
 ## Findings
 

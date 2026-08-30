@@ -425,6 +425,16 @@ the session remains running and becomes detached in the mobile PWA.
   and the canonical gate passes 41 Desktop, 55 Server integration, 27 Core, 26
   Infrastructure plus five intentional skips, and eleven frontend suites. No
   server redeployment or user launcher installation has occurred.
+- 2026-08-30: owner screenshots from the rebuilt native launcher continued to
+  show the narrow first root group. RCA
+  `RCA/2026-08-30--desktop-root-layout-tested-before-redeployment.md` proves the
+  selected server still serves pre-`e179c83` image `sha256:8be95175...` and
+  stylesheet `index-BgbL6qd-.css`, whose live bytes lack the corrected direct-
+  root flex selector. Because Photino loads `/desktop/` from the server, the
+  native rebuild could expose the new icon but not the pending CSS correction.
+  No new source correction or deployment was performed; the next attempt must
+  verify the live stylesheet after explicitly approved replacement and before
+  physical retest.
 
 ## Discoveries
 
