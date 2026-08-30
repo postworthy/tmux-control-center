@@ -1,6 +1,6 @@
 # Goal: tmuxctl Photino Desktop Companion
 
-Status: active
+Status: blocked
 Owner: Human Partner and AI Agent
 Risk: T2
 Updated: 2026-08-29
@@ -341,11 +341,22 @@ the session remains running and becomes detached in the mobile PWA.
 - Last failure: the first content-free endpoint test falsely matched the valid
   feature name `session-tabs-v1`; replacing the substring assertion with an
   exact three-field JSON assertion made the unchanged implementation pass 51/51.
+- Blocked audit: the same external completion boundary has remained across
+  three consecutive goal turns. The first review identified Apple Silicon,
+  owner Ubuntu, stacked-branch, and history-metadata requirements; the second
+  turn closed every remaining local compatibility/TLS/documentation gap; this
+  third audit finds no authorized local action that can produce physical-device
+  evidence or change owner-controlled git history/merge state.
+- Unblock conditions: the owner chooses the predecessor-stack versus clean-base
+  branch strategy, authorizes either local history repair for `69b4aeb` or a
+  trailer waiver, and supplies or authorizes the Ubuntu/Apple Silicon acceptance
+  evidence described in `docs/desktop-acceptance.md`.
 
 ## Next Action
 
-- Obtain owner direction for the stacked branch boundary and complete the
-  documented Apple Silicon/Ubuntu acceptance checks before re-review.
+- On owner resume, apply the selected branch/history decision and incorporate
+  the documented Apple Silicon/Ubuntu acceptance results, then re-run the
+  canonical gate and C022 Change Review.
 
 ## Pause Conditions
 
@@ -372,3 +383,7 @@ the session remains running and becomes detached in the mobile PWA.
   windows, guarded clipboard paths, exact-name kill, ordinary `exit`, and
   authoritative tab cleanup are implemented and locally runtime-proven. Unit 6
   and physical owner/platform acceptance remain active.
+- Unit 6 is blocked only at owner/external boundaries: local source builds,
+  Linux launch, compatibility, TLS, tests, docs, rollback, and review evidence
+  are complete; Apple Silicon launch, owner Ubuntu acceptance, branch ordering,
+  and commit-trailer disposition remain required.

@@ -4,7 +4,8 @@ Updated: 2026-08-29
 
 ## Current
 
-- C022 is implemented locally on `feat/c022-desktop-photino-client`. The
+- C022 is implemented locally on `feat/c022-desktop-photino-client` and blocked
+  at its owner/external completion boundary. The
   .NET 10/Photino shell connects to an already-running tmuxctl server and serves
   a desktop-specific xterm.js experience with saved URL profiles, real
   attachment-aware session tabs, authoritative tmux windows/panes, native
@@ -15,9 +16,10 @@ Updated: 2026-08-29
   `osx-arm64` source builds pass; the Linux artifact launches with no installed
   .NET runtime. Focused tests, dependency audits, isolated tmux/Photino runtime
   checks, 34 desktop tests, 51 server integration tests, and canonical
-  verification pass. Actual Apple Silicon launch and
-  owner Ubuntu acceptance remain approval-gated completion evidence; merge and
-  push remain owner-controlled.
+  verification pass. Actual Apple Silicon launch, owner Ubuntu acceptance, the
+  predecessor-stack versus clean-base decision, and disposition of one missing
+  commit-trailer pair remain required. Merge, history rewrite, push, and remote
+  CI remain owner-controlled.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation
