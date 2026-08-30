@@ -6,6 +6,18 @@ public sealed record DesktopServerUrl(Uri ServerUri, Uri DesktopUri)
 {
     public Uri CapabilitiesUri => new(ServerUri, "api/desktop/capabilities");
 
+    public Uri CreateNavigationUri(string cacheToken, string? sessionId = null)
+    {
+        if (string.IsNullOrWhiteSpace(cacheToken) ||
+            cacheToken.Any(character => !char.IsAsciiLetterOrDigit(character)))
+            throw new ArgumentException("The desktop cache token must be alphanumeric.", nameof(cacheToken));
+
+        var query = $"desktopLoad={Uri.EscapeDataString(cacheToken)}";
+        if (sessionId is not null)
+            query += $"&session={Uri.EscapeDataString(sessionId)}";
+        return new UriBuilder(DesktopUri) { Query = query }.Uri;
+    }
+
     public static bool TryCreate(string? value, out DesktopServerUrl? result, out string error)
     {
         result = null;

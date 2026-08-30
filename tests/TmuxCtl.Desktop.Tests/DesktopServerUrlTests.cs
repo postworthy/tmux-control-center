@@ -33,4 +33,16 @@ public sealed class DesktopServerUrlTests
         Assert.Null(result);
         Assert.NotEmpty(error);
     }
+
+    [Fact]
+    public void NavigationUriAlwaysCarriesCacheTokenAndSafelyComposesSessionTarget()
+    {
+        Assert.True(DesktopServerUrl.TryCreate("https://tmux.example:8443", out var result, out var error), error);
+
+        Assert.Equal("https://tmux.example:8443/desktop/?desktopLoad=abc123",
+            result!.CreateNavigationUri("abc123").AbsoluteUri);
+        Assert.Equal("https://tmux.example:8443/desktop/?desktopLoad=abc123&session=s_safe%2Ftarget",
+            result.CreateNavigationUri("abc123", "s_safe/target").AbsoluteUri);
+        Assert.Throws<ArgumentException>(() => result.CreateNavigationUri("not safe"));
+    }
 }

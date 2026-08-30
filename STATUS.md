@@ -47,7 +47,16 @@ Updated: 2026-08-29
   protocol-1 capabilities, corrected desktop asset `index-DcoKvsuW.js`, and
   direct-backend 426 denial pass. Rollback image `sha256:8873036...` is tagged
   `tmux-mobile:pre-desktop-layout-rollback-20260829`. The self-contained Ubuntu
-  launcher is rebuilt; focused physical Ubuntu interaction remains with the owner.
+  launcher was rebuilt, but owner acceptance immediately observed the complete
+  pre-correction UI: no Ctrl+wheel zoom, unchanged topology rows, and no sidebar
+  collapse. Live/image digests prove the server contains the corrected bundle;
+  the live `/desktop/` default document lacks cache-control headers and Photino
+  reuses one URI with a persistent WebKit cache. The rollout is therefore not
+  accepted. `RCA/2026-08-29--desktop-webview-stale-release.md` narrows the next
+  attempt to explicit document no-store and native cache-busted navigation.
+  That correction is now implemented: 35 native desktop tests, five focused
+  cache-boundary cases, 55 total server integration tests, all nine frontend
+  suites, and the canonical gate pass. It is not yet rebuilt or redeployed.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation

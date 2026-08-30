@@ -147,6 +147,29 @@ public sealed class ApiTests
                 .Order(StringComparer.Ordinal).ToArray());
     }
 
+    [Theory]
+    [InlineData("/desktop/")]
+    [InlineData("/desktop/index.html")]
+    [InlineData("/desktop/session-deep-link")]
+    public async Task DesktopDocumentRoutesAreNeverStored(string path)
+    {
+        await using var factory = new TmuxFactory(authenticated: false);
+        var response = await CreateHttpsClient(factory).GetAsync(path);
+
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        Assert.True(response.Headers.CacheControl?.NoCache);
+        Assert.Contains(response.Headers.Pragma, value => value.Name == "no-cache");
+    }
+
+    [Fact]
+    public async Task HashedDesktopAssetsAreOutsideDocumentNoStoreRule()
+    {
+        await using var factory = new TmuxFactory(authenticated: false);
+        var response = await CreateHttpsClient(factory).GetAsync("/desktop/assets/release.js");
+
+        Assert.False(response.Headers.CacheControl?.NoStore ?? false);
+    }
+
     [Fact]
     public async Task WorkspaceRecoveryStatusIsAuthenticatedAndDisabledByDefault()
     {

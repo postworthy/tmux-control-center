@@ -262,6 +262,12 @@ app.Use(async (context, next) =>
         context.Response.Headers.CacheControl = "no-store";
         context.Response.Headers.Pragma = "no-cache";
     }
+    else if (context.Request.Path.StartsWithSegments("/desktop") &&
+             !context.Request.Path.StartsWithSegments("/desktop/assets"))
+    {
+        context.Response.Headers.CacheControl = "no-store, no-cache";
+        context.Response.Headers.Pragma = "no-cache";
+    }
     await next();
 });
 var webSocketOptions = new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(20) };

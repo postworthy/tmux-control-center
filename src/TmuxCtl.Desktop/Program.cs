@@ -143,9 +143,8 @@ public static class Program
                     return;
                 }
 
-                var uri = selected.DesktopUri.AbsoluteUri;
-                if (sessionId is not null) uri += $"?session={Uri.EscapeDataString(sessionId)}";
-                window.Load(uri);
+                var uri = selected.CreateNavigationUri(Guid.NewGuid().ToString("N"), sessionId);
+                window.Load(uri.AbsoluteUri);
                 _ = ReturnToProfilesOnConnectionTimeoutAsync(generation, selected.ServerUri.Host);
             });
         }

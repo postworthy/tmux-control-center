@@ -345,6 +345,20 @@ the session remains running and becomes detached in the mobile PWA.
   remains 426. Prior image `sha256:8873036...` is preserved as
   `tmux-mobile:pre-desktop-layout-rollback-20260829`. A fresh self-contained
   Ubuntu x64 launcher build completed with no missing linked libraries.
+- 2026-08-29: owner acceptance immediately rejected that rollout because the
+  running desktop still presented all three pre-correction behaviors. Live and
+  in-image asset digests match the corrected bundle, while the actual
+  `/desktop/` default-document response lacks cache-control headers and native
+  navigation reuses the same URI with a persistent WebKit cache. RCA
+  `RCA/2026-08-29--desktop-webview-stale-release.md` records the supported stale-
+  release cause and narrows the next attempt to explicit document no-store plus
+  native cache-busted navigation. No corrective redeployment has occurred yet.
+- 2026-08-29: the narrowed cache-boundary correction is implemented. Native
+  navigation now adds a unique non-secret `desktopLoad` token while preserving
+  encoded session deep links; every non-asset `/desktop` document/fallback path
+  now emits `no-store, no-cache` plus `Pragma: no-cache`. All 35 native desktop
+  tests, five focused server cases, 55 total server integration tests, and the
+  canonical gate pass. Rebuild/probe/redeployment remain next.
 
 ## Discoveries
 
@@ -417,7 +431,7 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Retry State
 
-- Current attempt: 0
+- Current attempt: 1
 - Maximum attempts per unchanged failure: 2
 - Last failure resolved: the first physical Ubuntu compatibility attempt could
   not resolve the MagicDNS origin because Tailscale DNS acceptance was disabled. A
@@ -434,9 +448,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner launches the rebuilt Ubuntu client and completes the focused interaction
-  checks for history, initial/fullscreen fit, single-row chrome, and sidebar
-  collapse. Apple Silicon launch remains external.
+- Implement and verify explicit desktop-document cache prevention plus native
+  cache-busted navigation, then rebuild/probe/redeploy and repeat owner Ubuntu
+  acceptance. Apple Silicon launch remains external.
 
 ## Pause Conditions
 
