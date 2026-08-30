@@ -191,8 +191,12 @@ Results:
   replacement: one labeled root overlay, root-relative edge splits, and center/
   sidebar **Single view** flattening that retains mounted terminals. Pure layout
   guards, production bundle inspection, all eleven frontend suites, and the
-  canonical gate pass. This correction is not yet deployed or physically
-  accepted.
+  canonical gate pass. Owner-approved image `sha256:a7f2997f...` is now live,
+  healthy, and at zero restarts; predecessor `sha256:a2d7f313...` is preserved
+  as `tmux-mobile:pre-global-snap-20260830`. The served bundle contains all five
+  labels and one `drop-guidance` implementation, the HTTPS capability response
+  and direct-backend denial pass, and all six tmux sessions retain their exact
+  pre-rollout window and attachment counts. Physical acceptance remains.
 
 ## Findings
 
@@ -255,8 +259,7 @@ tmux command was found in the reviewed C022 range.
 - Complete owner Ubuntu desktop interaction acceptance.
 - From Ubuntu Applications, confirm both PWA-derived dock identity and full-size
   initial unsplit workspace geometry.
-- After explicit approval, deploy the global five-zone/single-view correction
-  and confirm physically that pop-outs, exactly five labeled targets, root-edge
+- Confirm physically that pop-outs, exactly five labeled targets, root-edge
   nesting, center reset, and sidebar reset behave correctly on Ubuntu.
 - Physically verify bounded Ctrl+wheel text zoom while confirming unmodified
   wheel behavior remains unchanged in the deployed build.

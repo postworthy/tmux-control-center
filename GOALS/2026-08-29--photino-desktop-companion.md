@@ -556,11 +556,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner authorizes replacement of the live Compose app with the verified global
-  five-zone/single-view build. Then the owner closes older tmuxctl windows and
-  physically confirms exactly five labeled targets remain at every split depth
-  and both center drop and sidebar **Single view** restore one tab row. Apple
-  Silicon launch/pinning remains external.
+- Owner closes older tmuxctl windows and physically confirms exactly five
+  labeled targets remain at every split depth and both center drop and sidebar
+  **Single view** restore one tab row. Apple Silicon launch/pinning remains
+  external.
 
 ## Pause Conditions
 
@@ -589,8 +588,12 @@ the session remains running and becomes detached in the mobile PWA.
   chrome, collapsed icon rail, exact-name kill, ordinary `exit`, and authoritative
   tab cleanup are implemented and verified. The root-group sizing correction is
   live with served-selector evidence. The global five-zone/single-view
-  correction is locally verified and awaits redeployment and physical owner
-  acceptance.
+  correction is deployed as healthy zero-restart image `sha256:a7f2997f...`;
+  predecessor `sha256:a2d7f313...` is preserved as
+  `tmux-mobile:pre-global-snap-20260830`. The served bundle contains all five
+  labels and one `drop-guidance` implementation, the HTTPS protocol check and
+  direct-backend denial pass, and all six tmux sessions retain their pre-rollout
+  window and attachment counts. Physical owner acceptance remains.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch/identity, Ubuntu launcher, Apple Silicon app-bundle structure,
   compatibility, TLS, tests, docs, rollback, and review evidence are complete;
