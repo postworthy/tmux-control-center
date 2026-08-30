@@ -213,6 +213,26 @@ the session remains running and becomes detached in the mobile PWA.
   removed it. Earlier in the same interaction checkpoint, the native pop-out
   created a second 1280x800 Photino window and tmux client, and closing that
   child left the root window and its attachment intact.
+- Source delivery: `scripts/build-desktop.sh` produced current self-contained
+  outputs for `linux-x64` (80 MiB) and `osx-arm64` (84 MiB). `file` identified
+  the launchers as x86-64 ELF and arm64 Mach-O respectively, the macOS Photino
+  library includes arm64, and Linux native linkage reported no missing
+  libraries. The Linux artifact launched under Xvfb, rendered live inventory,
+  and stayed usable with `DOTNET_ROOT=/nonexistent` and multilevel lookup off.
+  Actual Apple Silicon launch remains the external hardware/CI boundary.
+- Dependency review: `dotnet list TmuxMobile.sln package --vulnerable
+  --include-transitive` reports no vulnerable direct or transitive NuGet
+  packages in all eight projects; `npm audit --omit=dev` reports zero
+  vulnerabilities. `THIRD_PARTY_NOTICES.md` records Photino.NET 4.0.16 and its
+  Apache-2.0 license.
+- Final canonical gate: `./scripts/verify.sh` exited 0 with shell recovery and
+  watchdog suites, 27 Core, 26 Infrastructure plus five intentional opt-in
+  skips, 50 Server integration, 26 Desktop, six frontend suites, and both
+  Compose configuration boundaries passing.
+- Rollback boundary: the C022 range begins after `24077b6`; a path-restricted
+  diff confirms existing mobile source and workspace-recovery source are
+  unchanged. Reverting the C022 commits removes the additive desktop/API
+  surface, after which `./scripts/verify.sh` is the validation gate.
 
 ## Discoveries
 

@@ -1,8 +1,20 @@
 # Project Status
 
-Updated: 2026-08-11
+Updated: 2026-08-29
 
 ## Current
+
+- C022 is implemented locally on `feat/c022-desktop-photino-client`. The
+  .NET 10/Photino shell connects to an already-running tmuxctl server and serves
+  a desktop-specific xterm.js experience with saved URL profiles, real
+  attachment-aware session tabs, authoritative tmux windows/panes, native
+  pop-outs, reconnect, desktop shortcuts, guarded clipboard input, ordinary
+  `exit`, and exact-name session kill. Self-contained `linux-x64` and
+  `osx-arm64` source builds pass; the Linux artifact launches with no installed
+  .NET runtime. Focused tests, dependency audits, isolated tmux/Photino runtime
+  checks, and canonical verification pass. Actual Apple Silicon launch and
+  owner Ubuntu acceptance remain approval-gated completion evidence; merge and
+  push remain owner-controlled.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation

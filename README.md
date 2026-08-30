@@ -42,6 +42,11 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
   loss reconnects with bounded exponential backoff. Tmux-authoritative window
   tabs and pane controls support selection, fixed horizontal/vertical splits,
   bounded resize, and guarded close without exposing arbitrary commands.
+  Desktop shortcuts include Ctrl+PageUp/PageDown for session tabs,
+  Ctrl+Shift+W to detach the active tab, and Ctrl+Shift+C/V for terminal
+  selection copy and guarded paste. A pop-out control opens a session in an
+  independent native window. Explicit session kill requires typing the exact
+  session name; terminal `exit` keeps ordinary tmux semantics.
 
 ## Development
 
@@ -97,9 +102,8 @@ npm --prefix src/TmuxMobile.Web ci
 npm --prefix src/TmuxMobile.Web run build
 dotnet publish src/TmuxMobile.Server/TmuxMobile.Server.csproj \
   --configuration Release --output artifacts/publish
-dotnet publish src/TmuxCtl.Desktop/TmuxCtl.Desktop.csproj \
-  --configuration Release --runtime linux-x64 --self-contained true \
-  --output artifacts/desktop/linux-x64
+./scripts/build-desktop.sh linux-x64
+./scripts/build-desktop.sh osx-arm64
 ```
 
 The frontend build writes separate hashed mobile and desktop assets into the
@@ -107,6 +111,19 @@ server's `wwwroot`. The desktop binary still expects an already-running server;
 it does not install or launch one. Follow [deployment.md](docs/deployment.md)
 for systemd and HTTPS setup. Configuration is documented in
 [configuration.md](docs/configuration.md).
+
+The desktop outputs bundle the .NET runtime, so the target machine does not
+need a separately installed .NET SDK or runtime. They still use each operating
+system's native web view. On Ubuntu 24.04, install the WebKitGTK runtime before
+launching the Linux output:
+
+```bash
+sudo apt-get install libwebkit2gtk-4.1-0
+./artifacts/desktop/linux-x64/tmuxctl
+```
+
+The `osx-arm64` output targets Apple Silicon and uses macOS's built-in WebKit.
+Source builds are not signed or notarized in this first cut.
 
 ## Docker Compose over Tailscale
 
