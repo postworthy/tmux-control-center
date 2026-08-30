@@ -32,8 +32,7 @@ Updated: 2026-08-29
   owner-approved local correction now provides desktop-only 8–32px bounded
   zoom, routes unmodified wheel input to tmux history, refits xterm/tmux
   dimensions, and passes focused tests, the production desktop build, and
-  canonical verification. It is not yet deployed; live redeployment remains an
-  explicit owner-controlled boundary.
+  canonical verification.
   Continued Ubuntu acceptance also found local-xterm wheel history, initial and
   fullscreen fit failures, excessive permanent topology rows, and no sidebar
   collapse. The owner explicitly revised the first-cut desktop contract to one
@@ -42,9 +41,13 @@ Updated: 2026-08-29
   permanent session row, and the narrow icon rail. Typecheck, the production
   desktop build, all nine frontend suites, 27 core tests, 34 desktop-shell tests,
   26 infrastructure tests (5 opt-in skips), 51 server integration tests, and the
-  canonical gate pass. The correction is locally complete and awaits explicit
-  deployment approval plus physical Ubuntu acceptance; the currently deployed
-  image remains unchanged.
+  canonical gate pass. The owner then explicitly authorized deployment. Image
+  `sha256:d6dadb4f...` passed the isolated tmux 3.4 probe and is healthy with
+  zero restarts on the unchanged loopback/Serve boundary; HTTPS liveness,
+  protocol-1 capabilities, corrected desktop asset `index-DcoKvsuW.js`, and
+  direct-backend 426 denial pass. Rollback image `sha256:8873036...` is tagged
+  `tmux-mobile:pre-desktop-layout-rollback-20260829`. The self-contained Ubuntu
+  launcher is rebuilt; focused physical Ubuntu interaction remains with the owner.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation

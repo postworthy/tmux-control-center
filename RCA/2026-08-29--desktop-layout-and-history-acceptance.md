@@ -103,6 +103,9 @@ Related Commit(s): `7be3911`, `08241ab`, `07b6d95`, `d7a2f73`
   activation includes multiple delayed layout-settling refits.
 - Desktop TypeScript compilation, the production Vite desktop build, all nine
   frontend suites, and the canonical repository verification gate pass.
-- The live image was intentionally not changed. Initial/fullscreen geometry,
-  physical wheel input, and icon-rail interaction remain explicit owner checks
-  after a separately approved deployment.
+- After explicit owner approval, image `sha256:d6dadb4f...` passed the isolated
+  tmux 3.4 compatibility probe and replaced the Compose app service. It is
+  healthy with zero restarts; HTTPS liveness, exact protocol-1 capabilities,
+  corrected desktop asset `index-DcoKvsuW.js`, unchanged loopback/Serve routing,
+  and direct-backend 426 denial pass. Initial/fullscreen geometry, physical wheel
+  input, and icon-rail interaction remain explicit owner checks.

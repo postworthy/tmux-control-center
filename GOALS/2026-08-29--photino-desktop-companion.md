@@ -335,6 +335,16 @@ the session remains running and becomes detached in the mobile PWA.
   style icon rail. `RCA/2026-08-29--desktop-layout-and-history-acceptance.md`
   traces the fit lifecycle, wheel route, prior contract mismatch, and missing
   physical verification before corrective implementation.
+- 2026-08-29: the owner explicitly authorized complete rebuild and deployment
+  of the correction. Image `sha256:d6dadb4f...` built from commit `99b2af7`,
+  passed the isolated host/container tmux 3.4 socket probe, and replaced only
+  the Compose app service. It is healthy with zero restarts on the unchanged
+  loopback `127.0.0.1:8780` and Tailscale Serve `:8443` boundary. HTTPS liveness
+  is 200, the capability contract is exact protocol 1, the live desktop entry
+  references corrected bundle `index-DcoKvsuW.js`, and direct backend access
+  remains 426. Prior image `sha256:8873036...` is preserved as
+  `tmux-mobile:pre-desktop-layout-rollback-20260829`. A fresh self-contained
+  Ubuntu x64 launcher build completed with no missing linked libraries.
 
 ## Discoveries
 
@@ -424,9 +434,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- After explicit owner approval, deploy the locally verified correction and run
-  the focused Ubuntu interaction checks for history, initial/fullscreen fit,
-  single-row chrome, and sidebar collapse. Apple Silicon launch remains external.
+- Owner launches the rebuilt Ubuntu client and completes the focused interaction
+  checks for history, initial/fullscreen fit, single-row chrome, and sidebar
+  collapse. Apple Silicon launch remains external.
 
 ## Pause Conditions
 
