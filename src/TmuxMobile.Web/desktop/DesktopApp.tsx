@@ -4,17 +4,26 @@ import { reconnectDelay } from "./reconnect";
 import {
   UnauthorizedError,
   createSession,
+  getTopology,
   getSessions,
   inventoryWebSocketUrl,
   killSession,
   login,
+  splitPane,
   type InventorySnapshot,
   type TmuxSession
 } from "./desktopApi";
+import { activePaneId, sessionIconLabel } from "./desktopNavigation";
 
 interface OpenTab {
   sessionId: string;
   name: string;
+}
+
+interface TerminalMenu {
+  sessionId: string;
+  x: number;
+  y: number;
 }
 
 export default function DesktopApp() {
@@ -29,6 +38,7 @@ export default function DesktopApp() {
   const [inventoryConnected, setInventoryConnected] = useState(navigator.onLine);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [terminalMenu, setTerminalMenu] = useState<TerminalMenu | null>(null);
   const deepLinkOpened = useRef(false);
   const newSessionInput = useRef<HTMLInputElement>(null);
   const [nativeProfilesAvailable, setNativeProfilesAvailable] = useState(false);
@@ -158,6 +168,43 @@ export default function DesktopApp() {
   }, []);
 
   useEffect(() => {
+    if (!terminalMenu) return;
+    const closeMenu = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setTerminalMenu(null);
+    };
+    const closeForResize = () => setTerminalMenu(null);
+    window.addEventListener("keydown", closeMenu, true);
+    window.addEventListener("resize", closeForResize);
+    return () => {
+      window.removeEventListener("keydown", closeMenu, true);
+      window.removeEventListener("resize", closeForResize);
+    };
+  }, [terminalMenu]);
+
+  const showTerminalMenu = (sessionId: string, x: number, y: number) => {
+    const menuWidth = 210;
+    const menuHeight = 84;
+    setTerminalMenu({
+      sessionId,
+      x: Math.max(8, Math.min(x, window.innerWidth - menuWidth - 8)),
+      y: Math.max(8, Math.min(y, window.innerHeight - menuHeight - 8))
+    });
+  };
+
+  const splitActivePane = async (orientation: "horizontal" | "vertical") => {
+    const target = terminalMenu;
+    setTerminalMenu(null);
+    if (!target) return;
+    try {
+      const paneId = activePaneId(await getTopology(target.sessionId));
+      if (!paneId) throw new Error("The active tmux pane is no longer available.");
+      await splitPane(paneId, orientation);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not split the active pane");
+    }
+  };
+
+  useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
       if (!activeId || event.altKey || event.metaKey) return;
       if (event.ctrlKey && event.shiftKey && event.code === "KeyW") {
@@ -241,6 +288,15 @@ export default function DesktopApp() {
         }}>
           <span aria-hidden="true">+</span>
         </button>
+        <div className="rail-session-list" aria-label="Tmux sessions">
+          {sessions.map(session => <button key={session.id}
+            className={session.id === activeId ? "rail-session active" : "rail-session"}
+            title={`${session.name} — ${session.isAttached ? "attached" : "detached"}`}
+            aria-label={`Open ${session.name}`} onClick={() => open(session)}>
+            <span className="rail-session-label" aria-hidden="true">{sessionIconLabel(session.name)}</span>
+            <span className={session.isAttached ? "rail-status attached" : "rail-status detached"} aria-hidden="true" />
+          </button>)}
+        </div>
         {nativeProfilesAvailable && <button className="rail-servers" title="Servers" aria-label="Servers" onClick={showProfiles}>
           <span aria-hidden="true">⚙</span>
         </button>}
@@ -282,9 +338,17 @@ export default function DesktopApp() {
         {tabs.map(tab => <DesktopTerminal key={tab.sessionId} sessionId={tab.sessionId}
           active={tab.sessionId === activeId}
           onConnectionState={state => updateConnection(tab.sessionId, state)}
+          onContextMenu={(x, y) => showTerminalMenu(tab.sessionId, x, y)}
           onError={setError} />)}
         {!activeTab && <div className="empty-state"><h1>Select a session</h1><p>Open an existing tmux session from the sidebar.</p></div>}
       </div>
+      {terminalMenu && <div className="terminal-menu-layer" onMouseDown={() => setTerminalMenu(null)}>
+        <div className="terminal-menu" role="menu" aria-label="Terminal actions"
+          style={{ left: terminalMenu.x, top: terminalMenu.y }} onMouseDown={event => event.stopPropagation()}>
+          <button role="menuitem" onClick={() => void splitActivePane("horizontal")}>Split left / right</button>
+          <button role="menuitem" onClick={() => void splitActivePane("vertical")}>Split top / bottom</button>
+        </div>
+      </div>}
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => setError(null)}>Dismiss</button></div>}
     </section>
   </main>;

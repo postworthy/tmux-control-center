@@ -278,7 +278,13 @@ app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = context =>
     {
-        if (context.File.Name is "service-worker.js" or "index.html")
+        if (context.File.Name == "index.html" &&
+            context.Context.Request.Path.StartsWithSegments("/desktop"))
+        {
+            context.Context.Response.Headers.CacheControl = "no-store, no-cache";
+            context.Context.Response.Headers.Pragma = "no-cache";
+        }
+        else if (context.File.Name is "service-worker.js" or "index.html")
             context.Context.Response.Headers.CacheControl = "no-cache";
     }
 });

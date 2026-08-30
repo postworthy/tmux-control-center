@@ -3,7 +3,7 @@
 Status: paused
 Owner: Human Partner and AI Agent
 Risk: T2
-Updated: 2026-08-29
+Updated: 2026-08-30
 Proposal: `PROPOSALS/2026-08-29--photino-desktop-companion.md`
 Review Boundary: merge from `feat/c022-desktop-photino-client` into `main`
 
@@ -145,6 +145,11 @@ the session remains running and becomes detached in the mobile PWA.
   endpoint, and a bounded native HTTPS preflight that refuses redirects and
   remote UI until the closed feature set is present. Missing support now
   returns to the native chooser with an explicit server-update message.
+- 2026-08-30: physical Ubuntu feedback showed continued native-window resize
+  was not delivered through the browser-only fit triggers. Added bounded host-
+  geometry detection, terminal right-click horizontal/vertical split actions,
+  and per-session collapsed-rail icons, then deployed the corrected server and
+  rebuilt the self-contained Ubuntu launcher.
 
 ## Evidence
 
@@ -233,6 +238,17 @@ the session remains running and becomes detached in the mobile PWA.
   has one session-tab row and a 48px collapsed sidebar icon rail. Two new focused
   suites pass alongside all nine frontend suites; the production desktop build
   and canonical repository gate pass. Physical behavior remains owner acceptance.
+- Desktop native-resize correction: the active terminal now compares its
+  measurable host geometry every 100 ms in addition to DOM observers, so a
+  Photino/WebKitGTK window-size change cannot be missed. Pure geometry and
+  navigation tests bring the frontend total to ten passing suites. The terminal
+  context menu resolves the authoritative active tmux pane before issuing a
+  typed split, and the collapsed rail lists every session with initials and
+  attachment state. Canonical verification passes with 27 Core, 26
+  Infrastructure plus five intentional skips, 55 Server integration, 35
+  Desktop, and ten frontend suites. Live image `sha256:54ce005...` is healthy
+  with zero restarts, serves bundle `index-BuJxit0H.js`, and preserves image
+  `sha256:ba16379...` as `tmux-mobile:pre-desktop-native-resize-20260830`.
 - Source delivery: `scripts/build-desktop.sh` produced current self-contained
   outputs for `linux-x64` (80 MiB) and `osx-arm64` (84 MiB). `file` identified
   the launchers as x86-64 ELF and arm64 Mach-O respectively, the macOS Photino
@@ -456,9 +472,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner launches the rebuilt cache-busting Ubuntu client and repeats the three
-  rejected interaction checks: Ctrl+wheel zoom, single session-tab row, and
-  sidebar icon-rail collapse. Apple Silicon launch remains external.
+- Owner launches the rebuilt cache-busting Ubuntu client and checks native
+  drag/maximize resize, right-click pane splits, and collapsed per-session
+  icons together with the earlier Ctrl+wheel, single-row, and collapse checks.
+  Apple Silicon launch remains external.
 
 ## Pause Conditions
 

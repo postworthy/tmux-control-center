@@ -1,6 +1,6 @@
 # Project Status
 
-Updated: 2026-08-29
+Updated: 2026-08-30
 
 ## Current
 
@@ -61,7 +61,18 @@ Updated: 2026-08-29
   restarts on the unchanged loopback/Serve boundary. The actual cache-busted
   desktop response now carries `no-store, no-cache` and `Pragma: no-cache`;
   HTTPS liveness and protocol 1 pass. The rebuilt Ubuntu launcher must still be
-  physically checked by the owner before the rollout is accepted.
+  physically checked by the owner before the rollout is accepted. Further
+  feedback found that native window changes still did not refit xterm, terminal
+  right-click lacked split actions, and collapsed navigation hid sessions. The
+  RCA-backed correction adds independent 100 ms host-geometry detection, typed
+  active-pane horizontal/vertical split actions, and per-session collapsed-rail
+  icons with attachment state. Canonical verification now passes 55 server, 35
+  desktop, 27 core, 26 infrastructure (5 opt-in skips), and ten frontend suites.
+  Image `sha256:54ce005...` is live, healthy, and at zero restarts on the
+  unchanged Serve boundary; `sha256:ba16379...` is preserved as
+  `tmux-mobile:pre-desktop-native-resize-20260830`. The Ubuntu launcher was
+  rebuilt at `artifacts/desktop/linux-x64/tmuxctl`; owner physical acceptance is
+  the next boundary.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation

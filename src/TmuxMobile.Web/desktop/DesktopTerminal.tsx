@@ -4,7 +4,12 @@ import { FitAddon } from "@xterm/addon-fit";
 import { terminalWebSocketUrl } from "./desktopApi";
 import { DEFAULT_TERMINAL_FONT_SIZE, terminalFontSizeForWheel } from "./fontZoom";
 import { isTerminalPing, reconnectDelay } from "./reconnect";
-import { SETTLED_TERMINAL_REFIT_DELAYS, terminalHostCanBeFit } from "./terminalLayout";
+import {
+  SETTLED_TERMINAL_REFIT_DELAYS,
+  TERMINAL_GEOMETRY_POLL_MILLISECONDS,
+  terminalHostCanBeFit,
+  terminalHostGeometryKey
+} from "./terminalLayout";
 import { DESKTOP_HISTORY_FLUSH_MILLISECONDS, historyRequestFromWheelDelta } from "./terminalWheel";
 import { MAX_PASTE_BYTES, pasteByteLength, requiresPasteConfirmation, serializeTerminalInput } from "../src/terminalInput";
 
@@ -14,19 +19,22 @@ interface Props {
   sessionId: string;
   active: boolean;
   onConnectionState: (state: TerminalConnectionState) => void;
+  onContextMenu: (x: number, y: number) => void;
   onError: (message: string) => void;
 }
 
-export default function DesktopTerminal({ sessionId, active, onConnectionState, onError }: Props) {
+export default function DesktopTerminal({ sessionId, active, onConnectionState, onContextMenu, onError }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const refitRef = useRef<(() => void) | null>(null);
   const activeRef = useRef(active);
   const connectionCallbackRef = useRef(onConnectionState);
+  const contextMenuCallbackRef = useRef(onContextMenu);
   const errorCallbackRef = useRef(onError);
 
   useEffect(() => { connectionCallbackRef.current = onConnectionState; }, [onConnectionState]);
+  useEffect(() => { contextMenuCallbackRef.current = onContextMenu; }, [onContextMenu]);
   useEffect(() => { errorCallbackRef.current = onError; }, [onError]);
   activeRef.current = active;
 
@@ -66,6 +74,7 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
     let retryTimer = 0;
     let fitFrame = 0;
     let lastResize = "";
+    let lastHostGeometry: string | null = null;
     let historyWheelDelta = 0;
     let historyTimer = 0;
     const settleTimers = new Set<number>();
@@ -74,6 +83,7 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       const host = hostRef.current;
       if (stopped || !activeRef.current || !host ||
           !terminalHostCanBeFit(host.clientWidth, host.clientHeight)) return;
+      lastHostGeometry = terminalHostGeometryKey(host.clientWidth, host.clientHeight);
       fit.fit();
       const socket = socketRef.current;
       if (socket?.readyState === WebSocket.OPEN) {
@@ -99,6 +109,15 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       }
     };
     refitRef.current = scheduleSettledFit;
+    const checkHostGeometry = () => {
+      if (stopped || !activeRef.current) return;
+      const host = hostRef.current;
+      if (!host) return;
+      const geometry = terminalHostGeometryKey(host.clientWidth, host.clientHeight);
+      if (geometry === null || geometry === lastHostGeometry) return;
+      lastHostGeometry = geometry;
+      scheduleSettledFit();
+    };
     const flushHistoryWheel = () => {
       historyTimer = 0;
       const request = historyRequestFromWheelDelta(historyWheelDelta);
@@ -126,6 +145,12 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
     };
     const terminalHost = hostRef.current!;
     terminalHost.addEventListener("wheel", terminalWheel, { capture: true, passive: false });
+    const terminalContextMenu = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (activeRef.current) contextMenuCallbackRef.current(event.clientX, event.clientY);
+    };
+    terminalHost.addEventListener("contextmenu", terminalContextMenu, true);
     const observer = new ResizeObserver(scheduleSettledFit);
     observer.observe(terminalHost);
     if (terminalHost.parentElement) observer.observe(terminalHost.parentElement);
@@ -205,10 +230,12 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
     const pageHide = () => socketRef.current?.close(1000, "Desktop window closed");
     const viewportChanged = () => scheduleSettledFit();
     const visibilityChanged = () => { if (!document.hidden) scheduleSettledFit(); };
+    const geometryTimer = window.setInterval(checkHostGeometry, TERMINAL_GEOMETRY_POLL_MILLISECONDS);
     window.addEventListener("online", online);
     window.addEventListener("offline", offline);
     window.addEventListener("pagehide", pageHide);
     window.addEventListener("resize", viewportChanged);
+    window.visualViewport?.addEventListener("resize", viewportChanged);
     document.addEventListener("fullscreenchange", viewportChanged);
     document.addEventListener("visibilitychange", visibilityChanged);
     scheduleSettledFit();
@@ -218,15 +245,18 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       stopped = true;
       window.clearTimeout(retryTimer);
       window.clearTimeout(historyTimer);
+      window.clearInterval(geometryTimer);
       if (fitFrame) window.cancelAnimationFrame(fitFrame);
       for (const timer of settleTimers) window.clearTimeout(timer);
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offline);
       window.removeEventListener("pagehide", pageHide);
       window.removeEventListener("resize", viewportChanged);
+      window.visualViewport?.removeEventListener("resize", viewportChanged);
       document.removeEventListener("fullscreenchange", viewportChanged);
       document.removeEventListener("visibilitychange", visibilityChanged);
       terminalHost.removeEventListener("wheel", terminalWheel, true);
+      terminalHost.removeEventListener("contextmenu", terminalContextMenu, true);
       observer.disconnect();
       input.dispose();
       socketRef.current?.close(1000, "Desktop tab closed");

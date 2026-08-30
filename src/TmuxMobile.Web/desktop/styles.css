@@ -24,6 +24,14 @@ button { color: inherit; }
 .sidebar-icon-rail { display: flex; flex: 1; flex-direction: column; gap: 5px; align-items: center; padding: 7px 5px; }
 .sidebar-icon-rail button { width: 37px; height: 37px; padding: 0; color: #aeb6bf; background: transparent; border: 0; border-radius: 5px; font-size: 20px; cursor: pointer; }
 .sidebar-icon-rail button:hover { color: #fff; background: #2a3038; }
+.rail-session-list { display: flex; flex: 1; flex-direction: column; gap: 5px; width: 100%; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.rail-session-list::-webkit-scrollbar { display: none; }
+.sidebar-icon-rail .rail-session { position: relative; flex: 0 0 37px; align-self: center; font-size: 11px; font-weight: 750; letter-spacing: .03em; }
+.sidebar-icon-rail .rail-session.active { color: #fff; background: #2a3038; box-shadow: inset 2px 0 #72d6a4; }
+.rail-session-label { display: block; overflow: hidden; text-overflow: clip; }
+.rail-status { position: absolute; right: 4px; bottom: 4px; width: 6px; height: 6px; border: 1px solid #191d22; border-radius: 50%; }
+.rail-status.attached { background: #72d6a4; box-shadow: 0 0 5px #72d6a466; }
+.rail-status.detached { background: #e2a65a; }
 .sidebar-icon-rail .rail-servers { margin-top: auto; }
 .new-session { display: grid; grid-template-columns: 1fr 34px; gap: 6px; padding: 10px; }
 input { min-width: 0; padding: 8px 10px; color: #eef1f4; background: #0f1216; border: 1px solid #39414a; border-radius: 5px; outline: none; }
@@ -60,6 +68,10 @@ input:focus { border-color: #72d6a4; box-shadow: 0 0 0 1px #72d6a4; }
 .terminal-host { display: none; width: 100%; height: 100%; }
 .terminal-host.active { position: absolute; inset: 0; display: block; }
 .terminal-host .xterm { height: 100%; }
+.terminal-menu-layer { position: fixed; z-index: 20; inset: 0; }
+.terminal-menu { position: fixed; display: grid; width: 210px; padding: 5px; background: #20252b; border: 1px solid #454d57; border-radius: 6px; box-shadow: 0 8px 28px #000a; }
+.terminal-menu button { padding: 8px 10px; color: #e6e8eb; background: transparent; border: 0; border-radius: 4px; text-align: left; cursor: pointer; }
+.terminal-menu button:hover, .terminal-menu button:focus { background: #303842; outline: none; }
 .empty-state { display: grid; height: 100%; place-content: center; color: #8f99a5; text-align: center; }
 .empty-state h1 { margin: 0; color: #d3d8de; font-size: 20px; font-weight: 550; }
 .empty-state p { margin: 8px 0 0; font-size: 13px; }
