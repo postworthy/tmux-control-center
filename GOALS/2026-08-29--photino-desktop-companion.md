@@ -359,6 +359,14 @@ the session remains running and becomes detached in the mobile PWA.
   now emits `no-store, no-cache` plus `Pragma: no-cache`. All 35 native desktop
   tests, five focused server cases, 55 total server integration tests, and the
   canonical gate pass. Rebuild/probe/redeployment remain next.
+- 2026-08-29: self-contained Ubuntu launcher and image `sha256:ba16379d...`
+  rebuilt from corrective commit `021b8a8`. The isolated tmux 3.4 probe passed;
+  the image replaced only the Compose app service and is healthy with zero
+  restarts. The actual live cache-busted desktop document now returns
+  `no-store, no-cache` plus `Pragma: no-cache`; HTTPS liveness, protocol 1, and
+  loopback-only binding remain intact. Immediate rollback is preserved as
+  `tmux-mobile:pre-webview-cache-rollback-20260829`. Owner interaction remains
+  required before accepting the three reported UI behaviors.
 
 ## Discoveries
 
@@ -448,9 +456,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Implement and verify explicit desktop-document cache prevention plus native
-  cache-busted navigation, then rebuild/probe/redeploy and repeat owner Ubuntu
-  acceptance. Apple Silicon launch remains external.
+- Owner launches the rebuilt cache-busting Ubuntu client and repeats the three
+  rejected interaction checks: Ctrl+wheel zoom, single session-tab row, and
+  sidebar icon-rail collapse. Apple Silicon launch remains external.
 
 ## Pause Conditions
 

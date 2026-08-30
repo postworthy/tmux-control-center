@@ -77,3 +77,13 @@ Related Commit(s): `99b2af7`, `8e8e6a6`
 - The canonical repository gate passes with 27 core, 35 native desktop, 26
   infrastructure (5 opt-in skips), 55 server integration, and all 9 frontend
   suites. Runtime rollout and owner interaction remain separate evidence.
+- Corrective image `sha256:ba16379d...` passed the isolated host/container tmux
+  3.4 socket probe and replaced only the Compose app service. It is healthy with
+  zero restarts on the unchanged loopback/Serve boundary.
+- The actual live `/desktop/?desktopLoad=verification123` response now contains
+  `Cache-Control: no-store, no-cache` and `Pragma: no-cache`; HTTPS liveness is
+  200 and the exact protocol-1 capability contract remains available. Image
+  `sha256:d6dadb4f...` is preserved as
+  `tmux-mobile:pre-webview-cache-rollback-20260829`.
+- Owner observation from a newly launched corrected binary remains required;
+  server/image evidence alone is not interaction acceptance.

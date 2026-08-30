@@ -56,7 +56,12 @@ Updated: 2026-08-29
   attempt to explicit document no-store and native cache-busted navigation.
   That correction is now implemented: 35 native desktop tests, five focused
   cache-boundary cases, 55 total server integration tests, all nine frontend
-  suites, and the canonical gate pass. It is not yet rebuilt or redeployed.
+  suites, and the canonical gate pass. Corrective image `sha256:ba16379d...`
+  then passed the isolated tmux 3.4 probe and is live, healthy, with zero
+  restarts on the unchanged loopback/Serve boundary. The actual cache-busted
+  desktop response now carries `no-store, no-cache` and `Pragma: no-cache`;
+  HTTPS liveness and protocol 1 pass. The rebuilt Ubuntu launcher must still be
+  physically checked by the owner before the rollout is accepted.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation
