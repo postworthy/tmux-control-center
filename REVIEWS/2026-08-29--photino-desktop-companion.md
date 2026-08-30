@@ -222,10 +222,16 @@ tmux command was found in the reviewed C022 range.
 
 - Obtain actual Apple Silicon launch/connection evidence.
 - Complete owner Ubuntu desktop interaction acceptance.
-- After explicit deployment approval, confirm a pop-out advances beyond its
-  compatibility page and drag-snap session groups behave correctly on Ubuntu.
-- After explicit approval, deploy and physically verify bounded Ctrl+wheel text
-  zoom while confirming unmodified wheel behavior remains unchanged.
+- The owner-authorized corrective deployment is live as healthy image
+  `sha256:8be95175...` with zero restarts. Rollback image
+  `tmux-mobile:pre-desktop-session-groups-20260830` preserves
+  `sha256:54ce0059...`; protocol, HTTPS document/cache policy, bundle markers,
+  direct-backend denial, bounded logs, tmux compatibility, and preservation of
+  all six named sessions pass. Confirm physically that a pop-out advances
+  beyond its compatibility page and drag-snap session groups behave correctly
+  on Ubuntu.
+- Physically verify bounded Ctrl+wheel text zoom while confirming unmodified
+  wheel behavior remains unchanged in the deployed build.
 - Follow `docs/desktop-acceptance.md` for both physical-platform checks and
   report only its sanitized evidence fields.
 - After physical acceptance, re-run canonical verification and update this

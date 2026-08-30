@@ -398,6 +398,19 @@ the session remains running and becomes detached in the mobile PWA.
   loopback-only binding remain intact. Immediate rollback is preserved as
   `tmux-mobile:pre-webview-cache-rollback-20260829`. Owner interaction remains
   required before accepting the three reported UI behaviors.
+- 2026-08-30: the owner authorized deployment of the pop-out/session-group
+  correction committed as `2044254`. The prior live image
+  `sha256:54ce0059...` is preserved as
+  `tmux-mobile:pre-desktop-session-groups-20260830`; replacement image
+  `sha256:8be95175...` passed Compose validation and the isolated host/container
+  tmux 3.4 socket probe before replacing only the app service. The container is
+  healthy with zero restarts on the unchanged loopback/Serve boundary. The
+  cache-busted HTTPS desktop document returns 200 with `no-store, no-cache`,
+  references `index-CZwtEXak.js`, and the served JS/CSS contain the new
+  drag/drop session-group markers. Protocol compatibility returns 200, direct
+  backend HTTP remains 426, logs contain no errors, and all six named sessions
+  retain their pre-deployment window and attachment counts. The self-contained
+  Ubuntu x64 launcher is present and has all native library dependencies.
 
 ## Discoveries
 
@@ -492,10 +505,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner authorizes replacement of the live Compose app with the verified
-  pop-out/session-group build; then the rebuilt Ubuntu client is physically
-  checked for child navigation and drag-snap layouts. Apple Silicon launch
-  remains external.
+- Owner closes any older tmuxctl windows, launches the rebuilt Ubuntu client,
+  and physically checks that pop-outs advance beyond compatibility and that
+  tab dragging creates/collapses left, right, top, bottom, and center session
+  groups. Apple Silicon launch remains external.
 
 ## Pause Conditions
 
@@ -522,8 +535,8 @@ the session remains running and becomes detached in the mobile PWA.
   independent windows, guarded clipboard paths, authoritative wheel history,
   settled initial/fullscreen fitting, bounded Ctrl+wheel font zoom, single-row
   chrome, collapsed icon rail, exact-name kill, ordinary `exit`, and authoritative
-  tab cleanup are implemented and verified. Deployment and physical owner
-  acceptance remain paused at their explicit boundaries.
+  tab cleanup are implemented and verified. The corrected build is deployed,
+  healthy, rollback-protected, and awaiting physical owner acceptance.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch, compatibility, TLS, tests, docs, rollback, and review evidence
   are complete; branch ordering and commit metadata are resolved, while Apple

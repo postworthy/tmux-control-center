@@ -242,7 +242,7 @@ Status: active
 
 ## C022 — tmuxctl Photino desktop companion
 
-Status: blocked pending owner branch/history decision and physical acceptance
+Status: deployed; Ubuntu and Apple Silicon physical acceptance pending
 
 - Add a self-contained .NET 10/Photino desktop client with a desktop-specific
   xterm.js interface for Ubuntu x64 and Apple Silicon macOS.
