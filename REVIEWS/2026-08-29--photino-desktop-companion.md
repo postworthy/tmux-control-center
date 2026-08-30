@@ -138,6 +138,14 @@ Results:
   26 Infrastructure plus five intentional skips, 34 Desktop, 51 Server
   integration, all six frontend suites, the shell suites, and both Compose
   assertions pass. No toolchain contract changed.
+- The owner-authorized live C022 rollout preserved prior image
+  `sha256:f48be26d...` as `tmux-mobile:pre-c022-desktop-rollback-20260829`. The
+  new `sha256:8873036d...` image passed Compose validation and the isolated tmux
+  3.4 socket probe, then became healthy with zero restarts. The unchanged Serve
+  origin returns liveness 200 and exact protocol-1 capability JSON; the direct
+  backend remains denied with 426. The existing mobile root and separate
+  desktop entry point serve their intended asset graphs, and six host tmux
+  sessions are present after replacement.
 
 ## Findings
 

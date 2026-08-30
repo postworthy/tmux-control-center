@@ -73,3 +73,22 @@ Related Commit(s): `8741bf4`, `948bbb2`
 - Deployment gate: require the real HTTPS capability endpoint to return JSON
   with protocol 1 and the complete required feature set before distributing or
   launching the matching desktop build.
+
+## Corrective Action Evidence
+
+- 2026-08-29: the owner enabled Tailscale DNS acceptance. `tailscale dns status`
+  now reports enabled, and normal `getent` resolution returns the host's current
+  Tailscale address without an override.
+- 2026-08-29: after explicit deployment approval, the prior live image
+  `sha256:f48be26d...` was preserved as
+  `tmux-mobile:pre-c022-desktop-rollback-20260829`. Compose validation, the C022
+  image build, and the isolated host/container tmux 3.4 socket probe passed.
+- The replacement image `sha256:8873036d...` is healthy with zero restarts on
+  the unchanged loopback/Serve mapping. Normal HTTPS liveness returns 200,
+  direct backend application access remains denied with 426, and the capability
+  endpoint returns JSON protocol 1 with `session-tabs-v1`,
+  `terminal-websocket-v1`, and `tmux-topology-v1`.
+- The deployed root still serves the existing mobile PWA while `/desktop/`
+  serves the separate tmuxctl desktop assets. Six host tmux sessions are present
+  after container replacement; the deployment did not restore or stop the host
+  tmux server.

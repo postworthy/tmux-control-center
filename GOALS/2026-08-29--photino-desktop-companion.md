@@ -293,6 +293,16 @@ the session remains running and becomes detached in the mobile PWA.
   Kestrel through valid TLS. That forced request also proves the deployed image
   predates C022 because the capability path returns mobile HTML rather than
   protocol JSON. No network or deployment state was changed.
+- 2026-08-29: the owner enabled Tailscale DNS acceptance and explicitly
+  authorized C022 deployment. The prior image `sha256:f48be26d...` is preserved
+  as `tmux-mobile:pre-c022-desktop-rollback-20260829`; the new
+  `sha256:8873036d...` image passed Compose validation and the isolated tmux 3.4
+  socket probe before replacement. It is healthy with zero restarts on the
+  unchanged loopback/Serve boundary. HTTPS liveness is 200, direct backend
+  application access remains 426, and the live capability endpoint returns the
+  exact protocol-1 feature contract. Mobile and desktop entry points both
+  render their distinct asset graphs, bounded logs show no failure, and six
+  host tmux sessions are present after deployment.
 
 ## Discoveries
 
@@ -364,13 +374,14 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Retry State
 
-- Current attempt: 1
+- Current attempt: 0
 - Maximum attempts per unchanged failure: 2
-- Last failure: the first physical Ubuntu compatibility attempt could not
-  resolve the MagicDNS origin because Tailscale DNS acceptance is disabled. A
+- Last failure resolved: the first physical Ubuntu compatibility attempt could
+  not resolve the MagicDNS origin because Tailscale DNS acceptance was disabled. A
   forced-address request then showed the deployed server is also pre-C022. The
-  supported causes and verification gap are recorded in the related RCA; an
-  unchanged retry is not useful.
+  supported causes and verification gap are recorded in the related RCA.
+  Tailscale DNS acceptance is now enabled and the C022 server is live, so the
+  next physical attempt changes both proven causes.
 - Resume evidence: the owner chose predecessor-stack ordering and authorized
   local history repair. Both Git findings are resolved with an unchanged source
   tree and a passing canonical gate.
@@ -380,9 +391,8 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Obtain explicit owner approval for the Tailscale DNS and C022 deployment
-  corrections recorded in the RCA, then validate normal capability resolution
-  before resuming physical acceptance.
+- Have the owner reconnect the Ubuntu desktop client to the unchanged `:8443`
+  origin and continue the numbered physical acceptance checklist.
 
 ## Pause Conditions
 

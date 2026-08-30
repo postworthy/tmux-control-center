@@ -19,11 +19,15 @@ Updated: 2026-08-29
   verification pass. The owner-approved predecessor-stack fast-forward and
   local history repair resolved the merge boundary and commit trailers. The
   first physical Ubuntu connection attempt exposed disabled Tailscale DNS
-  acceptance on this host; forced resolution also proves the deployed server
-  predates C022. The RCA is recorded in
+  acceptance and a pre-C022 deployed server. Both causes are now corrected:
+  normal MagicDNS resolution works and live image `sha256:8873036d...` serves
+  the exact protocol-1 contract on the unchanged tailnet-only origin. The prior
+  image is preserved as `tmux-mobile:pre-c022-desktop-rollback-20260829`; health,
+  loopback binding, direct-backend denial, mobile/desktop assets, and isolated
+  tmux 3.4 compatibility pass. The RCA is recorded in
   `RCA/2026-08-29--desktop-magicdns-preflight-failure.md`. Actual Apple Silicon
-  launch and owner Ubuntu acceptance remain required. Tailscale changes, live
-  deployment, merge, push, and remote CI remain owner-controlled.
+  launch and the remainder of owner Ubuntu acceptance remain required. Further
+  Tailscale changes, merge, push, and remote CI remain owner-controlled.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation
