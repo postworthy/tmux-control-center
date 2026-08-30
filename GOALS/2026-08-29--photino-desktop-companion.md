@@ -29,10 +29,11 @@ existing mobile PWA.
 
 ## Acceptance Criteria
 
-- [ ] AC1 — Clean-checkout documented commands produce self-contained
-  `linux-x64` and `osx-arm64` desktop outputs; Ubuntu launches without installed
-  .NET and actual Apple Silicon hardware or an approved macOS CI runner proves
-  the macOS app launches and reaches its connection screen.
+- [ ] AC1 — Clean-checkout documented commands produce a self-contained
+  `linux-x64` executable/Ubuntu launcher and an `osx-arm64` `.app`, both using
+  the PWA artwork for native pinning; Ubuntu launches without installed .NET and
+  actual Apple Silicon hardware or approved macOS CI proves the macOS bundle
+  launches and reaches its connection screen.
   - Evidence: pending
 - [ ] AC2 — Multiple label/HTTPS-URL profiles validate and persist locally; one
   selected profile connects through the existing protected login flow and
@@ -94,7 +95,7 @@ existing mobile PWA.
 | 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
 | 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
 | 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input, bounded Ctrl+wheel text zoom, draggable nested session groups, collapsible sidebar, working pop-outs, create/kill, ordinary exit, and recovery meet AC4-AC6. | Focused layout/wheel/pop-out tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
-| 6. Cross-platform delivery | in progress | Ubuntu/macOS source builds, launch evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, `./scripts/verify.sh`, Review Record |
+| 6. Cross-platform delivery | in progress | Ubuntu executable/launcher and macOS app-bundle source builds carry the PWA icon; launch/pinning evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, bundle/launcher checks, `./scripts/verify.sh`, Review Record |
 
 Thin slice: complete Unit 3 so an Ubuntu desktop app can select a saved server,
 authenticate, list sessions, attach one real tmux client, and close its tab while
@@ -411,6 +412,19 @@ the session remains running and becomes detached in the mobile PWA.
   backend HTTP remains 426, logs contain no errors, and all six named sessions
   retain their pre-deployment window and attachment counts. The self-contained
   Ubuntu x64 launcher is present and has all native library dependencies.
+- 2026-08-30: owner feedback added native PWA-derived app identity for Ubuntu
+  and macOS and reported that the first unsplit session group remains
+  content-sized. RCA `RCA/2026-08-30--desktop-root-session-group-shrinks.md`
+  proves the root group lacked the flex sizing applied to nested groups. The
+  corrective root selector, Ubuntu window icon/launcher, launcher registration
+  helper, and Apple Silicon `.app`/ICNS packaging are implemented locally. The
+  Linux PNG is byte-identical to the PWA 512px asset; the macOS bundle contains
+  an arm64 Mach-O executable and valid multi-size ICNS. An isolated launcher
+  install passes, Photino logs the absolute `SetIconFile` call, actual GTK
+  `WM_CLASS` is `Tmuxctl` as declared by the launcher, both source builds pass,
+  and the canonical gate passes 41 Desktop, 55 Server integration, 27 Core, 26
+  Infrastructure plus five intentional skips, and eleven frontend suites. No
+  server redeployment or user launcher installation has occurred.
 
 ## Discoveries
 
@@ -505,10 +519,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner closes any older tmuxctl windows, launches the rebuilt Ubuntu client,
-  and physically checks that pop-outs advance beyond compatibility and that
-  tab dragging creates/collapses left, right, top, bottom, and center session
-  groups. Apple Silicon launch remains external.
+- Owner authorizes deployment of the corrected desktop CSS bundle. Afterward,
+  the owner registers the rebuilt Ubuntu launcher and physically confirms the
+  PWA icon appears in the dock and the first unsplit session fills the complete
+  workspace. Apple Silicon launch/pinning remains external.
 
 ## Pause Conditions
 
@@ -535,9 +549,11 @@ the session remains running and becomes detached in the mobile PWA.
   independent windows, guarded clipboard paths, authoritative wheel history,
   settled initial/fullscreen fitting, bounded Ctrl+wheel font zoom, single-row
   chrome, collapsed icon rail, exact-name kill, ordinary `exit`, and authoritative
-  tab cleanup are implemented and verified. The corrected build is deployed,
-  healthy, rollback-protected, and awaiting physical owner acceptance.
+  tab cleanup are implemented and verified. The latest root-group sizing
+  correction is verified locally and awaits redeployment and physical owner
+  acceptance.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
-  Linux launch, compatibility, TLS, tests, docs, rollback, and review evidence
-  are complete; branch ordering and commit metadata are resolved, while Apple
-  Silicon launch and owner Ubuntu acceptance remain required.
+  Linux launch/identity, Ubuntu launcher, Apple Silicon app-bundle structure,
+  compatibility, TLS, tests, docs, rollback, and review evidence are complete;
+  actual Ubuntu pinning, Apple Silicon launch/pinning, and owner interaction
+  acceptance remain required.

@@ -50,6 +50,12 @@ chooser instead of trapping the user in the operating-system WebView error.
 Missing, too-new, or incomplete desktop protocol support is rejected before
 remote content loads and produces an explicit server/client update message.
 
+The source build reuses the PWA's 512px artwork as the Linux Photino window
+icon and generates matching Ubuntu launcher metadata whose startup class agrees
+with the actual GTK window. Apple Silicon output is a standard `.app` directory
+with `Info.plist` and a multi-size ICNS resource derived from the same artwork.
+These are native identity and pinning assets, not an installer or signing layer.
+
 Opening a desktop session tab connects to the existing terminal WebSocket and
 therefore starts one real `tmux attach-session` client. Every open tab remains
 mounted while another tab is selected, so switching visibility does not detach
@@ -75,6 +81,9 @@ on both the host and terminal stage and explicit window/fullscreen/visibility
 triggers. Each successful dimension change is reported through the existing
 terminal resize envelope. This desktop-only behavior does not enter the mobile
 terminal component.
+The root editor node and nested split nodes all receive an explicit flexible
+basis so an unsplit first session consumes the same complete workspace as later
+nested layouts before xterm performs its fit.
 
 Workspace recovery adds a deliberately narrow side channel beside the tmux
 socket. A host daemon running as the tmux owner writes an atomic metadata-only

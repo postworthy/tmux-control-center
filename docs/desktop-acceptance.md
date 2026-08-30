@@ -17,10 +17,9 @@ git rev-parse HEAD
 ```
 
 `git status --short` must be empty. The two commands should produce
-`artifacts/desktop/linux-x64/tmuxctl` and
-`artifacts/desktop/osx-arm64/tmuxctl`. The output directories are
-self-contained; the machine that runs an output does not need a separately
-installed .NET runtime.
+`artifacts/desktop/linux-x64/tmuxctl` with `tmuxctl.desktop`, and
+`artifacts/desktop/osx-arm64/tmuxctl.app`. The outputs are self-contained; the
+machine that runs one does not need a separately installed .NET runtime.
 
 Verify that the already-running server advertises desktop protocol 1 before
 opening the client:
@@ -48,8 +47,13 @@ On Ubuntu 24.04, install the native WebKitGTK runtime if it is absent:
 
 ```bash
 sudo apt-get install libwebkit2gtk-4.1-0
-./artifacts/desktop/linux-x64/tmuxctl
+./scripts/install-desktop-launcher.sh
 ```
+
+Open tmuxctl from Ubuntu's Applications view, pin it with **Add to Favorites**,
+and confirm the dock/window uses the same icon as the PWA. The launcher points
+to this checkout's self-contained artifact, so rebuild at the same path after a
+source update.
 
 Complete these checks with disposable tmux sessions:
 
@@ -67,8 +71,10 @@ Complete these checks with disposable tmux sessions:
    beyond **Checking server compatibility**, opens the requested session, and
    accepts independent input. Close the child and confirm the root window and
    session survive.
-6. Open at least three session tabs. Drag one tab toward the left/right edge and
-   confirm visible snap guidance creates a side-by-side editor group; drag
+6. Open the first session in a fresh unsplit window and confirm it immediately
+   fills all workspace space beside the sidebar. Open at least two more session
+   tabs. Drag one tab toward the left/right edge and confirm visible snap
+   guidance creates a side-by-side editor group; drag
    another toward the top/bottom edge to create a nested stacked group. Move a
    tab through the center target into another group and confirm its empty prior
    group collapses. Verify each session has exactly one desktop attachment. Use
@@ -102,13 +108,15 @@ On an Apple Silicon Mac with the .NET 10 SDK available for the source build:
 
 ```bash
 ./scripts/build-desktop.sh osx-arm64
-file artifacts/desktop/osx-arm64/tmuxctl
-./artifacts/desktop/osx-arm64/tmuxctl
+file artifacts/desktop/osx-arm64/tmuxctl.app/Contents/MacOS/tmuxctl
+open artifacts/desktop/osx-arm64/tmuxctl.app
 ```
 
 `file` must identify an arm64 Mach-O executable. Because this first cut is not
 signed or notarized, run only the artifact built from the trusted local checkout
-and use the operating system's explicit local-app approval if required. Prove at
+and use the operating system's explicit local-app approval if required. Copy the
+bundle to Applications, add it to the Dock, and confirm it uses the same artwork
+as the PWA. Prove at
 minimum that the app reaches its native Servers screen, saves a profile,
 completes the compatibility preflight, loads the protected desktop login, lists
 sessions, attaches one disposable session, and detaches it on tab/window close

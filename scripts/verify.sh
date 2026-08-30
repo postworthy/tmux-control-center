@@ -5,6 +5,7 @@ bash tests/first-run-setup.test.sh
 sh -n deploy/docker/healthcheck-watchdog.sh
 bash tests/healthcheck-watchdog.test.sh
 bash tests/tmux-workspace-recovery.test.sh
+bash tests/desktop-delivery.test.sh
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"

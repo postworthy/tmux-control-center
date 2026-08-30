@@ -45,8 +45,9 @@ public static class Program
         return 0;
     }
 
-    private static PhotinoWindow BuildWindow(PhotinoWindow? parent = null) =>
-        new PhotinoWindow(parent)
+    private static PhotinoWindow BuildWindow(PhotinoWindow? parent = null)
+    {
+        var window = new PhotinoWindow(parent)
             .SetTitle("tmuxctl")
             .SetUseOsDefaultSize(false)
             .SetSize(new Size(1280, 800))
@@ -55,6 +56,9 @@ public static class Program
             .SetDevToolsEnabled(Environment.GetEnvironmentVariable("TMUXCTL_DEVTOOLS") == "1")
             .SetGrantBrowserPermissions(false)
             .Center();
+        var icon = DesktopAppIcon.ResolveLinuxIcon(AppContext.BaseDirectory, OperatingSystem.IsLinux());
+        return icon is null ? window : window.SetIconFile(icon);
+    }
 
     private sealed class DesktopWindowController(
         PhotinoWindow window, ServerProfileStore profiles, DesktopCapabilityProbe capabilityProbe) : IDisposable

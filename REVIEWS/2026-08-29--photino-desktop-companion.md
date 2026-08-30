@@ -160,8 +160,17 @@ Results:
   horizontal/vertical nesting, center moves, unique membership, pruning, and
   empty-group collapse. The current canonical gate passes 39 Desktop, 55 Server
   integration, 27 Core, 26 Infrastructure plus five intentional skips, and
-  eleven frontend suites. Native physical confirmation and deployment remain
-  pending.
+  eleven frontend suites. That correction was subsequently deployed; native
+  physical confirmation remains pending.
+- The later owner-reported content-sized first session is traced in
+  `RCA/2026-08-30--desktop-root-session-group-shrinks.md` to a missing flex rule
+  for the root group, not xterm or tmux resize behavior. The corrected root CSS
+  contract, exact PWA-derived Linux icon, matching `Tmuxctl` GTK/launcher class,
+  launcher registration helper, and Apple Silicon `.app`/ICNS structure pass
+  focused checks and real source builds. Canonical verification now passes 41
+  Desktop, 55 Server integration, 27 Core, 26 Infrastructure plus five
+  intentional skips, and eleven frontend suites. Redeployment and physical
+  icon/layout acceptance remain explicit owner boundaries.
 
 ## Findings
 
@@ -222,6 +231,9 @@ tmux command was found in the reviewed C022 range.
 
 - Obtain actual Apple Silicon launch/connection evidence.
 - Complete owner Ubuntu desktop interaction acceptance.
+- After an explicitly approved corrective deployment, register the Ubuntu
+  launcher and confirm both PWA-derived dock identity and full-size initial
+  unsplit workspace geometry.
 - The owner-authorized corrective deployment is live as healthy image
   `sha256:8be95175...` with zero restarts. Rollback image
   `tmux-mobile:pre-desktop-session-groups-20260830` preserves

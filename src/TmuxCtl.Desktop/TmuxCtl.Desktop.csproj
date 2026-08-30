@@ -20,4 +20,9 @@
     <ProjectReference Include="../TmuxMobile.Core/TmuxMobile.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="../TmuxMobile.Web/public/icon-512.png" Link="tmuxctl.png"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

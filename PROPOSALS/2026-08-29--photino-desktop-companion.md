@@ -39,7 +39,9 @@ In scope:
   coalesced authoritative tmux-history wheel input, reliable initial/fullscreen
   fitting, bounded Ctrl+mouse-wheel terminal text zoom, a collapsible icon-rail
   sidebar, tests, documentation, rollback, and reproducible
-  `linux-x64`/`osx-arm64` source builds.
+  `linux-x64`/`osx-arm64` source builds. The Linux output includes native window
+  icon and launcher metadata, while macOS is an application bundle; both reuse
+  the established PWA artwork and can be pinned by their desktop shell.
 
 Out of scope:
 
@@ -66,8 +68,9 @@ Out of scope:
 
 ## Acceptance Criteria
 
-- [ ] Clean-checkout source builds produce launchable self-contained Ubuntu x64
-  and Apple Silicon macOS outputs without a preinstalled .NET runtime.
+- [ ] Clean-checkout source builds produce a launchable self-contained Ubuntu
+  x64 executable/launcher and Apple Silicon macOS `.app` without a preinstalled
+  .NET runtime; each exposes the established PWA icon for desktop pinning.
 - [ ] Saved server profiles connect and authenticate safely to an existing
   tmuxctl HTTPS server and recover clearly from auth, TLS, offline, and sleep
   transitions without persisting terminal content or plaintext login secrets.

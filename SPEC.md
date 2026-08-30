@@ -1,6 +1,6 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 1.9
+Version: 2.0
 Last updated: 2026-08-30
 Status: Approved
 
@@ -122,9 +122,11 @@ Status: Approved
   PWA's mobile cards, swipe navigation, touch shortcut bar, or oversized mobile
   controls.
 - FR30: provide documented repository-source build and test commands that
-  produce self-contained `linux-x64` and `osx-arm64` desktop outputs without a
-  preinstalled .NET runtime; native installers and published binaries are not
-  required in this cut.
+  produce a self-contained `linux-x64` executable with an Ubuntu launcher and
+  an `osx-arm64` application bundle without a preinstalled .NET runtime. Both
+  use the existing PWA artwork as their native application identity so they can
+  be pinned in the Ubuntu dock or macOS Dock; package installers and published
+  binaries are not required in this cut.
 
 ## Constraints
 
@@ -202,10 +204,12 @@ Status: Approved
   in-app request initiates restore, only classified Codex and Claude panes launch
   fixed resume commands, live sessions block restore, corrupt state creates
   nothing, and stopping the recovery daemon leaves tmux alive.
-- [ ] AC19: from a clean source checkout, documented commands produce
-  self-contained Ubuntu x64 and Apple Silicon macOS desktop outputs; the Ubuntu
-  app launches without a machine-wide .NET runtime, while an actual macOS build
-  or approved macOS CI runner proves the Apple Silicon output launches.
+- [ ] AC19: from a clean source checkout, documented commands produce a
+  self-contained Ubuntu x64 executable/launcher and an Apple Silicon macOS
+  `.app`, both carrying the PWA application artwork; the Ubuntu app launches and
+  can be pinned without a machine-wide .NET runtime, while actual macOS hardware
+  or approved macOS CI proves the Apple Silicon bundle launches and can be
+  pinned.
 - [ ] AC20: the desktop app validates and saves multiple label/URL profiles,
   connects through Tailscale to an already-running server, completes the
   existing protected login flow without storing a plaintext login secret in

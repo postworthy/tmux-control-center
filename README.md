@@ -127,15 +127,21 @@ for systemd and HTTPS setup. Configuration is documented in
 The desktop outputs bundle the .NET runtime, so the target machine does not
 need a separately installed .NET SDK or runtime. They still use each operating
 system's native web view. On Ubuntu 24.04, install the WebKitGTK runtime before
-launching the Linux output:
+building and registering the Linux launcher:
 
 ```bash
 sudo apt-get install libwebkit2gtk-4.1-0
+./scripts/build-desktop.sh linux-x64
+./scripts/install-desktop-launcher.sh
 ./artifacts/desktop/linux-x64/tmuxctl
 ```
 
-The `osx-arm64` output targets Apple Silicon and uses macOS's built-in WebKit.
-Source builds are not signed or notarized in this first cut.
+The installed launcher and native window use the same icon as the PWA. Open
+tmuxctl from Ubuntu's Applications view once, then choose **Add to Favorites**
+from its dock icon. The Apple Silicon build is
+`artifacts/desktop/osx-arm64/tmuxctl.app`; copy that bundle to Applications and
+add it to the macOS Dock. This source-build delivery does not add a `.deb`,
+`.dmg`, signing, notarization, or binary publication.
 
 ## Docker Compose over Tailscale
 
