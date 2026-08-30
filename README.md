@@ -180,6 +180,7 @@ above.
 - [Deployment, HTTPS, Tailscale, upgrades, and rollback](docs/deployment.md)
 - [Security model and operations](docs/security.md)
 - [HTTP and WebSocket API](docs/api.md)
+- [Desktop Ubuntu/macOS acceptance checklist](docs/desktop-acceptance.md)
 - [Configuration reference](docs/configuration.md)
 - [Docker Compose deployment](deploy/docker/README.md)
 - [Tempo project contract](SPEC.md)

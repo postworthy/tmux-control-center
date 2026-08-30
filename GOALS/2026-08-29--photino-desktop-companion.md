@@ -258,6 +258,17 @@ the session remains running and becomes detached in the mobile PWA.
   with 27 Core, 26 Infrastructure plus five intentional skips, 51 Server
   integration, 34 Desktop, six frontend suites, shell suites, and Compose
   boundary assertions passing.
+- Invalid-TLS runtime: a real Photino launch probed a disposable self-signed
+  HTTPS endpoint on loopback. Operating-system certificate validation rejected
+  it before remote navigation and the native chooser displayed “The server TLS
+  certificate could not be verified” with certificate/URL guidance. The app,
+  TLS server, certificate material, and dedicated X server were then stopped or
+  removed.
+- Physical acceptance handoff: `docs/desktop-acceptance.md` records clean-build,
+  protocol, Ubuntu, Apple Silicon, profiles, attachment, topology, clipboard,
+  context-menu, resize, network, sleep/wake, exit/kill, PWA-regression, privacy,
+  and sanitized-report steps without asking the owner to disclose secrets or
+  terminal content.
 
 ## Discoveries
 
@@ -333,9 +344,8 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Checkpoint the resolved compatibility finding, then obtain owner direction
-  for the stacked branch boundary and external Apple Silicon/Ubuntu acceptance
-  evidence before re-review.
+- Obtain owner direction for the stacked branch boundary and complete the
+  documented Apple Silicon/Ubuntu acceptance checks before re-review.
 
 ## Pause Conditions
 

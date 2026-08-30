@@ -60,8 +60,9 @@ Decision: not ready
 - [x] AC2 implementation: URL/profile validation, compatibility preflight,
   protected same-origin login,
   owner-only metadata storage, offline watchdog, and bounded reconnect are
-  implemented and focused/runtime tested. Physical sleep and invalid-TLS
-  behavior remain part of owner acceptance below.
+  implemented and focused/runtime tested. A real self-signed endpoint proves
+  certificate rejection before remote navigation; physical sleep remains part
+  of owner acceptance below.
 - [x] AC3: isolated real-tmux evidence proves one owned client per open tab,
   clean and abrupt detach, network-loss cleanup, reconnect, session survival,
   and preservation of another app-owned client.
@@ -119,6 +120,9 @@ Results:
   endpoint, loaded no remote page, and rendered an explicit server-update
   message. An isolated current image returned protocol 1, after which Photino
   loaded `/desktop/` and established its inventory WebSocket.
+- A real Photino probe against a disposable self-signed HTTPS endpoint rejected
+  the certificate before remote navigation and rendered explicit TLS
+  certificate/URL guidance in the native chooser.
 
 ## Findings
 
@@ -182,6 +186,8 @@ tmux command was found in the reviewed C022 range.
 
 - Obtain actual Apple Silicon launch/connection evidence.
 - Complete owner Ubuntu desktop interaction acceptance.
+- Follow `docs/desktop-acceptance.md` for both physical-platform checks and
+  report only its sanitized evidence fields.
 - Resolve the stacked branch boundary and missing commit trailers.
 - Re-run focused and canonical verification, then update this Review Record to
   a new readiness decision. Merge, push, CI, and publication remain explicitly
