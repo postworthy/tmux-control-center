@@ -328,6 +328,12 @@ app.MapGet("/api/config", (IOptions<TmuxOptions> options) => Results.Ok(new
 {
     tmuxPrefix = options.Value.Prefix
 })).RequireAuthorization("Read");
+app.MapGet("/api/desktop/capabilities", () => Results.Ok(new DesktopCapabilities(
+        DesktopProtocol.CurrentVersion,
+        DesktopProtocol.MinimumSupportedClientVersion,
+        DesktopProtocol.RequiredFeatures)))
+    .AllowAnonymous()
+    .RequireRateLimiting("health");
 
 var workspaceRecovery = app.MapGroup("/api/workspace-recovery").RequireAuthorization("Read");
 workspaceRecovery.MapGet("/", (WorkspaceRecoveryControl control) => Results.Ok(control.GetStatus()));

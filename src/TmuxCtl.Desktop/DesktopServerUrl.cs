@@ -4,6 +4,8 @@ namespace TmuxCtl.Desktop;
 
 public sealed record DesktopServerUrl(Uri ServerUri, Uri DesktopUri)
 {
+    public Uri CapabilitiesUri => new(ServerUri, "api/desktop/capabilities");
+
     public static bool TryCreate(string? value, out DesktopServerUrl? result, out string error)
     {
         result = null;

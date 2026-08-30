@@ -16,4 +16,8 @@
     <PackageReference Include="Photino.NET" Version="4.0.16" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../TmuxMobile.Core/TmuxMobile.Core.csproj" />
+  </ItemGroup>
+
 </Project>

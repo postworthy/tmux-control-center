@@ -92,8 +92,11 @@ dotnet run --project src/TmuxCtl.Desktop -- http://127.0.0.1:5179
 
 The desktop login key is sent only to the server's same-origin login endpoint.
 Use the desktop sidebar's **Servers** control to return to the native chooser.
-If the initial page cannot load, the native shell returns to the chooser after
-12 seconds with server, network, and TLS troubleshooting context.
+Before loading remote UI, the native shell checks a content-free, versioned
+server capability endpoint. Older or incompatible servers return to the chooser
+with an update message. If the compatible initial page cannot load, the native
+shell returns to the chooser after 12 seconds with server, network, and TLS
+troubleshooting context.
 
 ## Production build
 

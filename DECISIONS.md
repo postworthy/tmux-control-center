@@ -111,3 +111,9 @@ Closing UI detaches only the associated client; session termination remains an
 explicit confirmed operation, and terminal input is never intercepted to infer
 termination intent. Ubuntu x64 and Apple Silicon macOS source builds are the
 initial targets; native installers and a native terminal renderer are deferred.
+Before loading server-hosted desktop content, the native shell requests a
+bounded, content-free, versioned capability document from the configured HTTPS
+origin. The endpoint is anonymous and rate-limited because it exposes no host,
+identity, tmux, or authentication state; the client refuses redirects and
+requires the closed version-1 feature set. Missing or incompatible support
+returns to the native chooser with an actionable update message.

@@ -25,7 +25,9 @@ local tmux server
 stores multiple user-labelled, validated tmuxctl origins in the operating
 system application-data directory. The versioned JSON file is written
 atomically with owner-only permissions on Unix and contains no login key or
-terminal content. Selecting a profile navigates the operating system WebView to
+terminal content. Selecting a profile first probes the server's content-free,
+rate-limited `/api/desktop/capabilities` contract over the validated HTTPS
+origin. Only a compatible response navigates the operating system WebView to
 that server's `/desktop/` entry point. The server build produces a separate
 desktop React bundle under `wwwroot/desktop`; the mobile PWA remains the root
 entry point and does not share its card, swipe, or touch-toolbar presentation.
@@ -34,7 +36,10 @@ Serving the desktop entry point from the tmuxctl origin is an intentional
 security boundary. API-key login, Strict cookies, antiforgery tokens, REST
 requests, inventory WebSockets, and terminal WebSockets remain same-origin.
 The desktop client does not require CORS, a relaxed SameSite policy, a bearer
-token bridge, embedded credentials, or a new remotely callable capability.
+token bridge, embedded credentials, or a privileged remotely callable
+capability. The anonymous compatibility response is fixed, content-free
+metadata; it is rate-limited, redirects are refused by the native client, and
+its body is bounded before parsing.
 Plain HTTP server origins are rejected by the native shell except for explicit
 loopback development. Remote desktop content may ask the native shell to return
 to its chooser, but profile create, update, and delete messages are accepted
@@ -42,6 +47,8 @@ only while that native chooser is displayed. A successful desktop page sends a
 non-secret readiness message to cancel the native 12-second navigation
 watchdog; an initially offline server or TLS failure therefore returns to the
 chooser instead of trapping the user in the operating-system WebView error.
+Missing, too-new, or incomplete desktop protocol support is rejected before
+remote content loads and produces an explicit server/client update message.
 
 Opening a desktop session tab connects to the existing terminal WebSocket and
 therefore starts one real `tmux attach-session` client. Every open tab remains

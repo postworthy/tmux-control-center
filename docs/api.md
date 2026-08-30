@@ -1,6 +1,9 @@
 # API
 
-The generated OpenAPI document is available at `/openapi/v1.json`. Except for health, login, the OpenAPI document, and the static shell, endpoints require the `Read` policy. JSON uses camel case and string enum values.
+The generated OpenAPI document is available at `/openapi/v1.json`. Except for
+health, login, desktop capability metadata, the OpenAPI document, and the static
+shell, endpoints require the `Read` policy. JSON uses camel case and string enum
+values.
 
 ## Authentication
 
@@ -21,6 +24,27 @@ Returns the authenticated identity. `GET /api/auth/csrf` returns a short-lived r
 ### `POST /api/auth/logout`
 
 Requires CSRF and returns `204`.
+
+## Desktop compatibility
+
+### `GET /api/desktop/capabilities`
+
+Anonymous, content-free, and rate-limited. The native desktop shell calls this
+endpoint over the configured HTTPS origin before loading `/desktop/`:
+
+```json
+{
+  "protocolVersion": 1,
+  "minimumClientProtocolVersion": 1,
+  "features": ["session-tabs-v1", "terminal-websocket-v1", "tmux-topology-v1"]
+}
+```
+
+The response advertises only protocol metadata. It contains no host, profile,
+identity, tmux inventory, or authentication state. Clients refuse redirects,
+bound the response to 16 KiB, require every known version-1 feature, and show an
+actionable update message before remote UI is loaded when the endpoint is
+missing or incompatible.
 
 ## Inventory and capture
 

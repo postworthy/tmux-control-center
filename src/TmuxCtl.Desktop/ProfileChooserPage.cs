@@ -55,4 +55,17 @@ public static class ProfileChooserPage
           </script></body></html>
           """;
     }
+
+    public static string RenderConnecting(string host) => $$$"""
+      <!doctype html>
+      <html lang="en"><head><meta charset="utf-8"><meta name="color-scheme" content="dark">
+      <meta name="viewport" content="width=device-width,initial-scale=1"><title>Connecting to tmuxctl</title>
+      <style>
+      :root{font-family:Inter,Ubuntu,system-ui,sans-serif;color:#e6e8eb;background:#111418}
+      body{display:grid;place-items:center;min-height:100vh;margin:0;background:#111418}
+      main{text-align:center}.brand{color:#72d6a4;font-size:22px;font-weight:750}
+      h1{margin:10px 0 6px;font-size:25px}p{margin:0;color:#8f99a5}
+      </style></head><body><main><div class="brand">tmuxctl</div><h1>Checking server compatibility</h1>
+      <p>{{{WebUtility.HtmlEncode(host)}}}</p></main></body></html>
+      """;
 }

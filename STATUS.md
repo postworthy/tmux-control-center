@@ -9,10 +9,13 @@ Updated: 2026-08-29
   a desktop-specific xterm.js experience with saved URL profiles, real
   attachment-aware session tabs, authoritative tmux windows/panes, native
   pop-outs, reconnect, desktop shortcuts, guarded clipboard input, ordinary
-  `exit`, and exact-name session kill. Self-contained `linux-x64` and
+  `exit`, and exact-name session kill. A bounded native compatibility preflight
+  now rejects older/incomplete servers before loading remote UI without adding
+  an authentication or origin exception. Self-contained `linux-x64` and
   `osx-arm64` source builds pass; the Linux artifact launches with no installed
   .NET runtime. Focused tests, dependency audits, isolated tmux/Photino runtime
-  checks, and canonical verification pass. Actual Apple Silicon launch and
+  checks, 34 desktop tests, 51 server integration tests, and canonical
+  verification pass. Actual Apple Silicon launch and
   owner Ubuntu acceptance remain approval-gated completion evidence; merge and
   push remain owner-controlled.
 

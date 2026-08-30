@@ -91,7 +91,7 @@ existing mobile PWA.
 | 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
 | 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
 | 5. Desktop interaction | completed | Keyboard/mouse terminal workflows, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | 26 desktop tests, six frontend suites, isolated keyboard/pop-out/exit/named-kill runtime; owner acceptance remains at the goal boundary |
-| 6. Cross-platform delivery | pending | Ubuntu/macOS source builds, launch evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, `./scripts/verify.sh`, Review Record |
+| 6. Cross-platform delivery | in progress | Ubuntu/macOS source builds, launch evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, `./scripts/verify.sh`, Review Record |
 
 Thin slice: complete Unit 3 so an Ubuntu desktop app can select a saved server,
 authenticate, list sessions, attach one real tmux client, and close its tab while
@@ -137,6 +137,11 @@ the session remains running and becomes detached in the mobile PWA.
   two independent attachments, tab cycling, detach-only tab close, ordinary
   terminal `exit`, native child-window close, and wrong/exact kill confirmation.
   Unit 5 is complete pending final owner acceptance at the goal boundary.
+- 2026-08-29: resolved the review's older-server compatibility finding with a
+  shared version-1 capability contract, an anonymous content-free rate-limited
+  endpoint, and a bounded native HTTPS preflight that refuses redirects and
+  remote UI until the closed feature set is present. Missing support now
+  returns to the native chooser with an explicit server-update message.
 
 ## Evidence
 
@@ -238,6 +243,21 @@ the session remains running and becomes detached in the mobile PWA.
   launch, owner Ubuntu interaction acceptance, the stacked branch-to-main
   boundary, and the proposal-required older-server capability contract. Commit
   `69b4aeb` also lacks the proposal-required Roadmap/Proposal trailers.
+- Capability tests and runtime: 8 new native cases cover the exact endpoint,
+  forward-compatible versions, missing features, old-server 404/401, redirect
+  refusal, malformed/oversized bodies, and sanitized TLS failure. The anonymous
+  server contract test verifies exact content-free fields and cache prevention.
+  A real Photino run against a 404-only loopback server requested
+  `/api/desktop/capabilities`, did not load remote UI, and displayed “Update the
+  tmuxctl server”; a second run against isolated image `sha256:c890fe22...`
+  accepted protocol 1, loaded `/desktop/`, and established the inventory
+  WebSocket.
+- Post-capability source delivery and canonical gate: current self-contained
+  `linux-x64` and `osx-arm64` outputs again build as x86-64 ELF and arm64 Mach-O
+  artifacts with the shared protocol assembly. `./scripts/verify.sh` exits 0
+  with 27 Core, 26 Infrastructure plus five intentional skips, 51 Server
+  integration, 34 Desktop, six frontend suites, shell suites, and Compose
+  boundary assertions passing.
 
 ## Discoveries
 
@@ -274,6 +294,10 @@ the session remains running and becomes detached in the mobile PWA.
   needs an explicit pre-navigation capability check and actionable version
   error to meet the approved compatibility note; a generic navigation timeout
   is insufficient.
+- The compatibility gap is resolved without loading or trusting older remote
+  content: native `HttpClient` uses the operating-system TLS validation,
+  disables redirects, bounds the response to 16 KiB, accepts additive future
+  metadata, and requires all version-1 capabilities before WebView navigation.
 - The current feature branch is stacked on three locally committed C018-C021
   changes absent from `main`. The declared C022 merge boundary is not clean
   until the owner selects the stack order or authorizes a clean branch base.
@@ -303,13 +327,15 @@ the session remains running and becomes detached in the mobile PWA.
 
 - Current attempt: 0
 - Maximum attempts per unchanged failure: 2
-- Last failure: none
+- Last failure: the first content-free endpoint test falsely matched the valid
+  feature name `session-tabs-v1`; replacing the substring assertion with an
+  exact three-field JSON assertion made the unchanged implementation pass 51/51.
 
 ## Next Action
 
-- Resolve the review findings: add the approved server capability/version
-  contract, then obtain owner direction for the stacked branch boundary and
-  external Apple Silicon/Ubuntu acceptance evidence before re-review.
+- Checkpoint the resolved compatibility finding, then obtain owner direction
+  for the stacked branch boundary and external Apple Silicon/Ubuntu acceptance
+  evidence before re-review.
 
 ## Pause Conditions
 

@@ -31,8 +31,9 @@ public static class Program
             return 3;
         }
 
+        var capabilityProbe = new DesktopCapabilityProbe();
         var window = BuildWindow();
-        var controller = new DesktopWindowController(window, profiles);
+        var controller = new DesktopWindowController(window, profiles, capabilityProbe);
         Windows.Add(controller);
         window.RegisterWebMessageReceivedHandler(controller.HandleMessage);
 
@@ -40,6 +41,7 @@ public static class Program
         else controller.ShowProfiles();
 
         window.WaitForClose();
+        controller.Dispose();
         return 0;
     }
 
@@ -54,7 +56,8 @@ public static class Program
             .SetGrantBrowserPermissions(false)
             .Center();
 
-    private sealed class DesktopWindowController(PhotinoWindow window, ServerProfileStore profiles)
+    private sealed class DesktopWindowController(
+        PhotinoWindow window, ServerProfileStore profiles, DesktopCapabilityProbe capabilityProbe) : IDisposable
     {
         private static readonly JsonSerializerOptions CommandJson = new(JsonSerializerDefaults.Web)
         {
@@ -63,6 +66,7 @@ public static class Program
         private bool profilesVisible;
         private int navigationGeneration;
         private DesktopServerUrl? server;
+        private CancellationTokenSource? connectionCancellation;
 
         public void HandleMessage(object? sender, string message)
         {
@@ -75,7 +79,7 @@ public static class Program
                 switch (command.Type)
                 {
                     case "showProfiles": ShowProfiles(); break;
-                    case "desktopReady": Interlocked.Increment(ref navigationGeneration); break;
+                    case "desktopReady": MarkDesktopReady(); break;
                     case "openSessionWindow": OpenSessionWindow(command.SessionId); break;
                     case "connect":
                     {
@@ -111,18 +115,44 @@ public static class Program
 
         public void Connect(DesktopServerUrl selected, string? sessionId = null)
         {
+            CancelPendingConnection();
             profilesVisible = false;
             server = selected;
             var generation = Interlocked.Increment(ref navigationGeneration);
+            connectionCancellation = new CancellationTokenSource();
             window.SetTitle($"tmuxctl — {selected.ServerUri.Host}");
-            var uri = selected.DesktopUri.AbsoluteUri;
-            if (sessionId is not null) uri += $"?session={Uri.EscapeDataString(sessionId)}";
-            window.Load(uri);
-            _ = ReturnToProfilesOnConnectionTimeoutAsync(generation, selected.ServerUri.Host);
+            window.LoadRawString(ProfileChooserPage.RenderConnecting(selected.ServerUri.Host));
+            _ = NavigateAfterCapabilityCheckAsync(
+                generation, selected, sessionId, connectionCancellation.Token);
+        }
+
+        private async Task NavigateAfterCapabilityCheckAsync(
+            int generation, DesktopServerUrl selected, string? sessionId, CancellationToken cancellationToken)
+        {
+            DesktopCapabilityCheck check;
+            try { check = await capabilityProbe.CheckAsync(selected, cancellationToken); }
+            catch (OperationCanceledException) { return; }
+            if (cancellationToken.IsCancellationRequested) return;
+            window.Invoke(() =>
+            {
+                if (cancellationToken.IsCancellationRequested ||
+                    Volatile.Read(ref navigationGeneration) != generation) return;
+                if (!check.IsCompatible)
+                {
+                    ShowProfiles(check.Error);
+                    return;
+                }
+
+                var uri = selected.DesktopUri.AbsoluteUri;
+                if (sessionId is not null) uri += $"?session={Uri.EscapeDataString(sessionId)}";
+                window.Load(uri);
+                _ = ReturnToProfilesOnConnectionTimeoutAsync(generation, selected.ServerUri.Host);
+            });
         }
 
         public void ShowProfiles(string? error = null)
         {
+            CancelPendingConnection();
             profilesVisible = true;
             server = null;
             Interlocked.Increment(ref navigationGeneration);
@@ -143,12 +173,26 @@ public static class Program
             if (!DesktopSessionTarget.IsValid(sessionId))
                 throw new InvalidDataException("The session target is invalid.");
             var childWindow = BuildWindow(window);
-            var child = new DesktopWindowController(childWindow, profiles);
+            var child = new DesktopWindowController(childWindow, profiles, capabilityProbe);
             Windows.Add(child);
             childWindow.RegisterWebMessageReceivedHandler(child.HandleMessage);
             child.Connect(server, sessionId);
             childWindow.WaitForClose();
+            child.Dispose();
             Windows.Remove(child);
+        }
+
+        private void MarkDesktopReady()
+        {
+            Interlocked.Increment(ref navigationGeneration);
+            CancelPendingConnection();
+        }
+
+        private void CancelPendingConnection()
+        {
+            connectionCancellation?.Cancel();
+            connectionCancellation?.Dispose();
+            connectionCancellation = null;
         }
 
         private async Task ReturnToProfilesOnConnectionTimeoutAsync(int generation, string host)
@@ -165,6 +209,8 @@ public static class Program
             Guid.TryParse(value, out var id) && id != Guid.Empty
                 ? id
                 : throw new InvalidDataException("The server profile ID is invalid.");
+
+        public void Dispose() => CancelPendingConnection();
     }
 
     private sealed record ProfileCommand(

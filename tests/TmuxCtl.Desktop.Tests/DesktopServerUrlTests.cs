@@ -15,6 +15,7 @@ public sealed class DesktopServerUrlTests
     {
         Assert.True(DesktopServerUrl.TryCreate(value, out var result, out var error), error);
         Assert.Equal(expected, result!.DesktopUri.AbsoluteUri);
+        Assert.Equal(new Uri(result.ServerUri, "api/desktop/capabilities"), result.CapabilitiesUri);
     }
 
     [Theory]

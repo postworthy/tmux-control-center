@@ -126,6 +126,28 @@ public sealed class ApiTests
     }
 
     [Fact]
+    public async Task DesktopCapabilitiesAreAnonymousVersionedAndContentFree()
+    {
+        await using var factory = new TmuxFactory(authenticated: false);
+        var response = await CreateHttpsClient(factory).GetAsync("/api/desktop/capabilities");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("no-store", response.Headers.CacheControl!.ToString());
+
+        var capabilities = await response.Content.ReadFromJsonAsync<DesktopCapabilities>(JsonOptions);
+        Assert.NotNull(capabilities);
+        Assert.Equal(DesktopProtocol.CurrentVersion, capabilities.ProtocolVersion);
+        Assert.Equal(DesktopProtocol.MinimumSupportedClientVersion,
+            capabilities.MinimumClientProtocolVersion);
+        Assert.Equal(DesktopProtocol.RequiredFeatures, capabilities.Features);
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        Assert.Equal(
+            ["features", "minimumClientProtocolVersion", "protocolVersion"],
+            document.RootElement.EnumerateObject().Select(property => property.Name)
+                .Order(StringComparer.Ordinal).ToArray());
+    }
+
+    [Fact]
     public async Task WorkspaceRecoveryStatusIsAuthenticatedAndDisabledByDefault()
     {
         await using var production = new TmuxFactory(authenticated: false);
