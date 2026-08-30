@@ -10,6 +10,10 @@ grep -Fq '.workspace-layout > .workspace-group, .workspace-layout > .workspace-s
 grep -Fq 'WORKSPACE_DROP_ZONES.map' \
   "$repository_root/src/TmuxMobile.Web/desktop/DesktopWorkspace.tsx"
 grep -Fq 'Reset to single view' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
+grep -Fq 'const suppressBrowserContextMenu = (event: MouseEvent) => event.preventDefault();' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
+! grep -Fq 'contextMenuCallbackRef' "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
+! grep -Fq 'terminal-menu' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'Link="tmuxctl.png"' "$repository_root/src/TmuxCtl.Desktop/TmuxCtl.Desktop.csproj"
 grep -Fq '.SetIconFile(icon)' "$repository_root/src/TmuxCtl.Desktop/Program.cs"
 grep -Fq 'StartupWMClass=Tmuxctl' \

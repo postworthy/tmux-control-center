@@ -85,8 +85,9 @@ Complete these checks with disposable tmux sessions:
    its narrow icon rail remains, including its reset icon, then expand it.
 7. Select terminal text and copy it with Ctrl+Shift+C. Paste a harmless sentinel
    with Ctrl+Shift+V; multiline paste must ask for confirmation. Right-click and
-   verify the terminal split menu appears. Hold Ctrl while scrolling the mouse
-   wheel in both directions and confirm terminal text grows and shrinks within
+   verify only tmux's terminal-rendered menu appears, with no smaller tmuxctl
+   menu overlapping it. Hold Ctrl while scrolling the mouse wheel in both
+   directions and confirm terminal text grows and shrinks within
    bounded limits without scrolling terminal content; release Ctrl and confirm
    wheel up/down navigates tmux history. Select a newly opened session and
    confirm xterm is visible without first resizing the native window. Maximize,

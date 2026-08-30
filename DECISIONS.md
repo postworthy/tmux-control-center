@@ -114,7 +114,8 @@ multiply with split depth, and each session remains unique and owns one terminal
 attachment through layout-only changes. Tmux windows and panes remain inside
 normal tmux terminal interaction rather than consuming permanent subordinate
 rows. The safe topology API remains additive for a future compact, explicit
-surface rather than appearing by default.
+surface rather than appearing by default. Right click is likewise owned by the
+terminal-rendered tmux menu; tmuxctl does not overlay a second context menu.
 Closing UI detaches only the associated client; session termination remains an
 explicit confirmed operation, and terminal input is never intercepted to infer
 termination intent. Ubuntu x64 and Apple Silicon macOS source builds are the

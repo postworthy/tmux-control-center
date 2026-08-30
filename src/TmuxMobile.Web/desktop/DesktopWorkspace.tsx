@@ -25,7 +25,6 @@ interface Props {
   onClose: (sessionId: string) => void;
   onPopout: (sessionId: string) => void;
   onConnectionState: (sessionId: string, state: TerminalConnectionState) => void;
-  onContextMenu: (sessionId: string, x: number, y: number) => void;
   onDragStart: (sessionId: string) => void;
   onDragEnd: () => void;
   onDragOver: (event: React.DragEvent<HTMLElement>) => void;
@@ -76,7 +75,6 @@ export default function DesktopWorkspace(props: Props) {
         {group.tabIds.map(sessionId => <DesktopTerminal key={sessionId} sessionId={sessionId}
           active={sessionId === group.activeId}
           onConnectionState={state => props.onConnectionState(sessionId, state)}
-          onContextMenu={(x, y) => props.onContextMenu(sessionId, x, y)}
           onError={props.onError} />)}
         {!activeTab && <div className="empty-state"><h1>Select a session</h1><p>Open a session or drag a tab into this group.</p></div>}
       </div>

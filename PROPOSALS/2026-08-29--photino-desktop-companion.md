@@ -139,7 +139,8 @@ review record finds no blocking issue.
    pane authority for terminal and future compact UI use without permanent
    subordinate rows in the primary workspace — Risk T2.
 5. Lifecycle and desktop interaction — heartbeat/stale cleanup, reconnect,
-   multiple windows, shortcuts, selection, clipboard, context menu, settled
+   multiple windows, shortcuts, selection, clipboard, one tmux-owned right-click
+   menu without a duplicate tmuxctl overlay, settled
    layout fitting, coalesced tmux-history wheel input, bounded Ctrl+mouse-wheel
    text zoom, collapsible icon-rail navigation, draggable nested session editor
    groups with snap guidance, and explicit session create/kill behavior — Risk T2.

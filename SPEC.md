@@ -117,8 +117,9 @@ Status: Approved
   close; terminating an entire session remains a distinct named-confirmation
   action in the session list.
 - FR29: make the desktop interface behave like a conventional Linux terminal
-  with keyboard-driven tabs, splits, focus, selection, copy/paste, context
-  menus, authoritative tmux-history mouse-wheel scrolling, resizing, reliable
+  with keyboard-driven tabs, splits, focus, selection, copy/paste, one
+  terminal-rendered tmux right-click menu, authoritative tmux-history
+  mouse-wheel scrolling, resizing, reliable
   initial/maximized/fullscreen fitting, bounded Ctrl+mouse-wheel text zoom, a
   collapsible icon-rail sidebar, and reconnection states, without rendering the
   PWA's mobile cards, swipe navigation, touch shortcut bar, or oversized mobile
@@ -229,7 +230,8 @@ Status: Approved
 - [ ] AC23: session creation and named-confirmation termination operate on only
   the inventory-resolved target, while closing a tab merely detaches and typed
   `exit` retains normal tmux pane/window/session semantics.
-- [ ] AC24: keyboard navigation, focus, selection, copy/paste, context menu,
+- [ ] AC24: keyboard navigation, focus, selection, copy/paste, one tmux-owned
+  right-click menu with no overlapping tmuxctl menu,
   authoritative unmodified-wheel history, terminal resize, reliable initial and
   maximize/fullscreen fitting, bounded Ctrl+mouse-wheel text zoom, collapsible
   icon-rail navigation, draggable split groups, reconnect, and independent

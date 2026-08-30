@@ -56,7 +56,8 @@ existing mobile PWA.
   session, and typed `exit` retains ordinary tmux pane/window/session behavior.
   - Evidence: pending
 - [ ] AC6 — Desktop keyboard navigation, independent windows, focus, selection,
-  copy/paste, context menus, coalesced unmodified-wheel tmux history, reliable
+  copy/paste, one tmux-owned right-click menu without a duplicate tmuxctl
+  overlay, coalesced unmodified-wheel tmux history, reliable
   initial/maximized/fullscreen fitting, resize, bounded Ctrl+mouse-wheel text
   zoom, collapsible icon-rail navigation, draggable split groups, and reconnect
   pass automated interaction checks and owner Ubuntu acceptance without mobile
@@ -556,10 +557,11 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner closes older tmuxctl windows and physically confirms exactly five
-  labeled targets remain at every split depth and both center drop and sidebar
-  **Single view** restore one tab row. Apple Silicon launch/pinning remains
-  external.
+- Owner authorizes replacement of the live Compose app with the verified
+  single-context-menu build. Then the owner closes older tmuxctl windows and
+  physically confirms right click opens only tmux's full menu, alongside the
+  outstanding five-zone/single-view checks. Apple Silicon launch/pinning
+  remains external.
 
 ## Pause Conditions
 
@@ -594,6 +596,17 @@ the session remains running and becomes detached in the mobile PWA.
   labels and one `drop-guidance` implementation, the HTTPS protocol check and
   direct-backend denial pass, and all six tmux sessions retain their pre-rollout
   window and attachment counts. Physical owner acceptance remains.
+- Ubuntu evidence then showed tmuxctl's two-item HTML context menu overlapping
+  tmux's fuller terminal-rendered menu. RCA
+  `RCA/2026-08-30--desktop-duplicate-context-menus.md` traces the collision to
+  tmuxctl's capture-phase `contextmenu` callback after tmux had already received
+  the mouse event. The local correction reduces that hook to browser-default
+  suppression and removes its callback plumbing, overlay state/markup, and CSS
+  while retaining xterm/tmux event propagation and the typed topology API.
+  Focused typecheck, all eleven frontend suites,
+  the negative delivery guard, a production bundle without the removed menu
+  strings, and canonical verification pass. Redeployment and physical
+  acceptance remain.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch/identity, Ubuntu launcher, Apple Silicon app-bundle structure,
   compatibility, TLS, tests, docs, rollback, and review evidence are complete;

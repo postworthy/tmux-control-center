@@ -19,22 +19,19 @@ interface Props {
   sessionId: string;
   active: boolean;
   onConnectionState: (state: TerminalConnectionState) => void;
-  onContextMenu: (x: number, y: number) => void;
   onError: (message: string) => void;
 }
 
-export default function DesktopTerminal({ sessionId, active, onConnectionState, onContextMenu, onError }: Props) {
+export default function DesktopTerminal({ sessionId, active, onConnectionState, onError }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const refitRef = useRef<(() => void) | null>(null);
   const activeRef = useRef(active);
   const connectionCallbackRef = useRef(onConnectionState);
-  const contextMenuCallbackRef = useRef(onContextMenu);
   const errorCallbackRef = useRef(onError);
 
   useEffect(() => { connectionCallbackRef.current = onConnectionState; }, [onConnectionState]);
-  useEffect(() => { contextMenuCallbackRef.current = onContextMenu; }, [onContextMenu]);
   useEffect(() => { errorCallbackRef.current = onError; }, [onError]);
   activeRef.current = active;
 
@@ -145,12 +142,8 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
     };
     const terminalHost = hostRef.current!;
     terminalHost.addEventListener("wheel", terminalWheel, { capture: true, passive: false });
-    const terminalContextMenu = (event: MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (activeRef.current) contextMenuCallbackRef.current(event.clientX, event.clientY);
-    };
-    terminalHost.addEventListener("contextmenu", terminalContextMenu, true);
+    const suppressBrowserContextMenu = (event: MouseEvent) => event.preventDefault();
+    terminalHost.addEventListener("contextmenu", suppressBrowserContextMenu, true);
     const observer = new ResizeObserver(scheduleSettledFit);
     observer.observe(terminalHost);
     if (terminalHost.parentElement) observer.observe(terminalHost.parentElement);
@@ -256,7 +249,7 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       document.removeEventListener("fullscreenchange", viewportChanged);
       document.removeEventListener("visibilitychange", visibilityChanged);
       terminalHost.removeEventListener("wheel", terminalWheel, true);
-      terminalHost.removeEventListener("contextmenu", terminalContextMenu, true);
+      terminalHost.removeEventListener("contextmenu", suppressBrowserContextMenu, true);
       observer.disconnect();
       input.dispose();
       socketRef.current?.close(1000, "Desktop tab closed");

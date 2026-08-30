@@ -5,16 +5,14 @@ import { reconnectDelay } from "./reconnect";
 import {
   UnauthorizedError,
   createSession,
-  getTopology,
   getSessions,
   inventoryWebSocketUrl,
   killSession,
   login,
-  splitPane,
   type InventorySnapshot,
   type TmuxSession
 } from "./desktopApi";
-import { activePaneId, sessionIconLabel } from "./desktopNavigation";
+import { sessionIconLabel } from "./desktopNavigation";
 import {
   activateWorkspaceSession,
   closeWorkspaceSession,
@@ -32,12 +30,6 @@ import {
   type WorkspaceNode
 } from "./workspaceLayout";
 
-interface TerminalMenu {
-  sessionId: string;
-  x: number;
-  y: number;
-}
-
 export default function DesktopApp() {
   const [sessions, setSessions] = useState<TmuxSession[]>([]);
   const [tabs, setTabs] = useState<DesktopTab[]>([]);
@@ -54,7 +46,6 @@ export default function DesktopApp() {
   const [inventoryConnected, setInventoryConnected] = useState(navigator.onLine);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [terminalMenu, setTerminalMenu] = useState<TerminalMenu | null>(null);
   const deepLinkOpened = useRef(false);
   const layoutId = useRef(1);
   const newSessionInput = useRef<HTMLInputElement>(null);
@@ -244,43 +235,6 @@ export default function DesktopApp() {
   const layoutIsSplit = workspaceGroups(layout).length > 1;
 
   useEffect(() => {
-    if (!terminalMenu) return;
-    const closeMenu = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setTerminalMenu(null);
-    };
-    const closeForResize = () => setTerminalMenu(null);
-    window.addEventListener("keydown", closeMenu, true);
-    window.addEventListener("resize", closeForResize);
-    return () => {
-      window.removeEventListener("keydown", closeMenu, true);
-      window.removeEventListener("resize", closeForResize);
-    };
-  }, [terminalMenu]);
-
-  const showTerminalMenu = (sessionId: string, x: number, y: number) => {
-    const menuWidth = 210;
-    const menuHeight = 84;
-    setTerminalMenu({
-      sessionId,
-      x: Math.max(8, Math.min(x, window.innerWidth - menuWidth - 8)),
-      y: Math.max(8, Math.min(y, window.innerHeight - menuHeight - 8))
-    });
-  };
-
-  const splitActivePane = async (orientation: "horizontal" | "vertical") => {
-    const target = terminalMenu;
-    setTerminalMenu(null);
-    if (!target) return;
-    try {
-      const paneId = activePaneId(await getTopology(target.sessionId));
-      if (!paneId) throw new Error("The active tmux pane is no longer available.");
-      await splitPane(paneId, orientation);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not split the active pane");
-    }
-  };
-
-  useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
       if (!activeId || event.altKey || event.metaKey) return;
       if (event.ctrlKey && event.shiftKey && event.code === "KeyW") {
@@ -413,18 +367,10 @@ export default function DesktopApp() {
         nativeProfilesAvailable={nativeProfilesAvailable}
         onFocusGroup={focusGroup} onActivate={activateTab} onClose={close}
         onPopout={openSessionWindow} onConnectionState={updateConnection}
-        onContextMenu={showTerminalMenu}
         onDragStart={setDraggingSessionId}
         onDragEnd={() => { setDraggingSessionId(null); setDropTarget(null); }}
         onDragOver={dragOverWorkspace} onDragLeave={dragLeaveWorkspace} onDrop={dropIntoWorkspace}
         onError={setError} />
-      {terminalMenu && <div className="terminal-menu-layer" onMouseDown={() => setTerminalMenu(null)}>
-        <div className="terminal-menu" role="menu" aria-label="Terminal actions"
-          style={{ left: terminalMenu.x, top: terminalMenu.y }} onMouseDown={event => event.stopPropagation()}>
-          <button role="menuitem" onClick={() => void splitActivePane("horizontal")}>Split left / right</button>
-          <button role="menuitem" onClick={() => void splitActivePane("vertical")}>Split top / bottom</button>
-        </div>
-      </div>}
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => setError(null)}>Dismiss</button></div>}
     </section>
   </main>;

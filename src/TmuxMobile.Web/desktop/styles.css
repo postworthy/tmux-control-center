@@ -84,10 +84,6 @@ input:focus { border-color: #72d6a4; box-shadow: 0 0 0 1px #72d6a4; }
 .terminal-host { display: none; width: 100%; height: 100%; }
 .terminal-host.active { position: absolute; inset: 0; display: block; }
 .terminal-host .xterm { height: 100%; }
-.terminal-menu-layer { position: fixed; z-index: 20; inset: 0; }
-.terminal-menu { position: fixed; display: grid; width: 210px; padding: 5px; background: #20252b; border: 1px solid #454d57; border-radius: 6px; box-shadow: 0 8px 28px #000a; }
-.terminal-menu button { padding: 8px 10px; color: #e6e8eb; background: transparent; border: 0; border-radius: 4px; text-align: left; cursor: pointer; }
-.terminal-menu button:hover, .terminal-menu button:focus { background: #303842; outline: none; }
 .drop-guidance { position: absolute; z-index: 12; inset: 0; pointer-events: none; background: #0b111888; }
 .drop-zone { position: absolute; display: grid; place-items: center; background: #72d6a418; border: 1px solid #72d6a455; border-radius: 4px; transition: background 80ms ease, border-color 80ms ease; }
 .drop-zone > span { padding: 4px 7px; color: #b7c7bf; background: #111a18dd; border-radius: 3px; font-size: 11px; font-weight: 650; letter-spacing: .02em; }

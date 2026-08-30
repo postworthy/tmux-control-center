@@ -197,6 +197,15 @@ Results:
   labels and one `drop-guidance` implementation, the HTTPS capability response
   and direct-backend denial pass, and all six tmux sessions retain their exact
   pre-rollout window and attachment counts. Physical acceptance remains.
+- The owner's deployed screenshot then showed the two-item tmuxctl HTML menu
+  overlapping tmux's full terminal-rendered context menu. RCA
+  `RCA/2026-08-30--desktop-duplicate-context-menus.md` identifies two owners for
+  one gesture and the missing negative verification. The local correction
+  reduces tmuxctl interception to browser-default suppression and removes its
+  menu chrome while retaining xterm/tmux mouse input and the additive typed
+  topology API. Typecheck, all eleven frontend suites,
+  the desktop delivery guard, a production bundle inspection, and canonical
+  verification pass; deployment and physical confirmation remain.
 
 ## Findings
 
@@ -207,9 +216,9 @@ Results:
    macOS WebKit/Photino startup. This requires separately approved Mac hardware
    or macOS CI.
 2. AC6 lacks owner Ubuntu acceptance, including direct focus, selection,
-   clipboard copy/paste, context menu, resize, sleep/wake, and mouse/keyboard
-   feel. Synthetic Xvfb evidence is useful but cannot approve the subjective
-   desktop terminal criterion.
+   clipboard copy/paste, single tmux-owned right-click menu, resize, sleep/wake,
+   and mouse/keyboard feel. Synthetic Xvfb evidence is useful but cannot approve
+   the subjective desktop terminal criterion.
 No secret, terminal content, generated package output, installer, publication,
 live-session mutation, Tailscale change, auth exception, or caller-controlled
 tmux command was found in the reviewed C022 range.
@@ -261,6 +270,8 @@ tmux command was found in the reviewed C022 range.
   initial unsplit workspace geometry.
 - Confirm physically that pop-outs, exactly five labeled targets, root-edge
   nesting, center reset, and sidebar reset behave correctly on Ubuntu.
+- After explicit approval, deploy the single-context-menu correction and
+  confirm right click opens only tmux's full terminal-rendered menu.
 - Physically verify bounded Ctrl+wheel text zoom while confirming unmodified
   wheel behavior remains unchanged in the deployed build.
 - Follow `docs/desktop-acceptance.md` for both physical-platform checks and
