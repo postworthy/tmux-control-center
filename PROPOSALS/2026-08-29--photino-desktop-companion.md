@@ -31,9 +31,9 @@ In scope:
   explicit named-confirmation termination.
 - One top-level desktop tab per tmux session, subordinate tabs for tmux windows,
   and real tmux panes for splits, with closed typed operations for topology.
-- Bounded stale-client cleanup, desktop keyboard/mouse interaction, tests,
-  documentation, rollback, and reproducible `linux-x64`/`osx-arm64` source
-  builds.
+- Bounded stale-client cleanup, desktop keyboard/mouse interaction including
+  bounded Ctrl+mouse-wheel terminal text zoom, tests, documentation, rollback,
+  and reproducible `linux-x64`/`osx-arm64` source builds.
 
 Out of scope:
 
@@ -71,8 +71,10 @@ Out of scope:
   tabs, and splits across reconnect and the mobile client.
 - [ ] Creation, detach, ordinary `exit`, and explicit confirmed session kill
   retain their distinct tmux semantics and operate only on validated targets.
-- [ ] Desktop interaction acceptance, focused security/integration tests,
-  canonical verification, documentation, rollback, and Change Review pass.
+- [ ] Desktop interaction acceptance, including bounded Ctrl+mouse-wheel text
+  zoom that leaves unmodified wheel behavior intact, focused security/
+  integration tests, canonical verification, documentation, rollback, and
+  Change Review pass.
 
 ## Verification Plan
 
@@ -123,8 +125,9 @@ review record finds no blocking issue.
 4. Authoritative topology — typed fixed server operations and desktop mappings
    for tmux windows, panes, selection, resize, create, and close — Risk T2.
 5. Lifecycle and desktop interaction — heartbeat/stale cleanup, reconnect,
-   multiple windows, shortcuts, selection, clipboard, context menu, sizing, and
-   explicit session create/kill behavior — Risk T2.
+   multiple windows, shortcuts, selection, clipboard, context menu, sizing,
+   bounded Ctrl+mouse-wheel text zoom, and explicit session create/kill
+   behavior — Risk T2.
 6. Cross-platform delivery — deterministic source builds, Linux/macOS launch
    evidence, documentation, canonical verification, rollback, and review — Risk
    T1 locally; external macOS CI or push requires separate approval.

@@ -70,8 +70,11 @@ Complete these checks with disposable tmux sessions:
    sees the same topology and final-pane/window close is refused.
 7. Select terminal text and copy it with Ctrl+Shift+C. Paste a harmless sentinel
    with Ctrl+Shift+V; multiline paste must ask for confirmation. Right-click and
-   verify the native context menu appears. Resize the window and confirm the
-   active tmux client dimensions follow it.
+   verify the native context menu appears. Hold Ctrl while scrolling the mouse
+   wheel in both directions and confirm terminal text grows and shrinks within
+   bounded limits without scrolling terminal content; release Ctrl and confirm
+   ordinary wheel behavior remains unchanged. Resize the window and confirm
+   the active tmux client dimensions follow it.
 8. Temporarily disconnect the client from its Tailscale network, reconnect, and
    then suspend/resume the workstation. Confirm the UI reports offline/reconnect
    states, creates no duplicate attachment, and the tmux sessions survive.

@@ -28,6 +28,12 @@ Updated: 2026-08-29
   `RCA/2026-08-29--desktop-magicdns-preflight-failure.md`. Actual Apple Silicon
   launch and the remainder of owner Ubuntu acceptance remain required. Further
   Tailscale changes, merge, push, and remote CI remain owner-controlled.
+  Physical testing then identified missing Ctrl+mouse-wheel text zoom. The
+  owner-approved local correction now provides desktop-only 8–32px bounded
+  zoom, preserves unmodified wheel behavior, refits xterm/tmux dimensions, and
+  passes focused tests, the production desktop build, and canonical
+  verification. It is not yet deployed; live redeployment remains an explicit
+  owner-controlled boundary.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation

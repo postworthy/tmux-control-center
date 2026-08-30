@@ -53,9 +53,10 @@ existing mobile PWA.
   session, and typed `exit` retains ordinary tmux pane/window/session behavior.
   - Evidence: pending
 - [ ] AC6 — Desktop keyboard navigation, independent windows, focus, selection,
-  copy/paste, context menus, resize, and reconnect pass automated interaction
-  checks and owner Ubuntu acceptance without mobile cards, swipe navigation,
-  touch shortcuts, or oversized mobile controls.
+  copy/paste, context menus, resize, bounded Ctrl+mouse-wheel text zoom, and
+  reconnect pass automated interaction checks and owner Ubuntu acceptance
+  without mobile cards, swipe navigation, touch shortcuts, or oversized mobile
+  controls.
   - Evidence: pending
 - [ ] AC7 — Every new operation rejects unauthorized, cross-origin,
   rate-limited, stale, malformed, and caller-command-bearing requests; focused
@@ -90,7 +91,7 @@ existing mobile PWA.
 | 2. Shell and profiles | completed | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser and offline/reconnect runtime |
 | 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
 | 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
-| 5. Desktop interaction | completed | Keyboard/mouse terminal workflows, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | 26 desktop tests, six frontend suites, isolated keyboard/pop-out/exit/named-kill runtime; owner acceptance remains at the goal boundary |
+| 5. Desktop interaction | completed | Keyboard/mouse terminal workflows, bounded Ctrl+wheel text zoom, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | Focused zoom tests, seven frontend suites, isolated keyboard/pop-out/exit/named-kill runtime; owner acceptance remains at the goal boundary |
 | 6. Cross-platform delivery | in progress | Ubuntu/macOS source builds, launch evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, `./scripts/verify.sh`, Review Record |
 
 Thin slice: complete Unit 3 so an Ubuntu desktop app can select a saved server,
@@ -218,6 +219,10 @@ the session remains running and becomes detached in the mobile PWA.
   removed it. Earlier in the same interaction checkpoint, the native pop-out
   created a second 1280x800 Photino window and tmux client, and closing that
   child left the root window and its attachment intact.
+- Desktop font zoom: pure modifier/range cases prove Ctrl+wheel-up/down changes
+  one point, unmodified wheel bypasses zoom, invalid state recovers safely, and
+  8px/32px bounds hold. TypeScript compilation and the production desktop bundle
+  pass; physical wheel behavior remains in owner acceptance.
 - Source delivery: `scripts/build-desktop.sh` produced current self-contained
   outputs for `linux-x64` (80 MiB) and `osx-arm64` (84 MiB). `file` identified
   the launchers as x86-64 ELF and arm64 Mach-O respectively, the macOS Photino
@@ -303,6 +308,15 @@ the session remains running and becomes detached in the mobile PWA.
   exact protocol-1 feature contract. Mobile and desktop entry points both
   render their distinct asset graphs, bounded logs show no failure, and six
   host tmux sessions are present after deployment.
+- 2026-08-29: during physical Ubuntu acceptance, the owner required conventional
+  Ctrl+mouse-wheel terminal text zoom. The desktop-only xterm host now captures
+  that modified wheel gesture before browser/xterm scrolling, adjusts one point
+  per event within an 8–32px bound, refits the active terminal, and reports the
+  resulting dimensions to tmux. Unmodified wheel events bypass the zoom path,
+  and the mobile terminal remains unchanged. Focused typecheck, the production
+  desktop build, all seven frontend suites including the new modifier/bounds
+  cases, and the canonical repository gate pass. The change is local and awaits
+  a separately approved live redeployment plus owner interaction acceptance.
 
 ## Discoveries
 
@@ -391,8 +405,8 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Have the owner reconnect the Ubuntu desktop client to the unchanged `:8443`
-  origin and continue the numbered physical acceptance checklist.
+- Obtain owner approval to rebuild and redeploy the verified Ctrl+wheel change,
+  then have the owner retest zoom on Ubuntu against the unchanged `:8443` origin.
 
 ## Pause Conditions
 
@@ -416,9 +430,9 @@ the session remains running and becomes detached in the mobile PWA.
 - Unit 4 complete: authoritative tmux windows/panes and their guarded typed
   operations are automated- and runtime-proven. Units 5-6 remain active.
 - Unit 5 implementation complete: conventional desktop shortcuts, independent
-  windows, guarded clipboard paths, exact-name kill, ordinary `exit`, and
-  authoritative tab cleanup are implemented and locally runtime-proven. Unit 6
-  and physical owner/platform acceptance remain active.
+  windows, guarded clipboard paths, bounded Ctrl+wheel font zoom, exact-name
+  kill, ordinary `exit`, and authoritative tab cleanup are implemented and
+  locally verified. Unit 6 and physical owner/platform acceptance remain active.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch, compatibility, TLS, tests, docs, rollback, and review evidence
   are complete; branch ordering and commit metadata are resolved, while Apple

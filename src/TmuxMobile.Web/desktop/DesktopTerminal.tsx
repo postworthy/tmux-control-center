@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { terminalWebSocketUrl } from "./desktopApi";
+import { DEFAULT_TERMINAL_FONT_SIZE, terminalFontSizeForWheel } from "./fontZoom";
 import { isTerminalPing, reconnectDelay } from "./reconnect";
 import { MAX_PASTE_BYTES, pasteByteLength, requiresPasteConfirmation, serializeTerminalInput } from "../src/terminalInput";
 
@@ -43,7 +44,7 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
     const terminal = new Terminal({
       cursorBlink: true,
       fontFamily: "'JetBrains Mono', 'Ubuntu Mono', 'DejaVu Sans Mono', monospace",
-      fontSize: 14,
+      fontSize: DEFAULT_TERMINAL_FONT_SIZE,
       scrollback: 10_000,
       allowProposedApi: false,
       theme: {
@@ -72,8 +73,20 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
         socket.send(JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }));
       }
     };
+    const zoomWheel = (event: WheelEvent) => {
+      const current = terminal.options.fontSize ?? DEFAULT_TERMINAL_FONT_SIZE;
+      const next = terminalFontSizeForWheel(current, event.deltaY, event.ctrlKey);
+      if (next === null) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (next === current) return;
+      terminal.options.fontSize = next;
+      resize();
+    };
+    const terminalHost = hostRef.current!;
+    terminalHost.addEventListener("wheel", zoomWheel, { capture: true, passive: false });
     const observer = new ResizeObserver(resize);
-    observer.observe(hostRef.current!);
+    observer.observe(terminalHost);
     const input = terminal.onData(data => {
       const socket = socketRef.current;
       if (socket?.readyState === WebSocket.OPEN) socket.send(encoder.encode(data));
@@ -158,6 +171,7 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offline);
       window.removeEventListener("pagehide", pageHide);
+      terminalHost.removeEventListener("wheel", zoomWheel, true);
       observer.disconnect();
       input.dispose();
       socketRef.current?.close(1000, "Desktop tab closed");

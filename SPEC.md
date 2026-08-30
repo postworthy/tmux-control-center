@@ -1,6 +1,6 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 1.7
+Version: 1.8
 Last updated: 2026-08-29
 Status: Approved
 
@@ -112,8 +112,9 @@ Status: Approved
   action in the session list.
 - FR29: make the desktop interface behave like a conventional Linux terminal
   with keyboard-driven tabs, splits, focus, selection, copy/paste, context
-  menus, resizing, and reconnection states, without rendering the PWA's mobile
-  cards, swipe navigation, touch shortcut bar, or oversized mobile controls.
+  menus, resizing, bounded Ctrl+mouse-wheel text zoom, and reconnection states,
+  without rendering the PWA's mobile cards, swipe navigation, touch shortcut
+  bar, or oversized mobile controls.
 - FR30: provide documented repository-source build and test commands that
   produce self-contained `linux-x64` and `osx-arm64` desktop outputs without a
   preinstalled .NET runtime; native installers and published binaries are not
@@ -214,9 +215,10 @@ Status: Approved
   the inventory-resolved target, while closing a tab merely detaches and typed
   `exit` retains normal tmux pane/window/session semantics.
 - [ ] AC24: keyboard navigation, focus, selection, copy/paste, context menu,
-  terminal resize, reconnect, and independent desktop windows pass automated
-  interaction checks and owner acceptance on Ubuntu without exposing the
-  mobile card deck or touch shortcut controls.
+  terminal resize, bounded Ctrl+mouse-wheel text zoom, reconnect, and
+  independent desktop windows pass automated interaction checks and owner
+  acceptance on Ubuntu without exposing the mobile card deck or touch shortcut
+  controls.
 - [ ] AC25: all new server operations reject unauthorized, cross-origin,
   rate-limited, stale, malformed, or caller-command-bearing requests; focused
   security/integration tests and canonical `./scripts/verify.sh` pass, docs

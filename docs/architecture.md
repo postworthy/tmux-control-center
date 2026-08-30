@@ -61,6 +61,12 @@ seconds, and tmux inventory remains authoritative for attached state. Later
 C022 units extend this same mapping so top-level desktop tabs, subordinate tabs,
 and splits correspond to tmux sessions, windows, and panes.
 
+The desktop xterm host captures Ctrl-modified wheel events before WebView page
+zoom or xterm scroll handling, changes font size one point at a time within an
+8–32px bound, then refits xterm and reports its new rows and columns through the
+existing terminal resize envelope. Unmodified wheel events are not intercepted,
+and this desktop-only behavior does not enter the mobile terminal component.
+
 Workspace recovery adds a deliberately narrow side channel beside the tmux
 socket. A host daemon running as the tmux owner writes an atomic metadata-only
 snapshot and watches an owner-private directory. The authenticated Admin action

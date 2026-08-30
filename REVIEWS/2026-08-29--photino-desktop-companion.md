@@ -50,7 +50,8 @@ Decision: not ready
   same-origin authentication, CSRF, REST, inventory, and terminal WebSockets.
 - Adds real attachment-aware session tabs, native pop-out windows, bounded
   reconnect, conventional desktop shortcuts, guarded clipboard paths, and
-  ordinary tmux `exit`/detach/explicit-kill distinctions.
+  bounded Ctrl+mouse-wheel text zoom while retaining ordinary tmux
+  `exit`/detach/explicit-kill distinctions.
 - Adds opaque authoritative window/pane models and a closed set of fixed tmux
   create/select/split/resize/close operations with authorization, rate limits,
   CSRF, strict JSON, stale-target handling, and audit coverage.
@@ -81,7 +82,8 @@ Decision: not ready
   the `osx-arm64` output.
 - [ ] AC6: synthetic Ubuntu/Xvfb checks cover native pop-outs, multiple real
   clients, tab cycling, detach shortcut, `exit`, and named kill. Owner Ubuntu
-  acceptance and direct selection/copy/paste/context-menu/sleep checks remain.
+  acceptance and direct zoom/selection/copy/paste/context-menu/sleep checks
+  remain.
 - [ ] AC7: security, focused tests, dependency/license review, canonical
   verification, docs, and rollback inspection pass, but the review/merge
   boundary findings below prevent the Change Review from passing.
@@ -146,6 +148,10 @@ Results:
   backend remains denied with 426. The existing mobile root and separate
   desktop entry point serve their intended asset graphs, and six host tmux
   sessions are present after replacement.
+- The owner-requested Ctrl+wheel correction is locally verified but not yet
+  deployed. Its pure tests cover modifier bypass, both directions, invalid-state
+  recovery, and 8px/32px clamps; TypeScript compilation, the production desktop
+  build, all seven frontend suites, and canonical verification pass.
 
 ## Findings
 
@@ -206,6 +212,8 @@ tmux command was found in the reviewed C022 range.
 
 - Obtain actual Apple Silicon launch/connection evidence.
 - Complete owner Ubuntu desktop interaction acceptance.
+- After explicit approval, deploy and physically verify bounded Ctrl+wheel text
+  zoom while confirming unmodified wheel behavior remains unchanged.
 - Follow `docs/desktop-acceptance.md` for both physical-platform checks and
   report only its sanitized evidence fields.
 - After physical acceptance, re-run canonical verification and update this
