@@ -63,11 +63,14 @@ it. Closing a tab or cleanly closing the window closes its socket and disposes
 only its PTY attach client; abrupt loss is detected by the server's 20-second
 heartbeat at the latest. The tmux session and other clients remain alive.
 Inventory and terminal connections retry with exponential backoff capped at 30
-seconds, and tmux inventory remains authoritative for attached state. Session
-tabs may be moved between nested client-side editor groups, with edge drops
-creating left/right or top/bottom splits and empty groups collapsing. Grouping
-does not create tmux panes or duplicate attachments: every session appears once
-and retains one terminal WebSocket. Tmux windows and panes remain authoritative
+seconds, and tmux inventory remains authoritative for attached state. Dragging
+any session tab renders exactly one root-level overlay with five labeled zones.
+Edge drops remove that session from its current group, collapse any empty leaf,
+and split it against the complete remaining tree on the selected side. Center
+drop and **Single view** flatten the visual-order tab sequence into one group.
+These immutable layout transforms do not create tmux panes or reconnect terminal
+WebSockets: every session appears once and retains one attachment. Tmux windows
+and panes remain authoritative
 and are controlled through ordinary tmux interaction inside the terminal; the
 typed topology API remains available for a future compact, opt-in presentation
 rather than consuming permanent terminal height.

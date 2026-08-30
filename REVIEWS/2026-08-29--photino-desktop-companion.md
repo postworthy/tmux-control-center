@@ -185,6 +185,14 @@ Results:
   HTTPS/direct-backend boundaries, bounded logs, and the installed validated
   PWA-derived Ubuntu launcher pass. Only physical layout/icon acceptance remains
   for this correction.
+- The owner then rejected the group-local snap model because N groups rendered
+  `5 × N` targets and no standard-layout reset existed. RCA
+  `RCA/2026-08-30--desktop-snap-zones-multiply-per-group.md` supports the local
+  replacement: one labeled root overlay, root-relative edge splits, and center/
+  sidebar **Single view** flattening that retains mounted terminals. Pure layout
+  guards, production bundle inspection, all eleven frontend suites, and the
+  canonical gate pass. This correction is not yet deployed or physically
+  accepted.
 
 ## Findings
 
@@ -247,14 +255,9 @@ tmux command was found in the reviewed C022 range.
 - Complete owner Ubuntu desktop interaction acceptance.
 - From Ubuntu Applications, confirm both PWA-derived dock identity and full-size
   initial unsplit workspace geometry.
-- The owner-authorized corrective deployment is live as healthy image
-  `sha256:8be95175...` with zero restarts. Rollback image
-  `tmux-mobile:pre-desktop-session-groups-20260830` preserves
-  `sha256:54ce0059...`; protocol, HTTPS document/cache policy, bundle markers,
-  direct-backend denial, bounded logs, tmux compatibility, and preservation of
-  all six named sessions pass. Confirm physically that a pop-out advances
-  beyond its compatibility page and drag-snap session groups behave correctly
-  on Ubuntu.
+- After explicit approval, deploy the global five-zone/single-view correction
+  and confirm physically that pop-outs, exactly five labeled targets, root-edge
+  nesting, center reset, and sidebar reset behave correctly on Ubuntu.
 - Physically verify bounded Ctrl+wheel text zoom while confirming unmodified
   wheel behavior remains unchanged in the deployed build.
 - Follow `docs/desktop-acceptance.md` for both physical-platform checks and

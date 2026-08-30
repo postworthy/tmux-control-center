@@ -29,12 +29,13 @@ In scope:
   existing server security and stores no plaintext login secret in app settings.
 - Session listing, selection, creation, real attachment, detach, reconnect, and
   explicit named-confirmation termination.
-- Desktop session tabs that can move between nested editor groups or create
-  left/right and top/bottom client-side splits through visible drag-drop snap
-  guidance. Each session remains unique and owns one attachment. Tmux windows
-  and panes remain authoritative inside normal tmux terminal interaction; closed
-  typed topology operations remain additive but do not consume permanent
-  subordinate rows in the primary workspace.
+- Desktop session tabs that create nested editor layouts through one global set
+  of five labeled center/left/right/top/bottom drag targets. Edge targets add a
+  root-relative split; center or an explicit **Single view** action returns all
+  tabs to one standard group. Each session remains unique and owns one
+  attachment. Tmux windows and panes remain authoritative inside normal tmux
+  terminal interaction; closed typed topology operations remain additive but do
+  not consume permanent subordinate rows in the primary workspace.
 - Bounded stale-client cleanup, desktop keyboard/mouse interaction including
   coalesced authoritative tmux-history wheel input, reliable initial/fullscreen
   fitting, bounded Ctrl+mouse-wheel terminal text zoom, a collapsible icon-rail
@@ -76,9 +77,10 @@ Out of scope:
   transitions without persisting terminal content or plaintext login secrets.
 - [ ] Opening and closing desktop terminals creates and removes only the app's
   real tmux clients, with bounded stale cleanup and no underlying session loss.
-- [ ] The primary workspace uses one session-tab row; tmux windows and panes
-  remain authoritative through the attached terminal and round-trip across
-  reconnect and other tmux clients without permanent subordinate chrome.
+- [ ] The primary workspace uses one global five-zone split overlay and can
+  return all tabs to one standard session-tab row; tmux windows and panes remain
+  authoritative through the attached terminal and round-trip across reconnect
+  and other tmux clients without permanent subordinate chrome.
 - [ ] Creation, detach, ordinary `exit`, and explicit confirmed session kill
   retain their distinct tmux semantics and operate only on validated targets.
 - [ ] Desktop interaction acceptance includes coalesced unmodified-wheel tmux

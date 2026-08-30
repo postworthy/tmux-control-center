@@ -1,4 +1,6 @@
-export type WorkspaceDropZone = "center" | "left" | "right" | "top" | "bottom";
+export const WORKSPACE_DROP_ZONES = ["left", "right", "top", "bottom", "center"] as const;
+export type WorkspaceDropZone = typeof WORKSPACE_DROP_ZONES[number];
+export type WorkspaceEdgeDropZone = Exclude<WorkspaceDropZone, "center">;
 
 export interface WorkspaceGroup {
   kind: "group";
@@ -104,36 +106,33 @@ export function pruneWorkspaceSessions(node: WorkspaceNode, liveSessionIds: Read
   return collapseEmpty(prune(node)) ?? createWorkspace("group-root");
 }
 
-export function moveWorkspaceSession(node: WorkspaceNode, sessionId: string,
-  targetGroupId: string, zone: WorkspaceDropZone, newGroupId: string,
-  newSplitId: string): WorkspaceNode {
+export function splitWorkspaceSessionAtRoot(node: WorkspaceNode, sessionId: string,
+  zone: WorkspaceEdgeDropZone, newGroupId: string, newSplitId: string): WorkspaceNode {
   const source = groupForSession(node, sessionId);
-  const target = workspaceGroup(node, targetGroupId);
-  if (!source || !target) return node;
-  if (zone !== "center" && source.id === target.id && source.tabIds.length === 1) return node;
+  if (!source) return node;
 
-  const withoutSession = removeSessionFromGroups(node, sessionId);
-  if (zone === "center") {
-    const moved = updateGroup(withoutSession, targetGroupId, group => ({
-      ...group,
-      tabIds: [...group.tabIds, sessionId],
-      activeId: sessionId
-    }));
-    return collapseEmpty(moved) ?? createWorkspace("group-root");
-  }
+  const remainder = collapseEmpty(removeSessionFromGroups(node, sessionId), false);
+  if (!remainder) return node;
 
   const newGroup: WorkspaceGroup = { kind: "group", id: newGroupId, tabIds: [sessionId], activeId: sessionId };
-  const split = updateGroup(withoutSession, targetGroupId, group => {
-    const before = zone === "left" || zone === "top";
-    return {
-      kind: "split",
-      id: newSplitId,
-      direction: zone === "left" || zone === "right" ? "row" : "column",
-      first: before ? newGroup : group,
-      second: before ? group : newGroup
-    };
-  });
-  return collapseEmpty(split) ?? createWorkspace("group-root");
+  const before = zone === "left" || zone === "top";
+  return {
+    kind: "split",
+    id: newSplitId,
+    direction: zone === "left" || zone === "right" ? "row" : "column",
+    first: before ? newGroup : remainder,
+    second: before ? remainder : newGroup
+  };
+}
+
+export function resetWorkspaceLayout(node: WorkspaceNode, groupId: string,
+  preferredActiveId: string | null): WorkspaceGroup {
+  const groups = workspaceGroups(node);
+  const tabIds = [...new Set(groups.flatMap(group => group.tabIds))];
+  const activeId = preferredActiveId && tabIds.includes(preferredActiveId)
+    ? preferredActiveId
+    : groups.map(group => group.activeId).find(id => id && tabIds.includes(id)) ?? tabIds[0] ?? null;
+  return { kind: "group", id: groupId, tabIds, activeId };
 }
 
 export function dropZoneForPoint(width: number, height: number,

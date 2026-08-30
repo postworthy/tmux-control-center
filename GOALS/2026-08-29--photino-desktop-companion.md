@@ -45,10 +45,11 @@ existing mobile PWA.
   within the documented heartbeat bound while the session and other clients
   remain alive and inventory/mobile attached state converges.
   - Evidence: pending
-- [ ] AC4 — Desktop session tabs move between nested editor groups and create
-  left/right or top/bottom client-side splits through visible snap guidance;
-  every session appears once with one attachment, empty groups collapse, and
-  tmux windows/panes remain authoritative without subordinate topology chrome.
+- [ ] AC4 — Dragging a desktop session tab shows exactly one global set of five
+  labeled snap targets, edge drops create nested left/right or top/bottom
+  layouts, and center or **Single view** restores one standard group; every
+  session appears once with one attachment and tmux windows/panes remain
+  authoritative without subordinate topology chrome.
   - Evidence: pending
 - [ ] AC5 — Session listing, selection, creation, detach, and named-confirmation
   kill work only on inventory-resolved targets; closing UI never kills a
@@ -94,7 +95,7 @@ existing mobile PWA.
 | 2. Shell and profiles | completed | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser and offline/reconnect runtime |
 | 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
 | 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
-| 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input, bounded Ctrl+wheel text zoom, draggable nested session groups, collapsible sidebar, working pop-outs, create/kill, ordinary exit, and recovery meet AC4-AC6. | Focused layout/wheel/pop-out tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
+| 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input, bounded Ctrl+wheel text zoom, one global five-zone split overlay, single-view reset, collapsible sidebar, working pop-outs, create/kill, ordinary exit, and recovery meet AC4-AC6. | Focused layout/wheel/pop-out tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
 | 6. Cross-platform delivery | in progress | Ubuntu executable/launcher and macOS app-bundle source builds carry the PWA icon; launch/pinning evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, bundle/launcher checks, `./scripts/verify.sh`, Review Record |
 
 Thin slice: complete Unit 3 so an Ubuntu desktop app can select a saved server,
@@ -448,6 +449,19 @@ the session remains running and becomes detached in the mobile PWA.
   installed under the user's application data, passes desktop-file validation,
   declares the observed `Tmuxctl` GTK class, and resolves to the executable plus
   a PNG byte-identical to the PWA icon.
+- 2026-08-30: owner physical feedback rejected group-local snap guidance because
+  each split multiplied the five targets and there was no obvious return to the
+  standard layout. RCA `RCA/2026-08-30--desktop-snap-zones-multiply-per-group.md`
+  proves `renderGroup` intentionally emitted five zones per leaf and the tests
+  encoded group-local targeting without a zone-count or flatten guard. The
+  approved interaction contract now requires one global labeled five-zone
+  overlay, root-relative edge splits, and center/sidebar **Single view** reset
+  while preserving unique membership and attachments. The narrow correction is
+  implemented locally; focused typecheck, production bundle inspection, all
+  eleven frontend suites, the desktop delivery guard, and canonical verification
+  pass. The canonical gate reports 41 Desktop, 55 Server integration, 27 Core,
+  26 Infrastructure plus five intentional skips, all shell suites, and Compose
+  assertions. Redeployment remains next.
 
 ## Discoveries
 
@@ -542,10 +556,11 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner closes every older tmuxctl window, opens tmuxctl from Ubuntu's
-  Applications view, pins it with **Add to Favorites**, and physically confirms
-  the PWA icon appears in the dock and the first unsplit session fills the
-  complete workspace. Apple Silicon launch/pinning remains external.
+- Owner authorizes replacement of the live Compose app with the verified global
+  five-zone/single-view build. Then the owner closes older tmuxctl windows and
+  physically confirms exactly five labeled targets remain at every split depth
+  and both center drop and sidebar **Single view** restore one tab row. Apple
+  Silicon launch/pinning remains external.
 
 ## Pause Conditions
 
@@ -573,7 +588,9 @@ the session remains running and becomes detached in the mobile PWA.
   settled initial/fullscreen fitting, bounded Ctrl+wheel font zoom, single-row
   chrome, collapsed icon rail, exact-name kill, ordinary `exit`, and authoritative
   tab cleanup are implemented and verified. The root-group sizing correction is
-  live with served-selector evidence and awaits physical owner acceptance.
+  live with served-selector evidence. The global five-zone/single-view
+  correction is locally verified and awaits redeployment and physical owner
+  acceptance.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch/identity, Ubuntu launcher, Apple Silicon app-bundle structure,
   compatibility, TLS, tests, docs, rollback, and review evidence are complete;

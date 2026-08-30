@@ -17,8 +17,10 @@ button { color: inherit; }
 .sidebar-heading { min-width: 0; padding-right: 28px; }
 .brand-mark { color: #72d6a4; font-size: 18px; font-weight: 750; letter-spacing: .04em; }
 .session-sidebar header span { display: block; margin-top: 3px; overflow: hidden; color: #8f99a5; font-size: 11px; text-overflow: ellipsis; }
-.servers-button { margin-top: 10px; padding: 5px 8px; color: #aeb6bf; background: #242a31; border: 1px solid #39414a; border-radius: 4px; cursor: pointer; }
-.servers-button:hover { color: #fff; border-color: #566371; }
+.sidebar-actions { display: flex; gap: 6px; margin-top: 10px; }
+.servers-button, .layout-button { padding: 5px 8px; color: #aeb6bf; background: #242a31; border: 1px solid #39414a; border-radius: 4px; cursor: pointer; }
+.servers-button:hover, .layout-button:hover:not(:disabled) { color: #fff; border-color: #566371; }
+.layout-button:disabled, .sidebar-icon-rail button:disabled { color: #59616a; cursor: default; opacity: .55; }
 .sidebar-collapse { position: absolute; top: 10px; right: 9px; width: 27px; height: 27px; padding: 0; color: #8f99a5; background: transparent; border: 1px solid transparent; border-radius: 4px; font-size: 23px; line-height: 20px; cursor: pointer; }
 .sidebar-collapse:hover { color: #fff; background: #242a31; border-color: #39414a; }
 .sidebar-icon-rail { display: flex; flex: 1; flex-direction: column; gap: 5px; align-items: center; padding: 7px 5px; }
@@ -52,7 +54,7 @@ input:focus { border-color: #72d6a4; box-shadow: 0 0 0 1px #72d6a4; }
 .kill { color: #78828d; font-size: 18px; }
 .kill:hover { color: #ff7b72; }
 .workspace { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
-.workspace-layout { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.workspace-layout { position: relative; display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; }
 .workspace-layout > .workspace-group, .workspace-layout > .workspace-split { flex: 1 1 0; }
 .workspace-split { display: flex; flex: 1; min-width: 0; min-height: 0; }
 .workspace-split.row { flex-direction: row; }
@@ -87,7 +89,8 @@ input:focus { border-color: #72d6a4; box-shadow: 0 0 0 1px #72d6a4; }
 .terminal-menu button { padding: 8px 10px; color: #e6e8eb; background: transparent; border: 0; border-radius: 4px; text-align: left; cursor: pointer; }
 .terminal-menu button:hover, .terminal-menu button:focus { background: #303842; outline: none; }
 .drop-guidance { position: absolute; z-index: 12; inset: 0; pointer-events: none; background: #0b111888; }
-.drop-zone { position: absolute; background: #72d6a418; border: 1px solid #72d6a455; border-radius: 4px; transition: background 80ms ease, border-color 80ms ease; }
+.drop-zone { position: absolute; display: grid; place-items: center; background: #72d6a418; border: 1px solid #72d6a455; border-radius: 4px; transition: background 80ms ease, border-color 80ms ease; }
+.drop-zone > span { padding: 4px 7px; color: #b7c7bf; background: #111a18dd; border-radius: 3px; font-size: 11px; font-weight: 650; letter-spacing: .02em; }
 .drop-zone.active { background: #72d6a45c; border-color: #72d6a4; box-shadow: 0 0 18px #72d6a43d; }
 .drop-zone.left { top: 22%; bottom: 22%; left: 8px; width: 22%; }
 .drop-zone.right { top: 22%; right: 8px; bottom: 22%; width: 22%; }

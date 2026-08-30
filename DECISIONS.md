@@ -107,11 +107,14 @@ to an already-running Linux tmuxctl server over the owner's Tailscale network an
 does not install or supervise the server. Tmux remains authoritative and every
 open terminal is a real tmux client attachment. Physical Ubuntu acceptance
 superseded the initial always-visible three-level chrome. Session tabs may be
-arranged into nested client-side editor groups through left/right and top/bottom
-drag-drop snap targets; each session remains unique and owns one terminal
-attachment. Tmux windows and panes remain inside normal tmux terminal interaction
-rather than consuming permanent subordinate rows. The safe topology API remains
-additive for a future compact, explicit surface rather than appearing by default.
+arranged into nested client-side editor layouts through one global set of five
+labeled drag-drop targets; edge drops split against the whole layout, while
+center or **Single view** restores one standard tab group. The targets never
+multiply with split depth, and each session remains unique and owns one terminal
+attachment through layout-only changes. Tmux windows and panes remain inside
+normal tmux terminal interaction rather than consuming permanent subordinate
+rows. The safe topology API remains additive for a future compact, explicit
+surface rather than appearing by default.
 Closing UI detaches only the associated client; session termination remains an
 explicit confirmed operation, and terminal input is never intercepted to infer
 termination intent. Ubuntu x64 and Apple Silicon macOS source builds are the

@@ -102,10 +102,12 @@ with an update message. If the compatible initial page cannot load, the native
 shell returns to the chooser after 12 seconds with server, network, and TLS
 troubleshooting context.
 
-Session tabs can be dragged between editor groups. Dropping near a group's
-left/right or top/bottom edge shows snap guidance and creates a corresponding
-client-side split; a center drop moves the tab into that group and empty groups
-collapse. These editor groups do not create tmux panes or extra attachments.
+Dragging a session tab shows one global set of five labeled targets. Dropping on
+left/right or top/bottom splits against the complete current layout; the target
+set never multiplies as splits are added. Drop on **Single view** in the center,
+or use the sidebar's **Single view** action, to return every open tab to one
+standard row. These layouts do not create tmux panes, close WebSockets, or add
+attachments.
 
 ## Production build
 

@@ -5,6 +5,11 @@ repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 grep -Fq '.workspace-layout > .workspace-group, .workspace-layout > .workspace-split { flex: 1 1 0; }' \
   "$repository_root/src/TmuxMobile.Web/desktop/styles.css"
+[[ $(grep -o 'className="drop-guidance"' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopWorkspace.tsx" | wc -l) -eq 1 ]]
+grep -Fq 'WORKSPACE_DROP_ZONES.map' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopWorkspace.tsx"
+grep -Fq 'Reset to single view' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'Link="tmuxctl.png"' "$repository_root/src/TmuxCtl.Desktop/TmuxCtl.Desktop.csproj"
 grep -Fq '.SetIconFile(icon)' "$repository_root/src/TmuxCtl.Desktop/Program.cs"
 grep -Fq 'StartupWMClass=Tmuxctl' \

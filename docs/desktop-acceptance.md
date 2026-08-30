@@ -73,14 +73,16 @@ Complete these checks with disposable tmux sessions:
    session survive.
 6. Open the first session in a fresh unsplit window and confirm it immediately
    fills all workspace space beside the sidebar. Open at least two more session
-   tabs. Drag one tab toward the left/right edge and confirm visible snap
-   guidance creates a side-by-side editor group; drag
-   another toward the top/bottom edge to create a nested stacked group. Move a
-   tab through the center target into another group and confirm its empty prior
-   group collapses. Verify each session has exactly one desktop attachment. Use
-   ordinary tmux keys inside a terminal to split tmux panes and confirm that
-   topology remains distinct and authoritative from another client. Collapse
-   the left sidebar and confirm only its narrow icon rail remains, then expand it.
+   tabs. Begin dragging and confirm exactly five labeled targets appear over the
+   complete workspace. Drop left/right, then drag another tab and confirm there
+   are still only five targets before dropping top/bottom. Drop a tab on the
+   center **Single view** target and confirm every open tab returns to one row.
+   Create another split, use the sidebar **Single view** action, and confirm the
+   same standard layout returns. Verify every session keeps exactly one desktop
+   attachment through each visual-only change. Use ordinary tmux keys inside a
+   terminal to split tmux panes and confirm that topology remains distinct and
+   authoritative from another client. Collapse the left sidebar and confirm only
+   its narrow icon rail remains, including its reset icon, then expand it.
 7. Select terminal text and copy it with Ctrl+Shift+C. Paste a harmless sentinel
    with Ctrl+Shift+V; multiline paste must ask for confirmation. Right-click and
    verify the terminal split menu appears. Hold Ctrl while scrolling the mouse

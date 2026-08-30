@@ -21,9 +21,10 @@ import {
   createWorkspace,
   dropZoneForPoint,
   groupForSession,
-  moveWorkspaceSession,
   openWorkspaceSession,
   pruneWorkspaceSessions,
+  resetWorkspaceLayout,
+  splitWorkspaceSessionAtRoot,
   workspaceGroup,
   workspaceGroups,
   type WorkspaceDropZone,
@@ -44,7 +45,7 @@ export default function DesktopApp() {
   const [layout, setLayout] = useState<WorkspaceNode>(() => createWorkspace("group-0"));
   const [focusedGroupId, setFocusedGroupId] = useState("group-0");
   const [draggingSessionId, setDraggingSessionId] = useState<string | null>(null);
-  const [dropTarget, setDropTarget] = useState<{ groupId: string; zone: WorkspaceDropZone } | null>(null);
+  const [dropTarget, setDropTarget] = useState<WorkspaceDropZone | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [newName, setNewName] = useState("");
@@ -203,36 +204,44 @@ export default function DesktopApp() {
     setActiveId(sessionId);
   };
 
-  const dragOverGroup = (groupId: string, event: React.DragEvent<HTMLElement>) => {
+  const dragOverWorkspace = (event: React.DragEvent<HTMLElement>) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     const bounds = event.currentTarget.getBoundingClientRect();
-    setDropTarget({
-      groupId,
-      zone: dropZoneForPoint(bounds.width, bounds.height,
-        event.clientX - bounds.left, event.clientY - bounds.top)
-    });
+    setDropTarget(dropZoneForPoint(bounds.width, bounds.height,
+      event.clientX - bounds.left, event.clientY - bounds.top));
   };
 
-  const dragLeaveGroup = (groupId: string, event: React.DragEvent<HTMLElement>) => {
+  const dragLeaveWorkspace = (event: React.DragEvent<HTMLElement>) => {
     if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
-    setDropTarget(current => current?.groupId === groupId ? null : current);
+    setDropTarget(null);
   };
 
-  const dropIntoGroup = (groupId: string, event: React.DragEvent<HTMLElement>) => {
+  const dropIntoWorkspace = (event: React.DragEvent<HTMLElement>) => {
     event.preventDefault();
     const sessionId = draggingSessionId ?? event.dataTransfer.getData("text/plain");
-    const zone = dropTarget?.groupId === groupId ? dropTarget.zone : "center";
+    const zone = dropTarget ?? "center";
     setDraggingSessionId(null);
     setDropTarget(null);
     if (!tabs.some(tab => tab.sessionId === sessionId)) return;
     const newGroupId = `group-${layoutId.current++}`;
-    const newSplitId = `split-${layoutId.current++}`;
-    setLayout(current => moveWorkspaceSession(current, sessionId, groupId, zone, newGroupId, newSplitId));
-    const destinationGroupId = zone === "center" ? groupId : newGroupId;
-    setFocusedGroupId(destinationGroupId);
+    const next = zone === "center"
+      ? resetWorkspaceLayout(layout, newGroupId, sessionId)
+      : splitWorkspaceSessionAtRoot(layout, sessionId, zone, newGroupId, `split-${layoutId.current++}`);
+    setLayout(next);
+    setFocusedGroupId(groupForSession(next, sessionId)?.id ?? focusedGroupId);
     setActiveId(sessionId);
   };
+
+  const resetToSingleView = () => {
+    const groupId = `group-${layoutId.current++}`;
+    const next = resetWorkspaceLayout(layout, groupId, activeId);
+    setLayout(next);
+    setFocusedGroupId(groupId);
+    setActiveId(next.activeId);
+  };
+
+  const layoutIsSplit = workspaceGroups(layout).length > 1;
 
   useEffect(() => {
     if (!terminalMenu) return;
@@ -357,6 +366,8 @@ export default function DesktopApp() {
         }}>
           <span aria-hidden="true">+</span>
         </button>
+        <button title="Single view" aria-label="Reset to single view" disabled={!layoutIsSplit}
+          onClick={resetToSingleView}><span aria-hidden="true">▣</span></button>
         <div className="rail-session-list" aria-label="Tmux sessions">
           {sessions.map(session => <button key={session.id}
             className={session.id === activeId ? "rail-session active" : "rail-session"}
@@ -373,7 +384,11 @@ export default function DesktopApp() {
         <header><div className="sidebar-heading"><div className="brand-mark">tmuxctl</div><span>{location.host}</span></div>
           <button className="sidebar-collapse" title="Collapse sidebar" aria-label="Collapse sidebar"
             onClick={() => setSidebarCollapsed(true)}>‹</button>
-          {nativeProfilesAvailable && <button className="servers-button" onClick={showProfiles}>Servers</button>}
+          <div className="sidebar-actions">
+            {nativeProfilesAvailable && <button className="servers-button" onClick={showProfiles}>Servers</button>}
+            <button className="layout-button" disabled={!layoutIsSplit}
+              onClick={resetToSingleView}>Single view</button>
+          </div>
         </header>
         <form className="new-session" onSubmit={submitCreate}>
           <input ref={newSessionInput} aria-label="New session name" placeholder="New session" value={newName}
@@ -401,7 +416,7 @@ export default function DesktopApp() {
         onContextMenu={showTerminalMenu}
         onDragStart={setDraggingSessionId}
         onDragEnd={() => { setDraggingSessionId(null); setDropTarget(null); }}
-        onDragOver={dragOverGroup} onDragLeave={dragLeaveGroup} onDrop={dropIntoGroup}
+        onDragOver={dragOverWorkspace} onDragLeave={dragLeaveWorkspace} onDrop={dropIntoWorkspace}
         onError={setError} />
       {terminalMenu && <div className="terminal-menu-layer" onMouseDown={() => setTerminalMenu(null)}>
         <div className="terminal-menu" role="menu" aria-label="Terminal actions"

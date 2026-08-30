@@ -1,6 +1,6 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 2.0
+Version: 2.1
 Last updated: 2026-08-30
 Status: Approved
 
@@ -96,10 +96,12 @@ Status: Approved
   origin, and rate-limit protections, and never persist terminal content or a
   plaintext login secret in application settings.
 - FR25: represent one tmux session as one desktop session tab and allow tabs to
-  move between client-side editor groups arranged in nested left/right or
-  top/bottom splits with visible drag-drop snap guidance. Each session appears
-  in exactly one group and retains one terminal attachment. Tmux windows and
-  panes remain authoritative and usable through normal tmux terminal interaction
+  form nested left/right or top/bottom client-side editor layouts through one
+  global, labeled five-zone drag overlay that never multiplies with group count.
+  A center drop or explicit **Single view** action returns every open tab to one
+  standard group. Each session appears in exactly one group and retains one
+  terminal attachment throughout layout-only changes. Tmux windows and panes
+  remain authoritative and usable through normal tmux terminal interaction
   without always-visible subordinate window/pane chrome; typed topology APIs
   remain available for a future compact opt-in surface.
 - FR26: enumerate, select, create, detach from, and explicitly kill sessions,
@@ -218,11 +220,12 @@ Status: Approved
   inventory attachment state; closing its tab, closing the desktop window, or
   losing the client unexpectedly removes only its owned attachment within the
   bounded timeout while the session and any other client remain alive.
-- [ ] AC22: session tabs can be dragged between editor groups or onto visible
-  left/right/top/bottom snap targets to form nested horizontal and vertical
-  client layouts; each session appears once and remains one attachment, empty
-  groups collapse, and tmux windows/panes remain authoritative without permanent
-  subordinate topology chrome.
+- [ ] AC22: dragging any session tab shows exactly one global set of five
+  labeled center/left/right/top/bottom targets regardless of current split
+  count. Edge drops form nested horizontal or vertical client layouts; a center
+  drop or **Single view** action restores one standard tab group. Each session
+  appears once and remains one attachment throughout, and tmux windows/panes
+  remain authoritative without permanent subordinate topology chrome.
 - [ ] AC23: session creation and named-confirmation termination operate on only
   the inventory-resolved target, while closing a tab merely detaches and typed
   `exit` retains normal tmux pane/window/session semantics.

@@ -1,14 +1,14 @@
 import DesktopTerminal, { type TerminalConnectionState } from "./DesktopTerminal";
-import type { WorkspaceDropZone, WorkspaceGroup, WorkspaceNode } from "./workspaceLayout";
+import {
+  WORKSPACE_DROP_ZONES,
+  type WorkspaceDropZone,
+  type WorkspaceGroup,
+  type WorkspaceNode
+} from "./workspaceLayout";
 
 export interface DesktopTab {
   sessionId: string;
   name: string;
-}
-
-interface DropTarget {
-  groupId: string;
-  zone: WorkspaceDropZone;
 }
 
 interface Props {
@@ -18,7 +18,7 @@ interface Props {
   inventoryConnected: boolean;
   focusedGroupId: string;
   draggingSessionId: string | null;
-  dropTarget: DropTarget | null;
+  dropTarget: WorkspaceDropZone | null;
   nativeProfilesAvailable: boolean;
   onFocusGroup: (group: WorkspaceGroup) => void;
   onActivate: (groupId: string, sessionId: string) => void;
@@ -28,22 +28,25 @@ interface Props {
   onContextMenu: (sessionId: string, x: number, y: number) => void;
   onDragStart: (sessionId: string) => void;
   onDragEnd: () => void;
-  onDragOver: (groupId: string, event: React.DragEvent<HTMLElement>) => void;
-  onDragLeave: (groupId: string, event: React.DragEvent<HTMLElement>) => void;
-  onDrop: (groupId: string, event: React.DragEvent<HTMLElement>) => void;
+  onDragOver: (event: React.DragEvent<HTMLElement>) => void;
+  onDragLeave: (event: React.DragEvent<HTMLElement>) => void;
+  onDrop: (event: React.DragEvent<HTMLElement>) => void;
   onError: (message: string) => void;
 }
 
 export default function DesktopWorkspace(props: Props) {
+  const dropLabels: Record<WorkspaceDropZone, string> = {
+    left: "Split left",
+    right: "Split right",
+    top: "Split top",
+    bottom: "Split bottom",
+    center: "Single view"
+  };
   const renderGroup = (group: WorkspaceGroup) => {
     const activeTab = props.tabs.find(tab => tab.sessionId === group.activeId) ?? null;
-    const target = props.dropTarget?.groupId === group.id ? props.dropTarget : null;
     return <section key={group.id}
       className={group.id === props.focusedGroupId ? "workspace-group focused" : "workspace-group"}
-      onMouseDown={() => props.onFocusGroup(group)}
-      onDragOver={event => props.onDragOver(group.id, event)}
-      onDragLeave={event => props.onDragLeave(group.id, event)}
-      onDrop={event => props.onDrop(group.id, event)}>
+      onMouseDown={() => props.onFocusGroup(group)}>
       <nav className="tab-strip group-tab-strip" aria-label="Session group tabs">
         {group.tabIds.map(sessionId => {
           const tab = props.tabs.find(item => item.sessionId === sessionId);
@@ -77,10 +80,6 @@ export default function DesktopWorkspace(props: Props) {
           onError={props.onError} />)}
         {!activeTab && <div className="empty-state"><h1>Select a session</h1><p>Open a session or drag a tab into this group.</p></div>}
       </div>
-      {props.draggingSessionId && <div className="drop-guidance" aria-hidden="true">
-        {(["left", "right", "top", "bottom", "center"] as WorkspaceDropZone[]).map(zone =>
-          <span key={zone} className={`drop-zone ${zone}${target?.zone === zone ? " active" : ""}`} />)}
-      </div>}
     </section>;
   };
 
@@ -92,5 +91,14 @@ export default function DesktopWorkspace(props: Props) {
         {renderNode(node.second)}
       </div>;
 
-  return <div className="workspace-layout">{renderNode(props.layout)}</div>;
+  return <div className="workspace-layout" onDragOver={props.onDragOver}
+    onDragLeave={props.onDragLeave} onDrop={props.onDrop}>
+    {renderNode(props.layout)}
+    {props.draggingSessionId && <div className="drop-guidance" aria-hidden="true">
+      {WORKSPACE_DROP_ZONES.map(zone => <span key={zone}
+        className={`drop-zone ${zone}${props.dropTarget === zone ? " active" : ""}`}>
+        <span>{dropLabels[zone]}</span>
+      </span>)}
+    </div>}
+  </div>;
 }
