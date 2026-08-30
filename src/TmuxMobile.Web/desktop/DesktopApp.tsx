@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DesktopTerminal, { type TerminalConnectionState } from "./DesktopTerminal";
 import TopologyBar from "./TopologyBar";
 import { reconnectDelay } from "./reconnect";
@@ -37,13 +37,20 @@ export default function DesktopApp() {
   const [error, setError] = useState<string | null>(null);
   const [connections, setConnections] = useState<Record<string, TerminalConnectionState>>({});
   const [inventoryConnected, setInventoryConnected] = useState(navigator.onLine);
+  const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [topology, setTopology] = useState<TmuxTopology | null>(null);
   const [topologyBusy, setTopologyBusy] = useState(false);
+  const deepLinkOpened = useRef(false);
   const [nativeProfilesAvailable, setNativeProfilesAvailable] = useState(false);
 
   const showProfiles = () => {
     const bridge = window.external as unknown as { sendMessage: (message: string) => void };
     bridge.sendMessage(JSON.stringify({ type: "showProfiles" }));
+  };
+
+  const openSessionWindow = (sessionId: string) => {
+    const bridge = window.external as unknown as { sendMessage: (message: string) => void };
+    bridge.sendMessage(JSON.stringify({ type: "openSessionWindow", sessionId }));
   };
 
   useEffect(() => {
@@ -65,6 +72,7 @@ export default function DesktopApp() {
   const refresh = useCallback(async () => {
     try {
       setSessions(await getSessions());
+      setInventoryLoaded(true);
       setAuthRequired(false);
       setError(null);
     } catch (cause) {
@@ -90,6 +98,7 @@ export default function DesktopApp() {
       current.addEventListener("message", event => {
         const snapshot = JSON.parse(String(event.data)) as InventorySnapshot;
         setSessions(snapshot.sessions);
+        setInventoryLoaded(true);
       });
       current.addEventListener("close", () => {
         if (socket === current) socket = null;
@@ -113,6 +122,17 @@ export default function DesktopApp() {
   }, [authRequired, refresh]);
 
   const activeTab = useMemo(() => tabs.find(tab => tab.sessionId === activeId) ?? null, [tabs, activeId]);
+
+  useEffect(() => {
+    if (!inventoryLoaded || !inventoryConnected) return;
+    const live = new Set(sessions.map(session => session.id));
+    if (activeId && !live.has(activeId))
+      setActiveId(tabs.filter(tab => live.has(tab.sessionId)).at(-1)?.sessionId ?? null);
+    setTabs(current => {
+      const next = current.filter(tab => live.has(tab.sessionId));
+      return next.length === current.length ? current : next;
+    });
+  }, [activeId, inventoryConnected, inventoryLoaded, sessions, tabs]);
 
   const refreshTopology = useCallback(async (sessionId: string) => {
     const next = await getTopology(sessionId);
@@ -147,6 +167,15 @@ export default function DesktopApp() {
     setActiveId(session.id);
   };
 
+  useEffect(() => {
+    if (deepLinkOpened.current || !sessions.length) return;
+    const requested = new URLSearchParams(location.search).get("session");
+    if (!requested) { deepLinkOpened.current = true; return; }
+    const session = sessions.find(item => item.id === requested);
+    if (session) open(session);
+    deepLinkOpened.current = true;
+  }, [sessions]);
+
   const close = (sessionId: string) => {
     setTabs(current => {
       const index = current.findIndex(tab => tab.sessionId === sessionId);
@@ -164,6 +193,26 @@ export default function DesktopApp() {
   const updateConnection = useCallback((sessionId: string, state: TerminalConnectionState) => {
     setConnections(current => current[sessionId] === state ? current : { ...current, [sessionId]: state });
   }, []);
+
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent) => {
+      if (!activeId || event.altKey || event.metaKey) return;
+      if (event.ctrlKey && event.shiftKey && event.code === "KeyW") {
+        event.preventDefault();
+        close(activeId);
+        return;
+      }
+      if (event.ctrlKey && (event.code === "PageUp" || event.code === "PageDown")) {
+        event.preventDefault();
+        const index = tabs.findIndex(tab => tab.sessionId === activeId);
+        if (index < 0 || tabs.length < 2) return;
+        const offset = event.code === "PageUp" ? -1 : 1;
+        setActiveId(tabs[(index + offset + tabs.length) % tabs.length].sessionId);
+      }
+    };
+    window.addEventListener("keydown", keydown, true);
+    return () => window.removeEventListener("keydown", keydown, true);
+  }, [activeId, tabs]);
 
   const submitLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -191,7 +240,9 @@ export default function DesktopApp() {
   };
 
   const terminate = async (session: TmuxSession) => {
-    if (!window.confirm(`Kill tmux session “${session.name}”? This ends every window and pane in it.`)) return;
+    const confirmation = window.prompt(
+      `Kill tmux session “${session.name}”? This ends every window and pane in it. Type the session name to confirm.`);
+    if (confirmation !== session.name) return;
     try {
       await killSession(session.id);
       close(session.id);
@@ -239,6 +290,8 @@ export default function DesktopApp() {
       <nav className="tab-strip" aria-label="Open sessions">
         {tabs.map(tab => <div className={tab.sessionId === activeId ? "tab active" : "tab"} key={tab.sessionId}>
           <button onClick={() => setActiveId(tab.sessionId)}>{tab.name}</button>
+          {nativeProfilesAvailable && <button className="tab-popout" title={`Open ${tab.name} in a new window`}
+            aria-label={`Open ${tab.name} in a new window`} onClick={() => openSessionWindow(tab.sessionId)}>↗</button>}
           <button className="tab-close" aria-label={`Detach ${tab.name}`} onClick={() => close(tab.sessionId)}>×</button>
         </div>)}
         <span className={`connection ${activeTab ? connections[activeTab.sessionId] ?? "connecting" : ""}`}>
@@ -266,7 +319,8 @@ export default function DesktopApp() {
       <div className="terminal-stage">
         {tabs.map(tab => <DesktopTerminal key={tab.sessionId} sessionId={tab.sessionId}
           active={tab.sessionId === activeId}
-          onConnectionState={state => updateConnection(tab.sessionId, state)} />)}
+          onConnectionState={state => updateConnection(tab.sessionId, state)}
+          onError={setError} />)}
         {!activeTab && <div className="empty-state"><h1>Select a session</h1><p>Open an existing tmux session from the sidebar.</p></div>}
       </div>
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => setError(null)}>Dismiss</button></div>}

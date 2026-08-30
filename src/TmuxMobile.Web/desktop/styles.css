@@ -41,8 +41,9 @@ input:focus { border-color: #72d6a4; box-shadow: 0 0 0 1px #72d6a4; }
 .tab.active { background: #111418; box-shadow: inset 0 2px #72d6a4; }
 .tab button { overflow: hidden; padding: 0 11px; border: 0; background: transparent; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .tab button:first-child { flex: 1; text-align: left; }
-.tab .tab-close { width: 30px; padding: 0; color: #8f99a5; }
+.tab .tab-close, .tab .tab-popout { width: 30px; padding: 0; color: #8f99a5; }
 .tab .tab-close:hover { color: #ff7b72; }
+.tab .tab-popout:hover { color: #72d6a4; }
 .connection { align-self: center; margin-left: auto; padding: 0 12px; color: #8f99a5; font-size: 11px; white-space: nowrap; }
 .connection.connected { color: #72d6a4; }
 .connection.connecting { color: #e2a65a; }

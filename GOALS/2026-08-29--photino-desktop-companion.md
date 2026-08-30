@@ -90,7 +90,7 @@ existing mobile PWA.
 | 2. Shell and profiles | completed | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser and offline/reconnect runtime |
 | 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
 | 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
-| 5. Desktop interaction | pending | Keyboard/mouse terminal workflows, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | Frontend interaction suite and owner Ubuntu acceptance |
+| 5. Desktop interaction | completed | Keyboard/mouse terminal workflows, windows, create/kill, ordinary exit, and recovery meet AC5/AC6. | 26 desktop tests, six frontend suites, isolated keyboard/pop-out/exit/named-kill runtime; owner acceptance remains at the goal boundary |
 | 6. Cross-platform delivery | pending | Ubuntu/macOS source builds, launch evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, `./scripts/verify.sh`, Review Record |
 
 Thin slice: complete Unit 3 so an Ubuntu desktop app can select a saved server,
@@ -130,6 +130,13 @@ the session remains running and becomes detached in the mobile PWA.
   window tabs and pane controls. Isolated tmux and Photino runs proved all
   operations, including corrected resize ordering and guarded close. Unit 4 is
   complete.
+- 2026-08-29: added capture-phase desktop session shortcuts, guarded native
+  clipboard copy/paste, native session pop-outs, strict pop-out target
+  validation, per-window native bridge state, exact-name session kill, and
+  inventory-driven stale-tab pruning. An isolated Ubuntu/Photino runtime proved
+  two independent attachments, tab cycling, detach-only tab close, ordinary
+  terminal `exit`, native child-window close, and wrong/exact kill confirmation.
+  Unit 5 is complete pending final owner acceptance at the goal boundary.
 
 ## Evidence
 
@@ -192,6 +199,20 @@ the session remains running and becomes detached in the mobile PWA.
   corrected resize control changed the active pane from 62 to 64 columns and
   the sibling from 61 to 59, matching direct tmux inventory. Disposable
   containers, sockets, Photino, Xvfb, and input harness files were removed.
+- Desktop interaction tests: 26/26 native tests validate URL/profile behavior,
+  strict native commands, and opaque session pop-out targets; frontend
+  typecheck and all six suites pass, including bounded input serialization and
+  reconnect behavior.
+- Desktop interaction runtime: disposable image `sha256:f9a39844...` and
+  socket `c022_interaction` hosted `alpha`, `beta`, and `gamma`. Opening alpha
+  and beta produced distinct PTY clients 206 and 211. Ctrl+PageUp changed the
+  active xterm tab while both stayed attached; Ctrl+Shift+W removed only client
+  206 and left `alpha:0` and `beta:1`. Typing ordinary shell `exit` removed beta
+  and the authoritative inventory pruned its tab without retrying a stale
+  target. A wrong typed kill confirmation preserved gamma; exact `gamma`
+  removed it. Earlier in the same interaction checkpoint, the native pop-out
+  created a second 1280x800 Photino window and tmux client, and closing that
+  child left the root window and its attachment intact.
 
 ## Discoveries
 
@@ -253,9 +274,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Complete Unit 5 desktop interaction: keyboard navigation, focus,
-  selection/copy/paste/context menu, independent windows, ordinary terminal
-  `exit`, explicit named session kill, resize, and owner Ubuntu acceptance.
+- Complete Unit 6 cross-platform delivery: rebuild both self-contained source
+  outputs, launch the Linux artifact without an installed .NET runtime, record
+  the Apple Silicon hardware/approved-CI boundary, run the canonical gate, and
+  perform the C022 Change Review.
 
 ## Pause Conditions
 
@@ -278,3 +300,7 @@ the session remains running and becomes detached in the mobile PWA.
   implemented and runtime-proven.
 - Unit 4 complete: authoritative tmux windows/panes and their guarded typed
   operations are automated- and runtime-proven. Units 5-6 remain active.
+- Unit 5 implementation complete: conventional desktop shortcuts, independent
+  windows, guarded clipboard paths, exact-name kill, ordinary `exit`, and
+  authoritative tab cleanup are implemented and locally runtime-proven. Unit 6
+  and physical owner/platform acceptance remain active.

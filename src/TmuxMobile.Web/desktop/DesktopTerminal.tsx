@@ -3,6 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { terminalWebSocketUrl } from "./desktopApi";
 import { isTerminalPing, reconnectDelay } from "./reconnect";
+import { MAX_PASTE_BYTES, pasteByteLength, requiresPasteConfirmation, serializeTerminalInput } from "../src/terminalInput";
 
 export type TerminalConnectionState = "connecting" | "connected" | "reconnecting" | "disconnected";
 
@@ -10,16 +11,19 @@ interface Props {
   sessionId: string;
   active: boolean;
   onConnectionState: (state: TerminalConnectionState) => void;
+  onError: (message: string) => void;
 }
 
-export default function DesktopTerminal({ sessionId, active, onConnectionState }: Props) {
+export default function DesktopTerminal({ sessionId, active, onConnectionState, onError }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const connectionCallbackRef = useRef(onConnectionState);
+  const errorCallbackRef = useRef(onError);
 
   useEffect(() => { connectionCallbackRef.current = onConnectionState; }, [onConnectionState]);
+  useEffect(() => { errorCallbackRef.current = onError; }, [onError]);
 
   useEffect(() => {
     if (!active) return;
@@ -73,6 +77,34 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState }
     const input = terminal.onData(data => {
       const socket = socketRef.current;
       if (socket?.readyState === WebSocket.OPEN) socket.send(encoder.encode(data));
+    });
+    terminal.attachCustomKeyEventHandler(event => {
+      if (event.type !== "keydown" || !event.ctrlKey || !event.shiftKey) return true;
+      if (event.code === "KeyC") {
+        const selection = terminal.getSelection();
+        if (selection) void navigator.clipboard.writeText(selection)
+          .catch(() => errorCallbackRef.current("Clipboard copy was denied by the desktop environment."));
+        return false;
+      }
+      if (event.code === "KeyV") {
+        void navigator.clipboard.readText().then(value => {
+          if (!value) return;
+          if (pasteByteLength(value) > MAX_PASTE_BYTES) {
+            errorCallbackRef.current("Clipboard paste is larger than 128 KiB and was not sent.");
+            return;
+          }
+          if (requiresPasteConfirmation(value) &&
+              !window.confirm("Paste multiline or large clipboard text into this terminal?")) return;
+          const socket = socketRef.current;
+          if (socket?.readyState !== WebSocket.OPEN) {
+            errorCallbackRef.current("The terminal is disconnected; clipboard text was not sent.");
+            return;
+          }
+          for (const message of serializeTerminalInput(value)) socket.send(message);
+        }).catch(() => errorCallbackRef.current("Clipboard paste was denied by the desktop environment."));
+        return false;
+      }
+      return true;
     });
 
     const connect = () => {
