@@ -709,3 +709,9 @@ the session remains running and becomes detached in the mobile PWA.
   boundary and invoke every mounted terminal's existing settled-fit scheduler;
   frontend and delivery-contract verification pass, with physical maximize and
   restore acceptance still required.
+- Rapid reconnect cycling is separately traced in
+  `RCA/2026-08-31--desktop-reconnect-backoff-resets-on-handshake.md`. Terminal
+  and inventory sockets now reset retry history only after ten seconds of
+  stability; short-lived handshakes advance the existing bounded exponential
+  backoff instead of allocating a new connection every second indefinitely,
+  and stale socket-close callbacks cannot overwrite a newer healthy state.

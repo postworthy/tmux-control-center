@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import DesktopWorkspace, { type DesktopTab } from "./DesktopWorkspace";
 import { type TerminalConnectionState } from "./DesktopTerminal";
-import { reconnectDelay } from "./reconnect";
+import {
+  RECONNECT_STABILITY_MILLISECONDS,
+  nextReconnectAttempt,
+  reconnectDelay
+} from "./reconnect";
 import {
   UnauthorizedError,
   createSession,
@@ -116,22 +120,36 @@ export default function DesktopApp() {
     let stopped = false;
     let attempt = 0;
     let timer = 0;
+    let stabilityTimer = 0;
     let socket: WebSocket | null = null;
     const connect = () => {
       if (stopped || socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) return;
       if (!navigator.onLine) { setInventoryConnected(false); return; }
       socket = new WebSocket(inventoryWebSocketUrl());
       const current = socket;
-      current.addEventListener("open", () => { attempt = 0; setInventoryConnected(true); });
+      current.addEventListener("open", () => {
+        window.clearTimeout(stabilityTimer);
+        stabilityTimer = window.setTimeout(() => {
+          stabilityTimer = 0;
+          attempt = 0;
+        }, RECONNECT_STABILITY_MILLISECONDS);
+        setInventoryConnected(true);
+      });
       current.addEventListener("message", event => {
         const snapshot = JSON.parse(String(event.data)) as InventorySnapshot;
         setSessions(snapshot.sessions);
         setInventoryLoaded(true);
       });
       current.addEventListener("close", () => {
-        if (socket === current) socket = null;
+        if (socket !== current) return;
+        window.clearTimeout(stabilityTimer);
+        stabilityTimer = 0;
+        socket = null;
         setInventoryConnected(false);
-        if (!stopped) timer = window.setTimeout(connect, reconnectDelay(attempt++));
+        if (!stopped) {
+          timer = window.setTimeout(connect, reconnectDelay(attempt));
+          attempt = nextReconnectAttempt(attempt);
+        }
       });
       current.addEventListener("error", () => current.close());
     };
@@ -143,6 +161,7 @@ export default function DesktopApp() {
     return () => {
       stopped = true;
       window.clearTimeout(timer);
+      window.clearTimeout(stabilityTimer);
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offline);
       socket?.close(1000, "Desktop inventory closed");

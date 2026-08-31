@@ -30,6 +30,10 @@ grep -Fq '.RegisterRestoredHandler(NotifyNativeGeometryChanged)' \
 grep -Fq 'bridge.receiveMessage?.' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'window.addEventListener(NATIVE_WINDOW_GEOMETRY_EVENT, viewportChanged)' \
   "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
+grep -Fq 'if (socketRef.current !== socket) return;' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
+grep -Fq 'if (socket !== current) return;' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'StartupWMClass=Tmuxctl' \
   "$repository_root/src/TmuxCtl.Desktop/Packaging/linux/tmuxctl.desktop.in"
 grep -Fq '<string>tmuxctl.icns</string>' \

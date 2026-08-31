@@ -3,7 +3,12 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { terminalWebSocketUrl } from "./desktopApi";
 import { DEFAULT_TERMINAL_FONT_SIZE, terminalFontSizeForWheel } from "./fontZoom";
-import { isTerminalPing, reconnectDelay } from "./reconnect";
+import {
+  RECONNECT_STABILITY_MILLISECONDS,
+  isTerminalPing,
+  nextReconnectAttempt,
+  reconnectDelay
+} from "./reconnect";
 import {
   NATIVE_WINDOW_GEOMETRY_EVENT,
   SETTLED_TERMINAL_REFIT_DELAYS,
@@ -70,6 +75,7 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
     let stopped = false;
     let retryAttempt = 0;
     let retryTimer = 0;
+    let reconnectStabilityTimer = 0;
     let fitFrame = 0;
     let lastResize = "";
     let lastHostGeometry: string | null = null;
@@ -193,7 +199,11 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       socket.binaryType = "arraybuffer";
       socketRef.current = socket;
       socket.addEventListener("open", () => {
-        retryAttempt = 0;
+        window.clearTimeout(reconnectStabilityTimer);
+        reconnectStabilityTimer = window.setTimeout(() => {
+          reconnectStabilityTimer = 0;
+          retryAttempt = 0;
+        }, RECONNECT_STABILITY_MILLISECONDS);
         lastResize = "";
         connectionCallbackRef.current("connected");
         scheduleSettledFit();
@@ -205,15 +215,20 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
           socket.send(JSON.stringify({ type: "pong" }));
       });
       socket.addEventListener("close", () => {
-        if (socketRef.current === socket) socketRef.current = null;
+        if (socketRef.current !== socket) return;
+        window.clearTimeout(reconnectStabilityTimer);
+        reconnectStabilityTimer = 0;
+        socketRef.current = null;
         if (stopped) return;
         connectionCallbackRef.current("reconnecting");
-        retryTimer = window.setTimeout(connect, reconnectDelay(retryAttempt++));
+        retryTimer = window.setTimeout(connect, reconnectDelay(retryAttempt));
+        retryAttempt = nextReconnectAttempt(retryAttempt);
       });
       socket.addEventListener("error", () => socket.close());
     };
     const online = () => {
       window.clearTimeout(retryTimer);
+      window.clearTimeout(reconnectStabilityTimer);
       connect();
     };
     const offline = () => {
