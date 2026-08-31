@@ -703,3 +703,9 @@ the session remains running and becomes detached in the mobile PWA.
   NSS clients bypass it because the managed stub target contains public DNS
   servers instead of `127.0.0.53`. The live app remains healthy and forced-address
   TLS/protocol checks pass. Host DNS service restart requires explicit approval.
+- Ubuntu title-bar maximize is tracked independently from transport reconnect
+  behavior in `RCA/2026-08-31--desktop-titlebar-maximize-misses-refit.md`.
+  Photino native size, maximize, and restore events now cross the shell/web
+  boundary and invoke every mounted terminal's existing settled-fit scheduler;
+  frontend and delivery-contract verification pass, with physical maximize and
+  restore acceptance still required.

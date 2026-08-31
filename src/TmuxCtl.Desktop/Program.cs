@@ -8,6 +8,7 @@ namespace TmuxCtl.Desktop;
 public static class Program
 {
     private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(12);
+    private const string NativeGeometryChangedMessage = "{\"type\":\"nativeWindowGeometryChanged\"}";
     private static readonly List<DesktopWindowController> Windows = [];
 
     [STAThread]
@@ -55,10 +56,19 @@ public static class Program
             .SetContextMenuEnabled(true)
             .SetDevToolsEnabled(Environment.GetEnvironmentVariable("TMUXCTL_DEVTOOLS") == "1")
             .SetGrantBrowserPermissions(false)
+            .RegisterSizeChangedHandler((sender, _) => NotifyNativeGeometryChanged(sender))
+            .RegisterMaximizedHandler(NotifyNativeGeometryChanged)
+            .RegisterRestoredHandler(NotifyNativeGeometryChanged)
             .Center();
         var icon = DesktopAppIcon.ResolveLinuxIcon(AppContext.BaseDirectory, OperatingSystem.IsLinux());
         return icon is null ? window : window.SetIconFile(icon);
     }
+
+    private static void NotifyNativeGeometryChanged(object? sender, EventArgs _) =>
+        NotifyNativeGeometryChanged(sender);
+
+    private static void NotifyNativeGeometryChanged(object? sender) =>
+        ((PhotinoWindow)sender!).SendWebMessage(NativeGeometryChangedMessage);
 
     private sealed class DesktopWindowController(
         PhotinoWindow window, ServerProfileStore profiles, DesktopCapabilityProbe capabilityProbe) : IDisposable

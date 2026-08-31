@@ -21,6 +21,15 @@ grep -Fq 'Kill session' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.
 ! grep -Fq 'Type the session name to confirm' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'Link="tmuxctl.png"' "$repository_root/src/TmuxCtl.Desktop/TmuxCtl.Desktop.csproj"
 grep -Fq '.SetIconFile(icon)' "$repository_root/src/TmuxCtl.Desktop/Program.cs"
+grep -Fq '.RegisterSizeChangedHandler((sender, _) => NotifyNativeGeometryChanged(sender))' \
+  "$repository_root/src/TmuxCtl.Desktop/Program.cs"
+grep -Fq '.RegisterMaximizedHandler(NotifyNativeGeometryChanged)' \
+  "$repository_root/src/TmuxCtl.Desktop/Program.cs"
+grep -Fq '.RegisterRestoredHandler(NotifyNativeGeometryChanged)' \
+  "$repository_root/src/TmuxCtl.Desktop/Program.cs"
+grep -Fq 'bridge.receiveMessage?.' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
+grep -Fq 'window.addEventListener(NATIVE_WINDOW_GEOMETRY_EVENT, viewportChanged)' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
 grep -Fq 'StartupWMClass=Tmuxctl' \
   "$repository_root/src/TmuxCtl.Desktop/Packaging/linux/tmuxctl.desktop.in"
 grep -Fq '<string>tmuxctl.icns</string>' \

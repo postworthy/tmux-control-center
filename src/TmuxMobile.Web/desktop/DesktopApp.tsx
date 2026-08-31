@@ -30,6 +30,12 @@ import {
   type WorkspaceGroup,
   type WorkspaceNode
 } from "./workspaceLayout";
+import { NATIVE_WINDOW_GEOMETRY_EVENT } from "./terminalLayout";
+
+interface PhotinoBridge {
+  sendMessage?: (message: string) => void;
+  receiveMessage?: (callback: (message: string) => void) => void;
+}
 
 export default function DesktopApp() {
   const [sessions, setSessions] = useState<TmuxSession[]>([]);
@@ -55,19 +61,19 @@ export default function DesktopApp() {
   const [nativeProfilesAvailable, setNativeProfilesAvailable] = useState(false);
 
   const showProfiles = () => {
-    const bridge = window.external as unknown as { sendMessage: (message: string) => void };
-    bridge.sendMessage(JSON.stringify({ type: "showProfiles" }));
+    const bridge = window.external as unknown as PhotinoBridge;
+    bridge.sendMessage?.(JSON.stringify({ type: "showProfiles" }));
   };
 
   const openSessionWindow = (sessionId: string) => {
-    const bridge = window.external as unknown as { sendMessage: (message: string) => void };
-    bridge.sendMessage(JSON.stringify({ type: "openSessionWindow", sessionId }));
+    const bridge = window.external as unknown as PhotinoBridge;
+    bridge.sendMessage?.(JSON.stringify({ type: "openSessionWindow", sessionId }));
   };
 
   useEffect(() => {
     let announcedReady = false;
     const detect = () => {
-      const bridge = window.external as unknown as { sendMessage?: (message: string) => void };
+      const bridge = window.external as unknown as PhotinoBridge;
       const available = typeof bridge?.sendMessage === "function";
       setNativeProfilesAvailable(available);
       if (available && !announcedReady) {
@@ -78,6 +84,17 @@ export default function DesktopApp() {
     detect();
     const timer = window.setTimeout(detect, 250);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const bridge = window.external as unknown as PhotinoBridge;
+    bridge.receiveMessage?.(message => {
+      try {
+        const event = JSON.parse(message) as { type?: unknown };
+        if (event.type === "nativeWindowGeometryChanged")
+          window.dispatchEvent(new Event(NATIVE_WINDOW_GEOMETRY_EVENT));
+      } catch { /* Ignore native messages outside this page's protocol. */ }
+    });
   }, []);
 
   const refresh = useCallback(async () => {

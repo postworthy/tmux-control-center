@@ -5,6 +5,7 @@ import { terminalWebSocketUrl } from "./desktopApi";
 import { DEFAULT_TERMINAL_FONT_SIZE, terminalFontSizeForWheel } from "./fontZoom";
 import { isTerminalPing, reconnectDelay } from "./reconnect";
 import {
+  NATIVE_WINDOW_GEOMETRY_EVENT,
   SETTLED_TERMINAL_REFIT_DELAYS,
   TERMINAL_GEOMETRY_POLL_MILLISECONDS,
   terminalHostCanBeFit,
@@ -228,6 +229,7 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
     window.addEventListener("offline", offline);
     window.addEventListener("pagehide", pageHide);
     window.addEventListener("resize", viewportChanged);
+    window.addEventListener(NATIVE_WINDOW_GEOMETRY_EVENT, viewportChanged);
     window.visualViewport?.addEventListener("resize", viewportChanged);
     document.addEventListener("fullscreenchange", viewportChanged);
     document.addEventListener("visibilitychange", visibilityChanged);
@@ -245,6 +247,7 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       window.removeEventListener("offline", offline);
       window.removeEventListener("pagehide", pageHide);
       window.removeEventListener("resize", viewportChanged);
+      window.removeEventListener(NATIVE_WINDOW_GEOMETRY_EVENT, viewportChanged);
       window.visualViewport?.removeEventListener("resize", viewportChanged);
       document.removeEventListener("fullscreenchange", viewportChanged);
       document.removeEventListener("visibilitychange", visibilityChanged);

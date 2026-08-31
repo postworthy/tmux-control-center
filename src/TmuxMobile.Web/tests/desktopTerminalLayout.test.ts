@@ -1,4 +1,5 @@
 import {
+  NATIVE_WINDOW_GEOMETRY_EVENT,
   SETTLED_TERMINAL_REFIT_DELAYS,
   TERMINAL_GEOMETRY_POLL_MILLISECONDS,
   terminalHostCanBeFit,
@@ -23,5 +24,7 @@ assert(terminalHostGeometryKey(801, 500) !== terminalHostGeometryKey(800, 500) &
   "Either native host dimension must produce a new geometry key.");
 assert(terminalHostGeometryKey(0, 500) === null && TERMINAL_GEOMETRY_POLL_MILLISECONDS >= 50,
   "Hidden terminals must be ignored and geometry polling must remain bounded.");
+assert(NATIVE_WINDOW_GEOMETRY_EVENT === "tmuxctl:native-window-geometry-changed",
+  "Native window geometry must use a stable app-wide refit event.");
 
 console.log("desktop terminal layout tests passed");
