@@ -3,7 +3,7 @@
 Date: 2026-08-31
 Severity: Medium
 Related Proposal(s): `PROPOSALS/2026-08-29--photino-desktop-companion.md`
-Related Commit(s): N/A
+Related Commit(s): `2f76c73`
 
 ## Symptom
 
@@ -47,3 +47,15 @@ Related Commit(s): N/A
   contract.
 - Process update: retain physical Ubuntu title-bar maximize and restore as
   acceptance evidence separate from drag resize and browser fullscreen.
+
+## Resolution Evidence
+
+- Corrective commit `2f76c73` is deployed in image
+  `tmux-mobile:desktop-stability-66c7a53` (`sha256:696d49f9...`); the served
+  desktop bundle contains the native geometry message and refit event markers.
+- The self-contained Ubuntu client was rebuilt in place and its managed payload
+  contains the native geometry message while the native payload contains the
+  Photino maximize handler registration. The installed launcher points to this
+  artifact and it has no missing native libraries.
+- Physical double-click maximize and restore acceptance remains pending after a
+  full quit/relaunch of the client process that predates this rebuild.

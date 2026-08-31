@@ -1,9 +1,23 @@
 # Project Status
 
-Updated: 2026-08-30
+Updated: 2026-08-31
 
 ## Current
 
+- The owner-authorized desktop stability rollout is live. Native title-bar
+  maximize/restore refitting and stable-connection-gated reconnect backoff were
+  committed separately as `2f76c73` and `66c7a53`. Image
+  `tmux-mobile:desktop-stability-66c7a53` (`sha256:696d49f9...`) is healthy with
+  zero restarts on the unchanged loopback-only backend; the predecessor
+  `sha256:82b787f4...` is retained as
+  `tmux-mobile:pre-desktop-stability-20260831`. Ordinary MagicDNS HTTPS
+  liveness, protocol compatibility, no-cache desktop delivery, served native
+  geometry markers, readiness, bounded logs, and isolated tmux 3.4 compatibility
+  pass. All six tmux sessions retain their exact IDs, names, window counts, and
+  attachment states. The self-contained Ubuntu client was rebuilt in place and
+  the installed launcher still targets it. A pre-rebuild client process remains
+  open, so full quit/relaunch and physical maximize/reconnect acceptance are
+  next; Apple Silicon launch remains external.
 - The owner reported that the PWA lists sessions but every mobile terminal falls
   into Reconnect after the desktop rollout. Live evidence shows two persistent
   desktop tmux clients consume the unchanged per-owner limit of two, so the

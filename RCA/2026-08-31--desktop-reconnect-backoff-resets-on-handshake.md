@@ -3,7 +3,7 @@
 Date: 2026-08-31
 Severity: Medium
 Related Proposal(s): `PROPOSALS/2026-08-29--photino-desktop-companion.md`
-Related Commit(s): N/A
+Related Commit(s): `66c7a53`
 
 ## Symptom
 
@@ -54,3 +54,14 @@ Related Commit(s): N/A
   close handling.
 - Operational evidence: server logs must no longer show a failing tab creating a
   new PTY every second indefinitely.
+
+## Resolution Evidence
+
+- Corrective commit `66c7a53` is deployed in image
+  `tmux-mobile:desktop-stability-66c7a53` (`sha256:696d49f9...`). The container
+  is healthy with zero restarts, and bounded post-rollout logs contain no rapid
+  terminal handshake/PTY cleanup cycle.
+- All six predeployment tmux sessions retain their exact IDs, names, window
+  counts, and attachment states after the app-only replacement.
+- Physical fault-injection acceptance remains pending after the owner fully
+  quits and relaunches the rebuilt desktop client.

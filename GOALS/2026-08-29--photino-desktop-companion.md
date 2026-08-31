@@ -506,6 +506,24 @@ the session remains running and becomes detached in the mobile PWA.
   pass. The canonical gate reports 41 Desktop, 55 Server integration, 27 Core,
   26 Infrastructure plus five intentional skips, all shell suites, and Compose
   assertions. Redeployment remains next.
+- 2026-08-31: the owner authorized deployment of the independently committed
+  native-maximize refit (`2f76c73`) and reconnect-stability correction
+  (`66c7a53`). The prior live image `sha256:82b787f4...` is preserved as
+  `tmux-mobile:pre-desktop-stability-20260831`; replacement image
+  `tmux-mobile:desktop-stability-66c7a53` has digest `sha256:696d49f9...`,
+  passed the disposable host/container tmux 3.4 probe, and replaced only the
+  Compose app service. It is healthy with zero restarts on the unchanged
+  `127.0.0.1:8780` backend/Serve boundary. HTTPS liveness and exact protocol-1
+  capabilities pass through ordinary MagicDNS, the cache-busted document is
+  HTTP 200 with `no-store, no-cache` and references `index-6mG0icpN.js`, and
+  the served bundle contains both native-geometry bridge markers. Bounded logs
+  contain no failure or reconnect churn. All six predeployment tmux sessions
+  retain their exact IDs, names, window counts, and attachment states. The
+  self-contained Ubuntu x64 client was rebuilt in place, has no missing native
+  libraries, and the validated installed launcher still resolves to that
+  executable and the PWA-derived icon. Because a client process predating the
+  rebuild remains open, the owner must fully quit and relaunch it before
+  physically accepting title-bar maximize/restore and reconnect behavior.
 
 ## Discoveries
 
@@ -604,10 +622,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner explicitly authorizes restarting `systemd-resolved` to regenerate the
-  overwritten local resolver stub. Then prove ordinary NSS/curl and the native
-  compatibility probe resolve MagicDNS without overrides before resuming desktop
-  interaction acceptance. Apple Silicon launch/pinning remains external.
+- Owner fully quits and relaunches the rebuilt Ubuntu client, then physically
+  verifies title-bar maximize/restore refits every visible xterm and an unstable
+  transport advances through bounded reconnect backoff without rapid PTY churn.
+  Apple Silicon launch/pinning remains external.
 
 ## Pause Conditions
 
