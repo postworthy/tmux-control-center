@@ -294,6 +294,10 @@ tmux command was found in the reviewed C022 range.
 
 ## Follow-Ups
 
+- With explicit host-network approval, restart `systemd-resolved` and require
+  its stub, ordinary NSS/curl, and the native probe to agree on MagicDNS before
+  further desktop acceptance. See
+  `RCA/2026-08-31--desktop-magicdns-bypassed-by-resolver-stub.md`.
 - Obtain actual Apple Silicon launch/connection evidence.
 - Complete owner Ubuntu desktop interaction acceptance.
 - From Ubuntu Applications, confirm both PWA-derived dock identity and full-size

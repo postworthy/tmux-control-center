@@ -604,11 +604,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner closes older tmuxctl windows and resumes acceptance for two-click kill,
-  rename, right-click, and layout behavior with the now-proven concurrent mobile
-  terminal path. Confirm native MagicDNS connection during that pass because
-  the deployment shell's resolver disagreed with `resolvectl`. Apple Silicon
-  launch/pinning remains external.
+- Owner explicitly authorizes restarting `systemd-resolved` to regenerate the
+  overwritten local resolver stub. Then prove ordinary NSS/curl and the native
+  compatibility probe resolve MagicDNS without overrides before resuming desktop
+  interaction acceptance. Apple Silicon launch/pinning remains external.
 
 ## Pause Conditions
 
@@ -697,3 +696,10 @@ the session remains running and becomes detached in the mobile PWA.
   compatibility, TLS, tests, docs, rollback, and review evidence are complete;
   the Ubuntu launcher is installed, while actual Ubuntu pinning, Apple Silicon
   launch/pinning, and owner interaction acceptance remain required.
+- Physical launch after the two-click rollout reproduces the generic connection
+  error. RCA
+  `RCA/2026-08-31--desktop-magicdns-bypassed-by-resolver-stub.md` proves
+  systemd-resolved and Tailscale know the correct MagicDNS route, while ordinary
+  NSS clients bypass it because the managed stub target contains public DNS
+  servers instead of `127.0.0.53`. The live app remains healthy and forced-address
+  TLS/protocol checks pass. Host DNS service restart requires explicit approval.
