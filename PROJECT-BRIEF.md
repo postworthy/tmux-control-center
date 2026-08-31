@@ -1,7 +1,7 @@
 # PROJECT-BRIEF
 
 Status: APPROVED
-Last updated: 2026-08-29
+Last updated: 2026-08-31
 
 ## Onboarding Mode
 
@@ -43,10 +43,16 @@ Last updated: 2026-08-29
   desktop-first xterm.js interface, real tmux attachment state, tmux-backed
   session/window/pane navigation, and source builds for Ubuntu x64 and Apple
   Silicon macOS.
+- Let an installed PWA keep a bounded device-local list of labelled tmuxctl
+  server origins and explicitly navigate to one server at a time without
+  weakening the existing same-origin authentication boundary.
 
 ## Out of Scope (Must Not Build Yet)
 
 - Collaborative users, or one tmuxctl server controlling multiple tmux hosts.
+- A combined multi-server session dashboard, cross-origin API aggregation,
+  shared login credentials, or automatic profile synchronization between
+  browser origins.
 - Launching, installing, or supervising the tmuxctl server from the desktop
   application.
 - Debian packages, DMGs, signing, notarization, Intel macOS, app stores, or
@@ -91,6 +97,11 @@ Last updated: 2026-08-29
   intercepted.
 - Confirmed by the user: Apple Silicon is the initial macOS architecture and
   users build from the GitHub repository before native installer work begins.
+- Confirmed by the user: the PWA should gain a full-screen server chooser opened
+  from its toolbar, with device-local label/HTTPS-URL profiles and top-level
+  navigation to the selected server rather than cross-origin API aggregation.
+- Confirmed by the user: every selected server retains its own authentication,
+  cookies, service worker, offline state, and local preferences.
 - Corrected: physical iPhone validation is recommended evidence, but it is not a
   prerequisite for completing the repository-delivery goal.
 
@@ -104,3 +115,6 @@ Last updated: 2026-08-29
   are supplied.
 - [x] Deployment documentation explains setup, validation, upgrade, rollback,
   and the host/container tmux compatibility constraint.
+- [ ] An installed PWA can manage a bounded device-local server catalog and
+  explicitly navigate between independently authenticated tmuxctl origins while
+  preserving the same-origin security model.

@@ -15,6 +15,9 @@ Deliver a source-buildable Ubuntu x64 and Apple Silicon macOS desktop client
 that connects to an existing tmuxctl server, presents tmux-owned tabs and
 splits through a desktop-first xterm.js interface, and participates accurately
 in tmux attachment and session lifecycle.
+Extend the same explicit server-selection concept to the mobile PWA through a
+device-local launcher that navigates between independently authenticated tmuxctl
+origins without adding cross-origin APIs.
 
 ## Scope
 
@@ -25,6 +28,10 @@ In scope:
   determine whether those assets are bundled locally or served by tmuxctl.
 - Multiple device-local server profiles containing a label and validated HTTPS
   URL; Tailscale connectivity and the remote server are prerequisites.
+- An additive PWA full-screen Servers chooser with at most 32 bounded
+  device-local label/HTTPS-origin profiles, current-origin identity, explicit
+  top-level navigation, and a fragment-delivered visible return-to-launcher
+  action that transfers no catalog or credential.
 - A proven remote authentication/CSRF/origin/WebSocket topology that preserves
   existing server security and stores no plaintext login secret in app settings.
 - Session listing, selection, creation, validated rename, real attachment,
@@ -51,7 +58,8 @@ Out of scope:
   Tailscale, or host recovery service from the desktop app.
 - Intercepting `exit`, killing a session when a tab closes, caller-controlled
   tmux/shell commands, terminal-content persistence, or weakening server auth.
-- Replacing the PWA, reusing its mobile controls, native terminal rendering,
+- Replacing or broadly restyling the PWA beyond the approved server chooser,
+  reusing its mobile controls in the desktop client, native terminal rendering,
   Electron, Windows, Intel macOS, broad Linux portability, collaboration, or a
   single server managing multiple tmux hosts.
 - `.deb`, `.dmg`, signing, notarization, app-store delivery, automatic updates,
@@ -67,6 +75,8 @@ Out of scope:
   operations, and corresponding unit/integration tests.
 - Optional GitHub Actions build workflow only after approval at the remote
   publication boundary.
+- Additive PWA profile validation/storage/navigation modules, chooser UI,
+  focused frontend tests, and mobile acceptance documentation.
 
 ## Acceptance Criteria
 
@@ -91,6 +101,12 @@ Out of scope:
   text zoom, and an accessible collapsed icon rail; focused security/integration
   tests, canonical verification, documentation, rollback, and Change Review
   pass.
+- [ ] The PWA toolbar opens a full-screen Servers chooser whose bounded
+  device-local profiles reject malformed or unsafe state, preserve the current
+  single-server workflow, and navigate only through explicit owner actions.
+- [ ] Cross-origin selection transfers no cookie, key, inventory, or profile
+  catalog; the target retains independent authentication/storage and may expose
+  only a visible, user-initiated return to the validated launcher origin.
 
 ## Verification Plan
 
@@ -150,12 +166,19 @@ review record finds no blocking issue.
 6. Cross-platform delivery — deterministic source builds, Linux/macOS launch
    evidence, documentation, canonical verification, rollback, and review — Risk
    T1 locally; external macOS CI or push requires separate approval.
+7. PWA server launcher — bounded browser-local profile storage and validation,
+   full-screen mobile chooser, explicit top-level navigation, fragment cleanup,
+   return action, compatibility tests, deployment, and owner acceptance — Risk
+   T1 locally and T3 only at the separately approved production rollout.
 
 Thin slice milestone:
 
 - From an Ubuntu desktop app, select a saved server URL, authenticate, list
   sessions, attach one real tmux client in xterm.js, and close the tab so only
   that client detaches while the session remains available in the mobile PWA.
+- From the current PWA, save one second tmuxctl HTTPS origin, select it, observe
+  a top-level navigation with independent login state, and use the visible
+  return action without any cross-origin API request or credential transfer.
 
 Dependencies and unknowns:
 
@@ -166,11 +189,16 @@ Dependencies and unknowns:
   `linux-x64` and `osx-arm64` publishing on .NET 10.
 - Final Apple Silicon launch evidence needs owner-approved Mac hardware or a
   separately approved remote CI run.
+- Browser local storage is origin-isolated; the profile catalog remains at the
+  launcher origin and only its normalized origin may cross in a removable URL
+  fragment for an explicit return action.
 
 Intentional deferrals:
 
 - Server management, native rendering, installers, signing/notarization, Intel
   macOS, Windows, broad Linux packaging, binary publication, and auto-update.
+- Multi-server inventory aggregation, CORS expansion, profile synchronization,
+  shared authentication, reverse proxying, and hosted profile directories.
 
 ## Rollback Plan
 
@@ -197,6 +225,10 @@ detach/session-action smoke test.
   authorization, CSRF, rate limits, and audits.
 - Risk: macOS output compiles but does not run. Mitigation: require actual
   Apple Silicon launch/attach evidence before goal completion.
+- Risk: cross-origin navigation is mistaken for cross-origin API access or an
+  automatic redirect. Mitigation: navigate only after an owner click, transfer
+  only a normalized launcher origin in the fragment, remove it immediately,
+  and keep return visible and user-initiated.
 
 ## Compatibility / Migration Notes
 
@@ -204,6 +236,8 @@ Server changes are additive and the PWA remains the default root/mobile client.
 Older servers may reject unsupported desktop topology operations; the desktop
 must negotiate capabilities and provide an actionable compatibility message.
 No database, session snapshot, or tmux configuration migration is permitted.
+Existing PWA installs keep the current origin and require no profile migration;
+the chooser is additive browser-local state.
 
 ## Observability / Debug Notes
 
@@ -219,3 +253,7 @@ clipboard content, session content, or raw WebSocket payloads.
   xterm.js architecture, remote-server boundary, tmux-authoritative mapping,
   Apple Silicon target, source-build delivery, attachment lifecycle, and
   session-action semantics.
+- Expanded at: 2026-08-31 when the owner approved the recommended PWA
+  redirect-based launcher, device-local label/HTTPS-origin profiles, full-screen
+  chooser, independent per-origin authentication/storage, and explicit
+  fragment-backed return action, then authorized build and deployment.

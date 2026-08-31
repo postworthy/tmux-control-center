@@ -7,6 +7,7 @@ import {
   requestWorkspaceRestore
 } from "./api";
 import { SessionCard } from "./SessionCard";
+import { ServerChooser } from "./ServerChooser";
 import { filterSessions } from "./sessionFilter";
 import {
   orderSessionsByRecency,
@@ -17,6 +18,12 @@ import {
 } from "./sessionRecency";
 import { useInventory } from "./useInventory";
 import type { WorkspaceRecoveryStatus } from "./types";
+import {
+  buildServerNavigationUrl,
+  launcherOriginFromHash,
+  readLauncherOrigin,
+  storeLauncherOrigin
+} from "./serverProfiles";
 
 const ACTIVE_KEY = "tmux-mobile-active-session";
 const TerminalView = lazy(() => import("./TerminalView").then((module) => ({ default: module.TerminalView })));
@@ -40,6 +47,8 @@ export default function App() {
   const [recoveryStatus, setRecoveryStatus] = useState<WorkspaceRecoveryStatus | null>(null);
   const [restoreBusy, setRestoreBusy] = useState(false);
   const [restoreError, setRestoreError] = useState("");
+  const [serversOpen, setServersOpen] = useState(false);
+  const [launcherOrigin, setLauncherOrigin] = useState(() => readLauncherOrigin(sessionStorage, location.origin));
   const orderedSessions = useMemo(
     () => orderSessionsByRecency(inventory.sessions, recentSessionIds),
     [inventory.sessions, recentSessionIds]
@@ -48,6 +57,19 @@ export default function App() {
     () => filterSessions(orderedSessions, searchQuery, detachedOnly),
     [orderedSessions, searchQuery, detachedOnly]
   );
+
+  useEffect(() => {
+    if (!location.hash.startsWith("#tmuxctl-launcher=")) return;
+    const launcher = launcherOriginFromHash(location.hash, location.origin);
+    history.replaceState(history.state, "", `${location.pathname}${location.search}`);
+    if (!launcher) return;
+    try {
+      storeLauncherOrigin(sessionStorage, launcher);
+      setLauncherOrigin(launcher);
+    } catch {
+      // Browsers can disable session storage; the chooser still works without a return shortcut.
+    }
+  }, []);
 
   useEffect(() => {
     if (!visibleSessions.length) return;
@@ -166,6 +188,20 @@ export default function App() {
   };
 
   const activeIndex = Math.max(0, visibleSessions.findIndex((session) => session.id === activeId));
+  const openServer = (serverUrl: string) => {
+    if (serverUrl === location.origin) {
+      setServersOpen(false);
+      return;
+    }
+    location.assign(buildServerNavigationUrl(serverUrl, launcherOrigin ?? location.origin));
+  };
+
+  if (serversOpen) return (
+    <ServerChooser currentOrigin={location.origin} launcherOrigin={launcherOrigin}
+      onClose={() => setServersOpen(false)} onOpenServer={openServer}
+      onReturnToLauncher={() => launcherOrigin && location.assign(launcherOrigin)} />
+  );
+
   if (terminalTarget) return (
     <Suspense fallback={<State title="Opening terminal…" busy />}>
       <TerminalView session={terminalTarget} tmuxPrefix={tmuxPrefix} onBack={() => setTerminalTarget(null)} />
@@ -189,13 +225,16 @@ export default function App() {
             onChange={(event) => setApiKey(event.target.value)} />
           {loginError && <p className="error-text" role="alert">{loginError}</p>}
           <button type="submit">Sign in</button>
+          <button className="secondary-button" type="button" onClick={() => setServersOpen(true)}>Servers</button>
         </form>
       </main>
     );
   }
-  if (inventory.state === "loading") return <State title="Finding tmux sessions…" busy />;
+  if (inventory.state === "loading") return <State title="Finding tmux sessions…" busy
+    action={<button onClick={() => setServersOpen(true)}>Servers</button>} />;
   if (inventory.state === "error") return <State title="Unable to load sessions" detail={inventory.error}
-    action={<button onClick={inventory.refresh}>Try again</button>} />;
+    action={<div className="state-actions"><button onClick={inventory.refresh}>Try again</button>
+      <button onClick={() => setServersOpen(true)}>Servers</button></div>} />;
 
   const hasAlerts = !inventory.connected || updateReady;
   const alertCount = Number(!inventory.connected) + Number(Boolean(updateReady));
@@ -220,6 +259,7 @@ export default function App() {
           aria-pressed={detachedOnly} onClick={() => setDetachedOnly((current) => !current)}>
           Detached
         </button>
+        <button className="servers-button" onClick={() => setServersOpen(true)}>Servers</button>
         <button className="new-session-button" onClick={() => {
           setCreateError("");
           setCreateOpen(true);

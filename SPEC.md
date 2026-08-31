@@ -1,7 +1,7 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 2.1
-Last updated: 2026-08-30
+Version: 2.2
+Last updated: 2026-08-31
 Status: Approved
 
 ## Product Objective
@@ -131,6 +131,20 @@ Status: Approved
   use the existing PWA artwork as their native application identity so they can
   be pinned in the Ubuntu dock or macOS Dock; package installers and published
   binaries are not required in this cut.
+- FR31: provide a PWA toolbar **Servers** action that opens a full-screen
+  chooser, automatically identifies the current origin, and lets the owner add,
+  edit, delete, and select at most 32 device-local profiles in a document no
+  larger than 32 KiB, containing only profile IDs, 1–80-character labels, and
+  normalized HTTPS tmuxctl origins no longer than 2,048 characters. Selecting a
+  profile performs an explicit top-level navigation to that origin; the client
+  never makes cross-origin tmuxctl API requests, transfers authentication, or
+  combines inventories. Plain HTTP remains limited to loopback development.
+- FR32: because browser persistence is isolated by origin, treat the origin
+  where a profile catalog was created as its launcher. Navigation may carry
+  only that normalized launcher origin in the URL fragment so the selected
+  tmuxctl PWA can offer a visible, user-initiated return action; it must remove
+  the fragment from the visible URL immediately, must not receive the catalog
+  or credentials, and must never redirect back automatically.
 
 ## Constraints
 
@@ -245,6 +259,18 @@ Status: Approved
   rate-limited, stale, malformed, or caller-command-bearing requests; focused
   security/integration tests and canonical `./scripts/verify.sh` pass, docs
   match behavior, rollback is proven, and a Tempo Change Review is ready.
+- [ ] AC26: from the PWA toolbar, the owner can open a full-screen Servers
+  chooser, see the current origin, and add/edit/delete bounded label/HTTPS-origin
+  profiles whose valid state survives reload on only that launcher origin;
+  malformed, credential-bearing, path/query/fragment-bearing, oversized,
+  duplicate, or non-HTTPS non-loopback values are rejected without changing
+  stored state.
+- [ ] AC27: choosing a saved profile performs one user-initiated top-level
+  navigation to its normalized origin, where that server retains independent
+  authentication, cookies, service worker, offline cache, and preferences. No
+  cross-origin API, inventory aggregation, credential transfer, or automatic
+  redirect occurs; a fragment-delivered launcher origin is removed immediately
+  and supports only a clearly labelled user-initiated return action.
 
 ## Canonical Verification
 
@@ -278,6 +304,10 @@ Status: Approved
 - Existing systemd/nginx deployment remains supported.
 - The mobile PWA, its routes, and existing API clients remain supported while
   the desktop client and additive typed topology operations are introduced.
+- Existing single-server PWA installs continue to open the current server and
+  require no profile migration. Server profiles are additive browser-local
+  metadata; each origin keeps an independent catalog because browser storage,
+  cookies, service workers, and installed-app scope remain origin-bound.
 - The Docker image contains its own tmux client; deployment must confirm it can
   communicate with the host tmux server before using critical sessions.
 
@@ -286,6 +316,9 @@ Status: Approved
 - One server controlling multiple hosts, orchestration platforms, native iOS
   packaging, public ingress, collaboration, notifications, history indexing,
   and external LLMs.
+- A unified multi-server inventory/session deck, background polling of multiple
+  origins, shared or exported authentication, synchronized profile catalogs,
+  reverse proxying, CORS expansion, or a hosted profile directory.
 - Automatic boot restore, SSH reconnection, remote-agent restore, arbitrary tool
   adapters, process-memory checkpointing, terminal-content snapshots, and exact
   agent-ID association.

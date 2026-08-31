@@ -254,6 +254,9 @@ Status: deployed; physical acceptance paused for explicitly approved host resolv
   or becomes stale, and keep explicit session kill distinct from terminal exit.
 - Document source builds from the GitHub repository; defer installers, signing,
   Intel macOS, server launch, and binary publication.
+- Add a bounded device-local PWA server chooser that navigates explicitly
+  between independently authenticated origins without CORS or credential
+  sharing.
 - Planned commits: staged under
   `PROPOSALS/2026-08-29--photino-desktop-companion.md`.
 

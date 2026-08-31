@@ -19,6 +19,22 @@ ASP.NET Core
 local tmux server
 ```
 
+## PWA server launcher
+
+The root PWA includes a full-screen Servers chooser for moving between tmuxctl
+deployments. Its versioned browser-local document contains only a generated
+profile ID, a user label, and a normalized HTTPS origin. The document is limited
+to 32 profiles and 32 KiB, and malformed state fails closed behind an explicit
+clear action. HTTP is accepted only for loopback development.
+
+Selecting a profile performs a top-level navigation; the PWA never fetches a
+remote inventory, changes CORS, or carries authentication between origins. The
+destination receives only the validated launcher origin in a URL fragment. It
+stores that origin in tab-scoped session storage and removes the fragment from
+the address immediately. A visible Return action is the only path back. Thus
+cookies, service workers, caches, preferences, and saved-server catalogs remain
+independent under the browser's normal same-origin boundary.
+
 ## Desktop companion
 
 `TmuxCtl.Desktop` is a self-contained .NET 10 Photino shell. Its native chooser

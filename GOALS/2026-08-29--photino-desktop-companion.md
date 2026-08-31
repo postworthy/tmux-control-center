@@ -15,6 +15,8 @@ already-running tmuxctl server over Tailscale, and manage real tmux
 sessions/windows/panes through a conventional desktop xterm.js experience whose
 attachment, detach, exit, and explicit-kill behavior agrees with tmux and the
 existing mobile PWA.
+The mobile PWA also offers a device-local server launcher that navigates between
+independently authenticated tmuxctl origins without cross-origin API access.
 
 ## Non-Goals
 
@@ -22,6 +24,8 @@ existing mobile PWA.
   Tailscale, or workspace recovery from the desktop app.
 - Do not replace or restyle the mobile PWA, intercept terminal `exit`, persist
   terminal content, accept arbitrary tmux/shell commands, or weaken auth.
+- Do not aggregate inventories, synchronize profile catalogs, transfer login
+  state, expand CORS, reverse proxy other servers, or redirect automatically.
 - Do not build a native terminal renderer or use Electron.
 - Do not add Windows, Intel macOS, broad Linux portability, `.deb`/`.dmg`
   installers, signing/notarization, app stores, auto-update, or published binary
@@ -71,6 +75,16 @@ existing mobile PWA.
   tests, isolated real-tmux tests, dependency/license review, canonical
   `./scripts/verify.sh`, docs, rollback proof, and the C022 Change Review pass.
   - Evidence: pending
+- [ ] AC8 — The PWA toolbar opens a full-screen Servers chooser that identifies
+  the current origin and add/edits/deletes at most 32 device-local label/HTTPS-
+  origin profiles; malformed, duplicate, oversized, credential-bearing,
+  path/query/fragment-bearing, and non-HTTPS non-loopback state fails closed.
+  - Evidence: pending
+- [ ] AC9 — Selecting a profile performs only an explicit top-level navigation;
+  target authentication/storage remains independent, no catalog or credential
+  crosses origins, the launcher fragment is removed immediately, and only a
+  visible owner action returns to its validated origin.
+  - Evidence: pending
 
 ## Authority Envelope
 
@@ -82,6 +96,9 @@ existing mobile PWA.
 - The bounded local T2 feasibility and implementation work explicitly described
   in the approved C022 proposal, provided it preserves current authentication,
   network exposure, PWA behavior, live tmux sessions, and production services.
+- The approved bounded PWA launcher implementation and its owner-authorized
+  2026-08-31 build/deployment, provided it adds no cross-origin API, credential
+  transfer, network exposure, automatic redirect, or live-session mutation.
 
 ### Must Pause for Approval
 
@@ -101,13 +118,29 @@ existing mobile PWA.
 | 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
 | 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input with explicit per-session App Scroll routing, bounded Ctrl+wheel text zoom, one global five-zone split overlay, single-view reset, collapsible sidebar, working pop-outs, create/rename/kill, ordinary exit, and recovery meet AC4-AC6. | Focused layout/wheel/pop-out tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
 | 6. Cross-platform delivery | in progress | Ubuntu executable/launcher and macOS app-bundle source builds carry the PWA icon; launch/pinning evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, bundle/launcher checks, `./scripts/verify.sh`, Review Record |
+| 7. PWA server launcher | in progress | Bounded profiles, full-screen chooser, explicit navigation/return, independent origin state, compatibility, deployment, and owner acceptance meet AC8-AC9. | Profile/navigation unit tests, production PWA build, browser checks, canonical verification, live asset and session-preservation evidence |
 
 Thin slice: complete Unit 3 so an Ubuntu desktop app can select a saved server,
 authenticate, list sessions, attach one real tmux client, and close its tab while
 the session remains running and becomes detached in the mobile PWA.
+PWA launcher slice: save one second origin, explicitly navigate to it, observe
+independent authentication, and explicitly return to the launcher.
 
 ## Progress
 
+- 2026-08-31: implemented the approved PWA server launcher model and
+  presentation. The full-screen chooser identifies the current origin and
+  provides bounded device-local add/edit/delete controls. Explicit navigation
+  carries only a validated launcher origin in a fragment, removes it on arrival,
+  and exposes a user-initiated Return action. Typecheck, all 14 frontend unit
+  suites, and both production frontend builds pass. The first focused test run
+  correctly rejected a fixture that attempted to edit a nonexistent ID; the
+  fixture was corrected without changing product behavior.
+- 2026-08-31: canonical `./scripts/verify.sh` passed the first-run, watchdog,
+  workspace-recovery, and desktop-delivery guards, then reached the documented
+  host boundary: the repository pins .NET SDK 10.0.300 while this host provides
+  only 8.0.130. Focused typecheck, unit tests, and production builds remain
+  green; the .NET 10 container publish is the required equivalent build proof.
 - 2026-08-30: mobile PWA feedback showed session inventory remained available
   while every terminal attachment fell into Reconnect whenever two desktop tabs
   were open. RCA proved the unchanged per-owner terminal lease limit of two was
@@ -590,6 +623,13 @@ the session remains running and becomes detached in the mobile PWA.
   only to `127.0.0.1:8780`. All six predeployment tmux sessions retain their
   exact IDs, names, one-window counts, and attachment states; the already-open
   desktop terminal reconnected to the replacement.
+- 2026-08-31: the owner approved the redirect-based PWA server launcher contract
+  and authorized implementation plus deployment. The approved revision adds a
+  bounded full-screen chooser, device-local label/HTTPS-origin profiles,
+  explicit top-level navigation, independent per-origin authentication/storage,
+  and a visible fragment-backed return action; multi-server aggregation, CORS,
+  credential transfer, catalog synchronization, and automatic redirects remain
+  excluded. Unit 7 is active.
 
 ## Discoveries
 
@@ -671,11 +711,11 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Retry State
 
-- Current attempt: 1 for the desktop App Scroll addition
+- Current attempt: 1 for the PWA server launcher
 - Maximum attempts per unchanged failure: 2
-- Last observed failure: none for the App Scroll behavior. The live server now
-  serves the new bundle; a window already open during replacement retains its
-  in-memory prior JavaScript until the owner closes and relaunches it.
+- Last observed failure: the first focused unit run used an edit ID for a new
+  profile and was rejected as designed. Correcting that test fixture produced a
+  complete pass; this was not an unchanged product failure.
 - Resume evidence: the owner chose predecessor-stack ordering and authorized
   local history repair. Both Git findings are resolved with an unchanged source
   tree and a passing canonical gate.
@@ -685,11 +725,8 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner closes and relaunches the existing Ubuntu tmuxctl window, then confirms
-  the expanded session row shows the App Scroll toggle and routes a mouse-aware
-  foreground tool while disabled mode returns to tmux history. Rebuilding the
-  pending F12-capable native launcher and Apple Silicon launch/pinning remain
-  physical/external acceptance.
+- Run canonical verification, commit the implementation, and deploy the
+  production PWA while preserving the exact live tmux inventory.
 
 ## Pause Conditions
 

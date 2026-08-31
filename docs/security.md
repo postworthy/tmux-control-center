@@ -19,6 +19,13 @@ This service controls terminals owned by its Linux account and must be treated a
 - Process timeouts, cancellation, separate bounded stdout/stderr drains, capture line/byte limits, HTTP body limits, WebSocket frame limits, a shared 10–2048 column by 5–1024 row terminal-grid contract, terminal idle timeout, global/per-user terminal leases, identity/IP-partitioned request limits, and per-connection terminal message/byte limits.
 - Secure/HttpOnly/SameSite production cookies, persistent Data Protection keys, constant-time access-key comparison, antiforgery tokens, explicit policies, and failed-login auditing. Disabled authentication is rejected in every environment. The loopback-only Development bypass uses a non-Secure development antiforgery cookie so actions can be exercised over local HTTP; that exception cannot activate outside the Development environment.
 - Strict same-origin frontend usage and configured WebSocket origins. Forwarded headers are disabled by default and, when enabled, trust only listed proxy IPs.
+- The PWA server chooser stores only bounded labels and normalized origins. It
+  rejects credentials, paths, queries, fragments, duplicates, non-HTTPS remote
+  addresses, malformed documents, and oversized documents. Opening a profile
+  is explicit top-level navigation rather than a cross-origin request. Only a
+  validated launcher origin crosses in the URL fragment; the target removes it
+  immediately and never transfers cookies, keys, profile data, or terminal
+  content. Return navigation always requires a visible user action.
 - One-year HSTS on production HTTPS, same-origin-only CSP connectivity, frame denial, MIME sniffing denial, no-referrer, a restrictive browser permissions policy, and `Cache-Control: no-store` on APIs. `style-src 'unsafe-inline'` remains narrowly required for xterm.js runtime styles; scripts do not receive an inline exception.
 - Terminal contents and keystrokes are absent from application logs and audits. Audits record actor, operation, opaque target, success, and time. Failed allowed interactions are recorded, and a sink failure is logged separately without changing an already-applied action response.
 - Single-session termination requires the `Admin` policy, CSRF, the interaction
