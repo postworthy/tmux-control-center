@@ -578,6 +578,18 @@ the session remains running and becomes detached in the mobile PWA.
   other sessions. Focused routing, persistence, typecheck, delivery, and
   production-bundle checks pass; deployment and physical mouse-aware-tool
   acceptance remain at the owner boundary.
+- 2026-08-31: the owner authorized the App Scroll build and deployment.
+  Candidate `tmux-mobile:desktop-app-scroll-581b1dd` with digest
+  `sha256:77150a97...` passed Compose validation and the isolated host/container
+  tmux 3.4 probe before replacing only the app service. The prior image
+  `sha256:73fab731...` remains tagged as
+  `tmux-mobile:pre-desktop-app-scroll-20260831`. The replacement is healthy with
+  zero restarts, HTTPS serves cache-busted `index-C5fgyXkz.js` and
+  `index-HeZ-p1xA.css` containing App Scroll, F12, and active-toggle markers,
+  direct application traffic remains denied with 426, and Docker remains bound
+  only to `127.0.0.1:8780`. All six predeployment tmux sessions retain their
+  exact IDs, names, one-window counts, and attachment states; the already-open
+  desktop terminal reconnected to the replacement.
 
 ## Discoveries
 
@@ -661,10 +673,9 @@ the session remains running and becomes detached in the mobile PWA.
 
 - Current attempt: 1 for the desktop App Scroll addition
 - Maximum attempts per unchanged failure: 2
-- Last observed failure: none for the App Scroll behavior. The canonical host
-  command reaches the unchanged SDK 8 versus pinned SDK 10 toolchain boundary
-  after all shell and desktop delivery guards pass; focused frontend checks and
-  the production bundle pass directly.
+- Last observed failure: none for the App Scroll behavior. The live server now
+  serves the new bundle; a window already open during replacement retains its
+  in-memory prior JavaScript until the owner closes and relaunches it.
 - Resume evidence: the owner chose predecessor-stack ordering and authorized
   local history repair. Both Git findings are resolved with an unchanged source
   tree and a passing canonical gate.
@@ -674,11 +685,11 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner authorizes the server deployment and closes the currently running
-  tmuxctl process long enough to rebuild/install the pending F12-capable Ubuntu
-  launcher, then confirms the per-session App Scroll toggle routes a mouse-aware
-  foreground tool while disabled mode returns to tmux history. F12 fullscreen
-  and Apple Silicon launch/pinning remain physical/external acceptance.
+- Owner closes and relaunches the existing Ubuntu tmuxctl window, then confirms
+  the expanded session row shows the App Scroll toggle and routes a mouse-aware
+  foreground tool while disabled mode returns to tmux history. Rebuilding the
+  pending F12-capable native launcher and Apple Silicon launch/pinning remain
+  physical/external acceptance.
 
 ## Pause Conditions
 
