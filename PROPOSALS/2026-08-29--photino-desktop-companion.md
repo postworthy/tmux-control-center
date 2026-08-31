@@ -37,7 +37,8 @@ In scope:
   terminal interaction; closed typed topology operations remain additive but do
   not consume permanent subordinate rows in the primary workspace.
 - Bounded stale-client cleanup, desktop keyboard/mouse interaction including
-  coalesced authoritative tmux-history wheel input, reliable initial/fullscreen
+  coalesced authoritative tmux-history wheel input by default, a device-local
+  per-session App Scroll toggle for mouse-aware foreground tools, reliable initial/fullscreen
   fitting, bounded Ctrl+mouse-wheel terminal text zoom, a collapsible icon-rail
   sidebar, tests, documentation, rollback, and reproducible
   `linux-x64`/`osx-arm64` source builds. The Linux output includes native window
@@ -85,7 +86,8 @@ Out of scope:
   confirmed session kill retain their distinct tmux semantics and operate only
   on validated targets; rename updates open labels without reconnecting.
 - [ ] Desktop interaction acceptance includes coalesced unmodified-wheel tmux
-  history, reliable initial/maximized/fullscreen fit, bounded Ctrl+mouse-wheel
+  history by default, explicit per-session App Scroll routing to foreground
+  tools, reliable initial/maximized/fullscreen fit, bounded Ctrl+mouse-wheel
   text zoom, and an accessible collapsed icon rail; focused security/integration
   tests, canonical verification, documentation, rollback, and Change Review
   pass.

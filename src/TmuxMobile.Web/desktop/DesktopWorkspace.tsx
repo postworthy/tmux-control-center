@@ -20,6 +20,7 @@ interface Props {
   draggingSessionId: string | null;
   dropTarget: WorkspaceDropZone | null;
   nativeProfilesAvailable: boolean;
+  applicationScrollSessionIds: ReadonlySet<string>;
   onFocusGroup: (group: WorkspaceGroup) => void;
   onActivate: (groupId: string, sessionId: string) => void;
   onClose: (sessionId: string) => void;
@@ -74,6 +75,7 @@ export default function DesktopWorkspace(props: Props) {
       <div className="terminal-stage">
         {group.tabIds.map(sessionId => <DesktopTerminal key={sessionId} sessionId={sessionId}
           active={sessionId === group.activeId}
+          applicationScrollEnabled={props.applicationScrollSessionIds.has(sessionId)}
           onConnectionState={state => props.onConnectionState(sessionId, state)}
           onError={props.onError} />)}
         {!activeTab && <div className="empty-state"><h1>Select a session</h1><p>Open a session or drag a tab into this group.</p></div>}

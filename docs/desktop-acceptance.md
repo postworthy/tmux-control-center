@@ -91,7 +91,11 @@ Complete these checks with disposable tmux sessions:
    menu overlapping it. Hold Ctrl while scrolling the mouse wheel in both
    directions and confirm terminal text grows and shrinks within
    bounded limits without scrolling terminal content; release Ctrl and confirm
-   wheel up/down navigates tmux history. Select a newly opened session and
+   wheel up/down navigates tmux history. Enable the session's **App Scroll**
+   control in the expanded left pane and confirm the active mouse-aware terminal
+   program receives wheel input instead; disable it and confirm tmux history
+   behavior returns. Reopen the session and restart the app to confirm this
+   device-local setting persists only for that session. Select a newly opened session and
    confirm xterm is visible without first resizing the native window. Maximize,
    enter/leave fullscreen, and resize the window; at every transition confirm
    xterm fills the terminal area and the active tmux client dimensions follow it.

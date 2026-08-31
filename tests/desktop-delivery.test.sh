@@ -15,6 +15,12 @@ grep -Fq 'const suppressBrowserContextMenu = (event: MouseEvent) => event.preven
 ! grep -Fq 'contextMenuCallbackRef' "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
 ! grep -Fq 'terminal-menu' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'renameSession(session.id, name)' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
+grep -Fq 'writeApplicationScrollPreference(localStorage, sessionId, enabled)' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
+grep -Fq 'applicationScrollEnabled ? "app-scroll active" : "app-scroll"' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
+grep -Fq 'routeDesktopWheel(event.deltaY, event.ctrlKey, applicationScrollRef.current)' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
 grep -Fq 'aria-label={`Rename ${session.name}`}' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'setPendingKill(session)' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'Kill session' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"

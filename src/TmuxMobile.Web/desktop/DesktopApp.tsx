@@ -36,6 +36,11 @@ import {
   type WorkspaceNode
 } from "./workspaceLayout";
 import { NATIVE_WINDOW_GEOMETRY_EVENT } from "./terminalLayout";
+import {
+  APPLICATION_SCROLL_SESSION_KEY,
+  readApplicationScrollSessionIds,
+  writeApplicationScrollPreference
+} from "../src/applicationScrollPreference";
 
 interface PhotinoBridge {
   sendMessage?: (message: string) => void;
@@ -60,6 +65,8 @@ export default function DesktopApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [pendingKill, setPendingKill] = useState<TmuxSession | null>(null);
   const [killBusy, setKillBusy] = useState(false);
+  const [applicationScrollSessionIds, setApplicationScrollSessionIds] = useState<ReadonlySet<string>>(
+    () => new Set(readApplicationScrollSessionIds(localStorage)));
   const deepLinkOpened = useRef(false);
   const layoutId = useRef(1);
   const newSessionInput = useRef<HTMLInputElement>(null);
@@ -113,6 +120,15 @@ export default function DesktopApp() {
     window.addEventListener("keydown", keydown, true);
     return () => window.removeEventListener("keydown", keydown, true);
   }, [nativeProfilesAvailable]);
+
+  useEffect(() => {
+    const storageChanged = (event: StorageEvent) => {
+      if (event.key === APPLICATION_SCROLL_SESSION_KEY)
+        setApplicationScrollSessionIds(new Set(readApplicationScrollSessionIds(localStorage)));
+    };
+    window.addEventListener("storage", storageChanged);
+    return () => window.removeEventListener("storage", storageChanged);
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -360,6 +376,17 @@ export default function DesktopApp() {
     }
   };
 
+  const toggleApplicationScroll = (sessionId: string) => {
+    setApplicationScrollSessionIds(current => {
+      const enabled = !current.has(sessionId);
+      writeApplicationScrollPreference(localStorage, sessionId, enabled);
+      const next = new Set(current);
+      if (enabled) next.add(sessionId);
+      else next.delete(sessionId);
+      return next;
+    });
+  };
+
   if (authRequired) {
     return <main className="login-shell">
       <form className="login-card" onSubmit={submitLogin}>
@@ -416,16 +443,23 @@ export default function DesktopApp() {
           <button title="Create session" type="submit">+</button>
         </form>
         <div className="session-list" aria-label="Tmux sessions">
-          {sessions.map(session => <div className="session-row" key={session.id}>
-            <button className="session-open" onClick={() => open(session)}>
-              <span className={session.isAttached ? "status attached" : "status detached"} />
-              <span><strong>{session.name}</strong><small>{session.windowCount} windows · {session.paneCount} panes</small></span>
-            </button>
-            <button className="rename" title={`Rename ${session.name}`}
-              aria-label={`Rename ${session.name}`} onClick={() => void rename(session)}>✎</button>
-            <button className="kill" title={`Kill ${session.name}`}
-              onClick={() => setPendingKill(session)}>×</button>
-          </div>)}
+          {sessions.map(session => {
+            const applicationScrollEnabled = applicationScrollSessionIds.has(session.id);
+            return <div className="session-row" key={session.id}>
+              <button className="session-open" onClick={() => open(session)}>
+                <span className={session.isAttached ? "status attached" : "status detached"} />
+                <span><strong>{session.name}</strong><small>{session.windowCount} windows · {session.paneCount} panes</small></span>
+              </button>
+              <button className={applicationScrollEnabled ? "app-scroll active" : "app-scroll"}
+                title={`${applicationScrollEnabled ? "Disable" : "Enable"} App Scroll for ${session.name}`}
+                aria-label={`${applicationScrollEnabled ? "Disable" : "Enable"} App Scroll for ${session.name}`}
+                aria-pressed={applicationScrollEnabled}
+                onClick={() => toggleApplicationScroll(session.id)}>↕</button>
+              <button className="rename" title={`Rename ${session.name}`}
+                aria-label={`Rename ${session.name}`} onClick={() => void rename(session)}>✎</button>
+              <button className="kill" title={`Kill ${session.name}`}
+                onClick={() => setPendingKill(session)}>×</button>
+            </div>})}
         </div>
       </>}
     </aside>
@@ -434,6 +468,7 @@ export default function DesktopApp() {
         inventoryConnected={inventoryConnected} focusedGroupId={focusedGroupId}
         draggingSessionId={draggingSessionId} dropTarget={dropTarget}
         nativeProfilesAvailable={nativeProfilesAvailable}
+        applicationScrollSessionIds={applicationScrollSessionIds}
         onFocusGroup={focusGroup} onActivate={activateTab} onClose={close}
         onPopout={openSessionWindow} onConnectionState={updateConnection}
         onDragStart={setDraggingSessionId}

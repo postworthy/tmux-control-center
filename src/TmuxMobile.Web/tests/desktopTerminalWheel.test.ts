@@ -1,6 +1,8 @@
 import {
+  DESKTOP_APPLICATION_WHEEL_FLUSH_MILLISECONDS,
   DESKTOP_HISTORY_FLUSH_MILLISECONDS,
-  historyRequestFromWheelDelta
+  historyRequestFromWheelDelta,
+  routeDesktopWheel
 } from "../desktop/terminalWheel.js";
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -19,5 +21,16 @@ assert(historyRequestFromWheelDelta(0) === null && historyRequestFromWheelDelta(
   "Zero and invalid wheel deltas must not emit history operations.");
 assert(DESKTOP_HISTORY_FLUSH_MILLISECONDS >= 250,
   "Wheel history dispatch must not exceed the server's four-operation-per-second limit.");
+assert(DESKTOP_APPLICATION_WHEEL_FLUSH_MILLISECONDS >= 16,
+  "Application wheel reports must be coalesced across a rendered input frame.");
+assert(routeDesktopWheel(-1, false, false) === "history",
+  "Unmodified wheel input defaults to authoritative tmux history.");
+assert(routeDesktopWheel(-1, false, true) === "application",
+  "Enabled App Scroll routes wheel input to the foreground application.");
+assert(routeDesktopWheel(-1, true, true) === "zoom",
+  "Ctrl+wheel retains font zoom even while App Scroll is enabled.");
+assert(routeDesktopWheel(0, false, true) === "ignore" &&
+  routeDesktopWheel(Number.NaN, false, true) === "ignore",
+"Invalid wheel input never enters either scroll path.");
 
 console.log("desktop terminal wheel tests passed");

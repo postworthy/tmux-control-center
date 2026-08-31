@@ -59,7 +59,8 @@ existing mobile PWA.
   - Evidence: pending
 - [ ] AC6 — Desktop keyboard navigation, independent windows, focus, selection,
   copy/paste, one tmux-owned right-click menu without a duplicate tmuxctl
-  overlay, coalesced unmodified-wheel tmux history, reliable
+  overlay, coalesced unmodified-wheel tmux history by default, a device-local
+  per-session App Scroll toggle for foreground tools, reliable
   initial/maximized/fullscreen fitting, resize, bounded Ctrl+mouse-wheel text
   zoom, collapsible icon-rail navigation, draggable split groups, and reconnect
   pass automated interaction checks and owner Ubuntu acceptance without mobile
@@ -98,7 +99,7 @@ existing mobile PWA.
 | 2. Shell and profiles | completed | Self-contained desktop shell and safe multi-profile settings handle launch, validation, auth, TLS, offline, and reconnect states. | 21 URL/profile tests, owner-only settings inspection, native chooser and offline/reconnect runtime |
 | 3. Session thin slice | completed | Each open desktop tab creates one real tmux client and clean/abrupt close paths detach only app-owned clients. | Server integration plus isolated two-session, clean-close, network-loss, reconnect, and abrupt-close runtime |
 | 4. Tmux topology | completed | Session/window/pane tabs and splits use fixed typed operations and round-trip through authoritative tmux state. | Core/parser/fixed-argv tests, 50 server integration tests, opt-in isolated topology test, Photino/tmux UI round trip |
-| 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input, bounded Ctrl+wheel text zoom, one global five-zone split overlay, single-view reset, collapsible sidebar, working pop-outs, create/rename/kill, ordinary exit, and recovery meet AC4-AC6. | Focused layout/wheel/pop-out tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
+| 5. Desktop interaction | in progress | Keyboard/mouse terminal workflows, settled initial/fullscreen fit, coalesced tmux-history wheel input with explicit per-session App Scroll routing, bounded Ctrl+wheel text zoom, one global five-zone split overlay, single-view reset, collapsible sidebar, working pop-outs, create/rename/kill, ordinary exit, and recovery meet AC4-AC6. | Focused layout/wheel/pop-out tests, frontend suites, physical Ubuntu acceptance, and canonical verification |
 | 6. Cross-platform delivery | in progress | Ubuntu executable/launcher and macOS app-bundle source builds carry the PWA icon; launch/pinning evidence, docs, rollback, canonical gate, and review all pass. | `dotnet publish`, platform smoke tests, bundle/launcher checks, `./scripts/verify.sh`, Review Record |
 
 Thin slice: complete Unit 3 so an Ubuntu desktop app can select a saved server,
@@ -568,6 +569,15 @@ the session remains running and becomes detached in the mobile PWA.
   not capture F12. Focused frontend, native, delivery, production-build, and
   full .NET 10 checks pass; deployment and physical chromeless-fullscreen
   acceptance remain at the owner boundary.
+- 2026-08-31: added an explicit App Scroll toggle to every expanded desktop
+  session row. The default path retains coalesced authoritative tmux history;
+  enabling one session leaves its unmodified wheel events to xterm and batches
+  negotiated mouse reports for the foreground tool without changing Ctrl+wheel
+  font zoom. The bounded device-local preference updates mounted terminals,
+  persists across reloads, and syncs across native windows without affecting
+  other sessions. Focused routing, persistence, typecheck, delivery, and
+  production-bundle checks pass; deployment and physical mouse-aware-tool
+  acceptance remain at the owner boundary.
 
 ## Discoveries
 
@@ -649,11 +659,12 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Retry State
 
-- Current attempt: 1 for the F12 native-fullscreen addition
+- Current attempt: 1 for the desktop App Scroll addition
 - Maximum attempts per unchanged failure: 2
-- Last observed failure: none for the F12 behavior. The first installed-artifact
-  overwrite was correctly refused because the existing tmuxctl executable is
-  running; an isolated self-contained build succeeded without stopping it.
+- Last observed failure: none for the App Scroll behavior. The canonical host
+  command reaches the unchanged SDK 8 versus pinned SDK 10 toolchain boundary
+  after all shell and desktop delivery guards pass; focused frontend checks and
+  the production bundle pass directly.
 - Resume evidence: the owner chose predecessor-stack ordering and authorized
   local history repair. Both Git findings are resolved with an unchanged source
   tree and a passing canonical gate.
@@ -664,10 +675,10 @@ the session remains running and becomes detached in the mobile PWA.
 ## Next Action
 
 - Owner authorizes the server deployment and closes the currently running
-  tmuxctl process long enough to rebuild/install the Ubuntu launcher, then
-  confirms F12 enters and leaves chromeless fullscreen while xterm remains
-  connected and fills the surface. Apple Silicon launch/pinning remains
-  external.
+  tmuxctl process long enough to rebuild/install the pending F12-capable Ubuntu
+  launcher, then confirms the per-session App Scroll toggle routes a mouse-aware
+  foreground tool while disabled mode returns to tmux history. F12 fullscreen
+  and Apple Silicon launch/pinning remain physical/external acceptance.
 
 ## Pause Conditions
 

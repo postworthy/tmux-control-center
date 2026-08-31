@@ -17,30 +17,46 @@ import {
   terminalHostCanBeFit,
   terminalHostGeometryKey
 } from "./terminalLayout";
-import { DESKTOP_HISTORY_FLUSH_MILLISECONDS, historyRequestFromWheelDelta } from "./terminalWheel";
-import { MAX_PASTE_BYTES, pasteByteLength, requiresPasteConfirmation, serializeTerminalInput } from "../src/terminalInput";
+import {
+  DESKTOP_APPLICATION_WHEEL_FLUSH_MILLISECONDS,
+  DESKTOP_HISTORY_FLUSH_MILLISECONDS,
+  historyRequestFromWheelDelta,
+  routeDesktopWheel
+} from "./terminalWheel";
+import {
+  MAX_PASTE_BYTES,
+  coalesceTerminalInput,
+  pasteByteLength,
+  requiresPasteConfirmation,
+  serializeTerminalInput
+} from "../src/terminalInput";
 
 export type TerminalConnectionState = "connecting" | "connected" | "reconnecting" | "disconnected";
 
 interface Props {
   sessionId: string;
   active: boolean;
+  applicationScrollEnabled: boolean;
   onConnectionState: (state: TerminalConnectionState) => void;
   onError: (message: string) => void;
 }
 
-export default function DesktopTerminal({ sessionId, active, onConnectionState, onError }: Props) {
+export default function DesktopTerminal({
+  sessionId, active, applicationScrollEnabled, onConnectionState, onError
+}: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const refitRef = useRef<(() => void) | null>(null);
   const activeRef = useRef(active);
+  const applicationScrollRef = useRef(applicationScrollEnabled);
   const connectionCallbackRef = useRef(onConnectionState);
   const errorCallbackRef = useRef(onError);
 
   useEffect(() => { connectionCallbackRef.current = onConnectionState; }, [onConnectionState]);
   useEffect(() => { errorCallbackRef.current = onError; }, [onError]);
   activeRef.current = active;
+  applicationScrollRef.current = applicationScrollEnabled;
 
   useEffect(() => {
     if (!active) return;
@@ -82,6 +98,9 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
     let lastHostGeometry: string | null = null;
     let historyWheelDelta = 0;
     let historyTimer = 0;
+    let dispatchingApplicationWheel = false;
+    let applicationWheelInput: string[] = [];
+    let applicationWheelTimer = 0;
     const settleTimers = new Set<number>();
     const fitAndResize = () => {
       fitFrame = 0;
@@ -133,11 +152,20 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       const socket = socketRef.current;
       if (request && socket?.readyState === WebSocket.OPEN) socket.send(request);
     };
+    const flushApplicationWheel = () => {
+      applicationWheelTimer = 0;
+      const data = coalesceTerminalInput(applicationWheelInput);
+      applicationWheelInput = [];
+      const socket = socketRef.current;
+      if (data && socket?.readyState === WebSocket.OPEN)
+        for (const message of serializeTerminalInput(data)) socket.send(message);
+    };
     const terminalWheel = (event: WheelEvent) => {
+      const route = routeDesktopWheel(event.deltaY, event.ctrlKey, applicationScrollRef.current);
+      if (route === "ignore") return;
       const current = terminal.options.fontSize ?? DEFAULT_TERMINAL_FONT_SIZE;
       const next = terminalFontSizeForWheel(current, event.deltaY, event.ctrlKey);
-      if (next === null) {
-        if (!Number.isFinite(event.deltaY) || event.deltaY === 0) return;
+      if (route === "history") {
         event.preventDefault();
         event.stopPropagation();
         historyWheelDelta += event.deltaY;
@@ -145,8 +173,19 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
           historyTimer = window.setTimeout(flushHistoryWheel, DESKTOP_HISTORY_FLUSH_MILLISECONDS);
         return;
       }
+      if (route === "application") {
+        dispatchingApplicationWheel = true;
+        queueMicrotask(() => {
+          dispatchingApplicationWheel = false;
+          if (!applicationWheelTimer)
+            applicationWheelTimer = window.setTimeout(
+              flushApplicationWheel, DESKTOP_APPLICATION_WHEEL_FLUSH_MILLISECONDS);
+        });
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
+      if (next === null) return;
       if (next === current) return;
       terminal.options.fontSize = next;
       scheduleSettledFit();
@@ -159,6 +198,10 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
     observer.observe(terminalHost);
     if (terminalHost.parentElement) observer.observe(terminalHost.parentElement);
     const input = terminal.onData(data => {
+      if (dispatchingApplicationWheel) {
+        applicationWheelInput.push(data);
+        return;
+      }
       const socket = socketRef.current;
       if (socket?.readyState === WebSocket.OPEN) socket.send(encoder.encode(data));
     });
@@ -259,6 +302,7 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
       stopped = true;
       window.clearTimeout(retryTimer);
       window.clearTimeout(historyTimer);
+      window.clearTimeout(applicationWheelTimer);
       window.clearInterval(geometryTimer);
       if (fitFrame) window.cancelAnimationFrame(fitFrame);
       for (const timer of settleTimers) window.clearTimeout(timer);
@@ -283,5 +327,7 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
   }, [sessionId]);
 
   return <div className={active ? "terminal-host active" : "terminal-host"}
-    ref={hostRef} aria-label="Terminal" aria-hidden={!active} />;
+    ref={hostRef} aria-label={applicationScrollEnabled
+      ? "Terminal. Application scrolling is enabled."
+      : "Terminal. Mouse wheel navigates tmux history."} aria-hidden={!active} />;
 }

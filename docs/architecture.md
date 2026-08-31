@@ -88,8 +88,12 @@ terminal WebSocket.
 
 The desktop xterm host captures wheel events before WebView or xterm local
 scroll handling. Ctrl-modified input changes font size one point at a time
-within an 8–32px bound; unmodified input is coalesced to at most four typed tmux
-history operations per second. Initial activation and viewport changes use an
+within an 8–32px bound; unmodified input defaults to at most four coalesced typed
+tmux history operations per second. Each expanded sidebar session row exposes a
+device-local, per-session App Scroll toggle. While enabled, the host leaves
+unmodified wheel events to xterm and coalesces any negotiated mouse reports
+before sending them to the foreground tool; Ctrl+wheel remains font zoom.
+Initial activation and viewport changes use an
 immediate animation-frame fit plus delayed settled-layout fits, with observers
 on both the host and terminal stage and explicit window/fullscreen/visibility
 triggers. Each successful dimension change is reported through the existing

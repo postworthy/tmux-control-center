@@ -119,7 +119,8 @@ Status: Approved
 - FR29: make the desktop interface behave like a conventional Linux terminal
   with keyboard-driven tabs, splits, focus, selection, copy/paste, one
   terminal-rendered tmux right-click menu, authoritative tmux-history
-  mouse-wheel scrolling, resizing, reliable
+  mouse-wheel scrolling by default, an explicit device-local per-session App
+  Scroll toggle that routes wheel input to mouse-aware foreground tools, resizing, reliable
   initial/maximized/fullscreen fitting, bounded Ctrl+mouse-wheel text zoom, a
   collapsible icon-rail sidebar, and reconnection states, without rendering the
   PWA's mobile cards, swipe navigation, touch shortcut bar, or oversized mobile
