@@ -82,6 +82,19 @@ public sealed record ProcessResult(
     bool TimedOut);
 
 public sealed record TerminalSize(int Columns, int Rows);
+
+public static class TerminalSizeLimits
+{
+    public const int MinimumColumns = 10;
+    public const int MaximumColumns = 2048;
+    public const int MinimumRows = 5;
+    public const int MaximumRows = 1024;
+
+    public static bool IsSupported(TerminalSize size) =>
+        size.Columns is >= MinimumColumns and <= MaximumColumns &&
+        size.Rows is >= MinimumRows and <= MaximumRows;
+}
+
 public sealed record InventorySnapshot(long Version, DateTimeOffset UpdatedAt, IReadOnlyList<TmuxSession> Sessions);
 public sealed record CreatedTmuxSession(string Id, string Name);
 public sealed record CreatedTmuxWindow(string Id);

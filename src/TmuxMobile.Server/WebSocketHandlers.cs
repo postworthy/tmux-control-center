@@ -219,8 +219,15 @@ public sealed class WebSocketHandlers(
                 }
                 else if (type == "resize")
                 {
-                    await pty.ResizeAsync(new(root.GetProperty("cols").GetInt32(),
-                        root.GetProperty("rows").GetInt32()), cancellationToken);
+                    var size = new TerminalSize(root.GetProperty("cols").GetInt32(),
+                        root.GetProperty("rows").GetInt32());
+                    if (!TerminalSizeLimits.IsSupported(size))
+                    {
+                        await CloseQuietlyAsync(socket, WebSocketCloseStatus.InvalidPayloadData,
+                            "Invalid terminal dimensions");
+                        break;
+                    }
+                    await pty.ResizeAsync(size, cancellationToken);
                 }
                 else if (type == "history")
                 {

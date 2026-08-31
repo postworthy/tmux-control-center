@@ -585,6 +585,43 @@ public sealed class ApiTests
     }
 
     [Fact]
+    public async Task TerminalResizeAcceptsHighResolutionMaximum()
+    {
+        await using var factory = new TmuxFactory(authenticated: true);
+        var client = factory.Server.CreateWebSocketClient();
+        using var socket = await client.ConnectAsync(
+            new Uri($"ws://localhost/ws/terminal/{TmuxFactory.Session.Id}"), CancellationToken.None);
+        var buffer = new byte[64];
+        await socket.ReceiveAsync(buffer, CancellationToken.None);
+
+        await socket.SendAsync(Encoding.UTF8.GetBytes(
+                $$"""{"type":"resize","cols":{{TerminalSizeLimits.MaximumColumns}},"rows":{{TerminalSizeLimits.MaximumRows}}}"""),
+            WebSocketMessageType.Text, true, CancellationToken.None);
+        await WaitUntilAsync(() => factory.LastPtySize ==
+            new TerminalSize(TerminalSizeLimits.MaximumColumns, TerminalSizeLimits.MaximumRows));
+    }
+
+    [Fact]
+    public async Task TerminalResizeRejectsFirstColumnAboveMaximum()
+    {
+        await using var factory = new TmuxFactory(authenticated: true);
+        var client = factory.Server.CreateWebSocketClient();
+        using var socket = await client.ConnectAsync(
+            new Uri($"ws://localhost/ws/terminal/{TmuxFactory.Session.Id}"), CancellationToken.None);
+        var buffer = new byte[128];
+        await socket.ReceiveAsync(buffer, CancellationToken.None);
+
+        await socket.SendAsync(Encoding.UTF8.GetBytes(
+                $$"""{"type":"resize","cols":{{TerminalSizeLimits.MaximumColumns + 1}},"rows":65}"""),
+            WebSocketMessageType.Text, true, CancellationToken.None);
+
+        var result = await socket.ReceiveAsync(buffer, CancellationToken.None);
+        Assert.Equal(WebSocketMessageType.Close, result.MessageType);
+        Assert.Equal(WebSocketCloseStatus.InvalidPayloadData, socket.CloseStatus);
+        Assert.Equal("Invalid terminal dimensions", socket.CloseStatusDescription);
+    }
+
+    [Fact]
     public async Task TerminalHistoryMessageUsesTmuxControlWithoutWritingPtyInput()
     {
         await using var factory = new TmuxFactory(authenticated: true);
@@ -725,6 +762,7 @@ public sealed class TmuxFactory(bool authenticated,
     public IReadOnlyList<string> TopologyCalls => fakeTmux.TopologyCalls.ToArray();
     public IReadOnlyList<AuditRecord> AuditRecords => fakeAudit.Records.ToArray();
     public long LastPtyInputLength => fakePty.Last?.InputLength ?? 0;
+    public TerminalSize? LastPtySize => fakePty.Last?.LastSize;
     public int RenameCalls => fakeTmux.RenameCalls;
     public int CreateCalls => fakeTmux.CreateCalls;
     public int KillCalls => fakeTmux.KillCalls;
@@ -818,8 +856,12 @@ public sealed class TmuxFactory(bool authenticated,
         public long InputLength => ((MemoryStream)Input).ToArray().LongLength;
         public int ProcessId => 4242;
         public bool HasExited { get; private set; }
-        public ValueTask ResizeAsync(TerminalSize size, CancellationToken cancellationToken) =>
-            ValueTask.CompletedTask;
+        public TerminalSize? LastSize { get; private set; }
+        public ValueTask ResizeAsync(TerminalSize size, CancellationToken cancellationToken)
+        {
+            LastSize = size;
+            return ValueTask.CompletedTask;
+        }
         public Task WaitForExitAsync(CancellationToken cancellationToken) =>
             Task.Delay(Timeout.Infinite, cancellationToken);
         public ValueTask DisposeAsync()

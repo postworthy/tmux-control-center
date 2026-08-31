@@ -90,3 +90,20 @@ Related Commit(s): `2f76c73`, `66c7a53`
   response without an unexplained PTY teardown.
 - Retain physical Ubuntu acceptance at both sides of the former threshold and
   require the maximized terminal to stay connected through settled refits.
+
+## Resolution Evidence
+
+- The local correction establishes a shared 10–2048 column by 5–1024 row
+  contract across desktop fitting, server message validation, and Linux PTY
+  initial/resize paths. A 5K/minimum-font-sized 1067×480 proposal is retained
+  exactly; still-larger proposals clamp xterm and the transmitted dimensions
+  together.
+- Focused frontend checks, all twelve frontend suites, production build,
+  delivery guards, 32 Core, 41 Desktop, 58 Server integration, and 26 ordinary
+  Infrastructure tests pass. Six opt-in isolated Linux tests pass with tmux 3.4,
+  including real `TIOCSWINSZ` acceptance at 2048×1024 and rejection at 2049.
+- The canonical host command passes its shell guards but cannot start its .NET
+  leg because the host has SDK 8 while `global.json` pins 10.0.300. The same
+  solution passes in the repository's compiler-equipped .NET 10 image; frontend
+  and Compose legs pass directly. Deployment and physical fullscreen acceptance
+  remain pending.

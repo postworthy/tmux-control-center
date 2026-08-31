@@ -13,6 +13,7 @@ import {
   NATIVE_WINDOW_GEOMETRY_EVENT,
   SETTLED_TERMINAL_REFIT_DELAYS,
   TERMINAL_GEOMETRY_POLL_MILLISECONDS,
+  boundedTerminalGrid,
   terminalHostCanBeFit,
   terminalHostGeometryKey
 } from "./terminalLayout";
@@ -89,6 +90,9 @@ export default function DesktopTerminal({ sessionId, active, onConnectionState, 
           !terminalHostCanBeFit(host.clientWidth, host.clientHeight)) return;
       lastHostGeometry = terminalHostGeometryKey(host.clientWidth, host.clientHeight);
       fit.fit();
+      const grid = boundedTerminalGrid(terminal.cols, terminal.rows);
+      if (terminal.cols !== grid.columns || terminal.rows !== grid.rows)
+        terminal.resize(grid.columns, grid.rows);
       const socket = socketRef.current;
       if (socket?.readyState === WebSocket.OPEN) {
         const dimensions = `${terminal.cols}x${terminal.rows}`;

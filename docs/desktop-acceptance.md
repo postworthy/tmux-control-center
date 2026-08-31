@@ -95,6 +95,8 @@ Complete these checks with disposable tmux sessions:
    confirm xterm is visible without first resizing the native window. Maximize,
    enter/leave fullscreen, and resize the window; at every transition confirm
    xterm fills the terminal area and the active tmux client dimensions follow it.
+   On a 5K/ultrawide display, confirm a grid wider than 500 columns remains
+   connected while maximized.
 8. Temporarily disconnect the client from its Tailscale network, reconnect, and
    then suspend/resume the workstation. Confirm the UI reports offline/reconnect
    states, creates no duplicate attachment, and the tmux sessions survive.

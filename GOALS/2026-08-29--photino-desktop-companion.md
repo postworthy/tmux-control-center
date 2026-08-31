@@ -534,6 +534,19 @@ the session remains running and becomes detached in the mobile PWA.
   bridge and reconnect backoff both operate as implemented; the missing shared
   dimension contract makes every maximized retry fail. No corrective source or
   deployment change has occurred yet.
+- 2026-08-31: the owner approved a 2048×1024 bounded correction and its
+  deployment. Core now owns the 10–2048 by 5–1024 PTY contract, the WebSocket
+  validates it before adapter invocation, Linux initial and resize paths enforce
+  it, and desktop xterm clamps its own logical grid to matching bounds before
+  transmission. Focused typecheck, all twelve frontend suites, production web
+  build, delivery guards, 32 Core, 41 Desktop, 58 Server integration, and 26
+  Infrastructure tests pass; all six opt-in Linux tests also pass with tmux 3.4,
+  including real 2048 acceptance and 2049 rejection. The canonical host command
+  passes every shell guard before stopping at the known host SDK 8 versus pinned
+  SDK 10.0.300 boundary; its .NET leg passes in the compiler-equipped .NET 10
+  image, and the remaining frontend and Compose assertions pass directly.
+  Production build, rollback snapshot, deployment, and live 2048/2049 proof are
+  next.
 
 ## Discoveries
 
@@ -630,10 +643,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Implement the RCA-bounded terminal-grid contract across desktop fitting,
-  WebSocket validation, and the Linux PTY adapter; add regression coverage for
-  the 500/501 failure boundary and supported 5K/minimum-font geometry before
-  requesting another deployment. Apple Silicon launch/pinning remains external.
+- Commit the verified 2048×1024 correction, preserve the current live image,
+  build and probe the replacement, replace only the Compose app service, and
+  prove live 2048 acceptance plus 2049 rejection without changing user tmux
+  sessions. Apple Silicon launch/pinning remains external.
 
 ## Pause Conditions
 

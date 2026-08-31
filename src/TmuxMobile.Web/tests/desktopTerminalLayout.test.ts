@@ -1,7 +1,12 @@
 import {
+  MAXIMUM_TERMINAL_COLUMNS,
+  MAXIMUM_TERMINAL_ROWS,
+  MINIMUM_TERMINAL_COLUMNS,
+  MINIMUM_TERMINAL_ROWS,
   NATIVE_WINDOW_GEOMETRY_EVENT,
   SETTLED_TERMINAL_REFIT_DELAYS,
   TERMINAL_GEOMETRY_POLL_MILLISECONDS,
+  boundedTerminalGrid,
   terminalHostCanBeFit,
   terminalHostGeometryKey
 } from "../desktop/terminalLayout.js";
@@ -26,5 +31,14 @@ assert(terminalHostGeometryKey(0, 500) === null && TERMINAL_GEOMETRY_POLL_MILLIS
   "Hidden terminals must be ignored and geometry polling must remain bounded.");
 assert(NATIVE_WINDOW_GEOMETRY_EVENT === "tmuxctl:native-window-geometry-changed",
   "Native window geometry must use a stable app-wide refit event.");
+assert(MAXIMUM_TERMINAL_COLUMNS === 2048 && MAXIMUM_TERMINAL_ROWS === 1024 &&
+  MINIMUM_TERMINAL_COLUMNS === 10 && MINIMUM_TERMINAL_ROWS === 5,
+  "Desktop terminal bounds must match the server PTY contract.");
+const fiveKilopixelGrid = boundedTerminalGrid(1067, 480);
+assert(fiveKilopixelGrid.columns === 1067 && fiveKilopixelGrid.rows === 480,
+  "A 5K display at minimum font size must retain its complete fitted grid.");
+const boundedGrid = boundedTerminalGrid(4096, 2048);
+assert(boundedGrid.columns === MAXIMUM_TERMINAL_COLUMNS && boundedGrid.rows === MAXIMUM_TERMINAL_ROWS,
+  "Oversized terminal grids must remain within the finite server contract.");
 
 console.log("desktop terminal layout tests passed");

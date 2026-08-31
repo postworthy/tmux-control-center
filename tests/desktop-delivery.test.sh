@@ -30,6 +30,12 @@ grep -Fq '.RegisterRestoredHandler(NotifyNativeGeometryChanged)' \
 grep -Fq 'bridge.receiveMessage?.' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'window.addEventListener(NATIVE_WINDOW_GEOMETRY_EVENT, viewportChanged)' \
   "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
+grep -Fq 'MAXIMUM_TERMINAL_COLUMNS = 2048' \
+  "$repository_root/src/TmuxMobile.Web/desktop/terminalLayout.ts"
+grep -Fq 'boundedTerminalGrid(terminal.cols, terminal.rows)' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
+grep -Fq 'MaximumColumns = 2048' \
+  "$repository_root/src/TmuxMobile.Core/Models.cs"
 grep -Fq 'if (socketRef.current !== socket) return;' \
   "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
 grep -Fq 'if (socket !== current) return;' \

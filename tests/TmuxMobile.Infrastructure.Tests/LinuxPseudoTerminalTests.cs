@@ -9,6 +9,26 @@ public sealed class LinuxPseudoTerminalTests
 {
     [LinuxIntegrationFact]
     [Trait("Category", "LinuxIntegration")]
+    public async Task ResizeAcceptsHighResolutionContractMaximumAndRejectsAboveIt()
+    {
+        if (!OperatingSystem.IsLinux() || !File.Exists("/bin/bash")) return;
+        var factory = new LinuxPseudoTerminalFactory(NullLoggerFactory.Instance);
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => factory.StartAsync("/bin/bash",
+            ["-c", "sleep 300"], new TerminalSize(TerminalSizeLimits.MaximumColumns + 1, 24),
+            new Dictionary<string, string> { ["TERM"] = "xterm-256color" }, CancellationToken.None));
+        await using var pty = await factory.StartAsync("/bin/bash",
+            ["-c", "sleep 300"], new TerminalSize(80, 24),
+            new Dictionary<string, string> { ["TERM"] = "xterm-256color" }, CancellationToken.None);
+
+        await pty.ResizeAsync(new(TerminalSizeLimits.MaximumColumns, TerminalSizeLimits.MaximumRows),
+            CancellationToken.None);
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+            await pty.ResizeAsync(new(TerminalSizeLimits.MaximumColumns + 1,
+                TerminalSizeLimits.MaximumRows), CancellationToken.None));
+    }
+
+    [LinuxIntegrationFact]
+    [Trait("Category", "LinuxIntegration")]
     public async Task DisconnectingPtyLeavesDedicatedTmuxSessionRunning()
     {
         if (!OperatingSystem.IsLinux() || !File.Exists("/usr/bin/tmux")) return;

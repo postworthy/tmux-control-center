@@ -5,16 +5,18 @@ Updated: 2026-08-31
 ## Current
 
 - Physical Ubuntu acceptance proved the maximize and reconnect symptoms share
-  one cause. On the 5120-pixel display, unrestricted xterm fitting crosses the
-  Linux PTY adapter's undocumented 500-column maximum; the server catches that
-  resize as invalid input, closes the terminal socket with code 1007, and every
-  maximized retry repeats it. A disposable protected live probe stays open at
-  500×65 and closes immediately at 501×65, while reducing the real window below
-  the threshold restores a stable attachment. The native resize bridge and
-  bounded reconnect policy work as implemented, but their prior tests omitted
-  the browser-to-real-PTY upper-bound contract. RCA is recorded in
-  `RCA/2026-08-31--desktop-fullscreen-width-exceeds-pty-bound.md`; no corrective
-  source or deployment change has occurred yet.
+  one cause: the 5120-pixel display crossed the Linux PTY's private 500-column
+  maximum. The owner-approved local correction replaces that mismatch with a
+  shared 10–2048 column by 5–1024 row contract across xterm, WebSocket
+  validation, and Linux PTY allocation/resizing. Wide 5K grids are preserved;
+  larger proposals clamp both xterm and transmitted dimensions. All focused
+  frontend/server/core tests, the production web build, 58 server integration
+  tests, and six isolated real-Linux/tmux tests pass, including 2048 acceptance
+  and 2049 rejection. The canonical shell checks pass; its .NET leg is proven
+  in the pinned compiler-equipped .NET 10 image because the host has only SDK 8.
+  RCA is recorded in
+  `RCA/2026-08-31--desktop-fullscreen-width-exceeds-pty-bound.md`; owner-approved
+  deployment is next.
 - The owner-authorized desktop stability rollout is live. Native title-bar
   maximize/restore refitting and stable-connection-gated reconnect backoff were
   committed separately as `2f76c73` and `66c7a53`. Image

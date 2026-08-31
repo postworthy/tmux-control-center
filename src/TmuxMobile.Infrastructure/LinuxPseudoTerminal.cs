@@ -69,6 +69,8 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
         IReadOnlyDictionary<string, string> environment,
         ILogger logger)
     {
+        if (!TerminalSizeLimits.IsSupported(size))
+            throw new ArgumentOutOfRangeException(nameof(size));
         var execExecutable = environment.Count == 0 ? executable : "/usr/bin/env";
         var argv = environment.Count == 0
             ? new[] { executable }.Concat(arguments).ToArray()
@@ -102,7 +104,7 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
     public ValueTask ResizeAsync(TerminalSize size, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (size.Columns is < 10 or > 500 || size.Rows is < 5 or > 300)
+        if (!TerminalSizeLimits.IsSupported(size))
             throw new ArgumentOutOfRangeException(nameof(size));
         var winsize = new Native.WinSize((ushort)size.Rows, (ushort)size.Columns, 0, 0);
         var descriptor = _output.SafeFileHandle.DangerousGetHandle().ToInt32();

@@ -64,6 +64,18 @@ public sealed class InputValidationTests
     }
 }
 
+public sealed class TerminalSizeLimitsTests
+{
+    [Theory]
+    [InlineData(10, 5, true)]
+    [InlineData(2048, 1024, true)]
+    [InlineData(9, 5, false)]
+    [InlineData(2049, 1024, false)]
+    [InlineData(2048, 1025, false)]
+    public void EnforcesBoundedHighResolutionGrid(int columns, int rows, bool expected) =>
+        Assert.Equal(expected, TerminalSizeLimits.IsSupported(new(columns, rows)));
+}
+
 public sealed class StatusInferenceTests
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-07-30T12:00:00Z");

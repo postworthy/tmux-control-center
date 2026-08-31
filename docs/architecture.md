@@ -88,8 +88,12 @@ history operations per second. Initial activation and viewport changes use an
 immediate animation-frame fit plus delayed settled-layout fits, with observers
 on both the host and terminal stage and explicit window/fullscreen/visibility
 triggers. Each successful dimension change is reported through the existing
-terminal resize envelope. This desktop-only behavior does not enter the mobile
-terminal component.
+terminal resize envelope. The browser, WebSocket boundary, and Linux PTY share
+a finite 10–2048 column by 5–1024 row contract. That ceiling preserves complete
+fitting on supported 5K/6K and typical 8K displays at the minimum desktop font
+size while bounding tmux grid allocation; a still-larger proposal is clamped in
+xterm before it is sent. This desktop-only fitting behavior does not enter the
+mobile terminal component.
 The root editor node and nested split nodes all receive an explicit flexible
 basis so an unsplit first session consumes the same complete workspace as later
 nested layouts before xterm performs its fit.

@@ -129,3 +129,15 @@ origin. The endpoint is anonymous and rate-limited because it exposes no host,
 identity, tmux, or authentication state; the client refuses redirects and
 requires the closed version-1 feature set. Missing or incompatible support
 returns to the native chooser with an actionable update message.
+
+## D012 — Share a bounded high-resolution terminal grid
+
+Date: 2026-08-31
+
+Desktop xterm fitting, the terminal WebSocket boundary, and the Linux PTY use
+one 10–2048 column by 5–1024 row contract. The upper bound preserves complete
+grids on supported 5K/6K ultrawide and typical 8K displays at the minimum font
+size while keeping allocation finite. The desktop clamps a still-larger fitted
+grid before resizing xterm or transmitting it, the server rejects dimensions
+outside the contract explicitly, and the PTY adapter enforces the same limits
+for both initial allocation and later `TIOCSWINSZ` calls.
