@@ -242,7 +242,7 @@ Status: active
 
 ## C022 — tmuxctl Photino desktop companion
 
-Status: two-click desktop kill confirmation verified locally; redeployment and physical acceptance pending
+Status: two-click desktop kill confirmation deployed; physical acceptance pending
 
 - Add a self-contained .NET 10/Photino desktop client with a desktop-specific
   xterm.js interface for Ubuntu x64 and Apple Silicon macOS.

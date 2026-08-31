@@ -229,7 +229,13 @@ Results:
   submission. Focused checks, production bundle inspection, and canonical
   verification pass with twelve frontend suites, 41 Desktop, 56 Server
   integration, 27 Core, and 26 Infrastructure tests plus five intentional
-  skips. Deployment and physical confirmation remain.
+  skips. Owner-approved image `sha256:82b787f4...` is live, healthy, and at zero
+  restarts; predecessor `sha256:1fbc3c0a...` is preserved as
+  `tmux-mobile:pre-two-click-kill-20260830`. Served modal markers, typed-prompt
+  absence, forced-address TLS/protocol checks, backend 426 denial, bounded logs,
+  and exact five-session continuity pass. `resolvectl` resolves MagicDNS while
+  sandboxed `curl` does not, so native name-resolution confirmation remains in
+  physical acceptance.
 
 ## Findings
 
@@ -298,8 +304,8 @@ tmux command was found in the reviewed C022 range.
   confirm right click opens only tmux's full terminal-rendered menu.
 - Physically verify bounded Ctrl+wheel text zoom while confirming unmodified
   wheel behavior remains unchanged in the deployed build.
-- After explicit approval, deploy the two-click kill confirmation and verify ×,
-  Cancel, and **Kill session** preserve the documented target semantics.
+- Verify ×, Cancel, and **Kill session** preserve the documented target
+  semantics in the deployed build.
 - Follow `docs/desktop-acceptance.md` for both physical-platform checks and
   report only its sanitized evidence fields.
 - After physical acceptance, re-run canonical verification and update this

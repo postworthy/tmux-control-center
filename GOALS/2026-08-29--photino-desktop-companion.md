@@ -604,10 +604,11 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner authorizes replacement of the live Compose app with the verified
-  two-click kill-confirmation build. Then resume owner acceptance for kill,
+- Owner closes older tmuxctl windows and resumes acceptance for two-click kill,
   rename, right-click, and layout behavior with the now-proven concurrent mobile
-  terminal path. Apple Silicon launch/pinning remains external.
+  terminal path. Confirm native MagicDNS connection during that pass because
+  the deployment shell's resolver disagreed with `resolvectl`. Apple Silicon
+  launch/pinning remains external.
 
 ## Pause Conditions
 
@@ -682,7 +683,15 @@ the session remains running and becomes detached in the mobile PWA.
   Focused typecheck, all twelve frontend suites, the delivery guard, production
   bundle inspection, and canonical verification pass with 41 Desktop, 56 Server
   integration, 27 Core, and 26 Infrastructure tests plus five intentional
-  skips. Redeployment and physical acceptance remain.
+  skips. Owner-approved image `sha256:82b787f4...` is now live, healthy, and at
+  zero restarts; prior capacity-fix image `sha256:1fbc3c0a...` is preserved as
+  `tmux-mobile:pre-two-click-kill-20260830`. The served bundle contains the
+  confirmation copy and no typed-name prompt, protocol 1 and backend 426 denial
+  pass through a forced tailnet address with hostname/TLS validation, startup
+  logs contain no failure, and all five pre-rollout sessions retain exact window
+  and attachment counts. `resolvectl` resolves the MagicDNS name to the expected
+  tailnet address, but sandboxed `curl` reports `Could not resolve host`; native
+  connection and physical behavior remain owner acceptance.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch/identity, Ubuntu launcher, Apple Silicon app-bundle structure,
   compatibility, TLS, tests, docs, rollback, and review evidence are complete;
