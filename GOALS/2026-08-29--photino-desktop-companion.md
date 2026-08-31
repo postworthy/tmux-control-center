@@ -141,6 +141,27 @@ independent authentication, and explicitly return to the launcher.
   host boundary: the repository pins .NET SDK 10.0.300 while this host provides
   only 8.0.130. Focused typecheck, unit tests, and production builds remain
   green; the .NET 10 container publish is the required equivalent build proof.
+- 2026-08-31: committed the PWA launcher as `295e327` and built production image
+  `tmux-mobile:pwa-server-launcher-295e327` at
+  `sha256:903b662a28c00e9d58e3fcb39c5ead7b237eb8e85c4fc5d122764f75e1f9205c`.
+  Its .NET 10 build stage passed 32 Core, 26 Infrastructure, 42 Desktop, and 58
+  Server Integration tests; the six skipped Infrastructure cases remain the
+  repository's explicit opt-in real-tmux tests. The initial Docker invocation
+  could not update sandboxed buildx activity metadata, then the same build
+  passed with the approved Docker boundary; this was an environment retry, not
+  a product failure.
+- 2026-08-31: deployed only the app service after Compose validation and the
+  isolated host/container tmux 3.4 probe. The prior image is preserved as
+  `tmux-mobile:pre-pwa-server-launcher-20260831` at `sha256:77150a97...`.
+  The candidate is healthy with zero restarts, HTTPS root and liveness return
+  200, the live hashed bundle contains `Clear saved profiles`, direct HTTP
+  application access returns 426, and the backend listener remains
+  `127.0.0.1:8780`. A fresh headless Chrome run rendered the login recovery
+  entry, opened Servers, and showed the current MagicDNS origin plus Add server.
+  The exact pre/post tmux inventory remained eight sessions: `$0`
+  Troubleshooting attached, `$2` Tmux attached, `$3` Doppelganger attached,
+  `$5` imsg detached, `$10` work-codex attached, `$12` work-claude attached,
+  `$15` work-codeql attached, and `$16` secondbrain detached.
 - 2026-08-30: mobile PWA feedback showed session inventory remained available
   while every terminal attachment fell into Reconnect whenever two desktop tabs
   were open. RCA proved the unchanged per-owner terminal lease limit of two was
@@ -713,9 +734,9 @@ independent authentication, and explicitly return to the launcher.
 
 - Current attempt: 1 for the PWA server launcher
 - Maximum attempts per unchanged failure: 2
-- Last observed failure: the first focused unit run used an edit ID for a new
-  profile and was rejected as designed. Correcting that test fixture produced a
-  complete pass; this was not an unchanged product failure.
+- Last observed failure: none. The corrected focused suite, production build,
+  .NET 10 container suite, deployed runtime checks, and browser chooser smoke
+  all pass.
 - Resume evidence: the owner chose predecessor-stack ordering and authorized
   local history repair. Both Git findings are resolved with an unchanged source
   tree and a passing canonical gate.
@@ -725,8 +746,9 @@ independent authentication, and explicitly return to the launcher.
 
 ## Next Action
 
-- Run canonical verification, commit the implementation, and deploy the
-  production PWA while preserving the exact live tmux inventory.
+- Obtain owner interaction acceptance for add/edit/delete, second-origin
+  navigation, and explicit Return using the deployed PWA; continue the existing
+  physical Ubuntu/macOS desktop acceptance boundary separately.
 
 ## Pause Conditions
 
