@@ -1,9 +1,9 @@
 # Goal: tmuxctl Photino Desktop Companion
 
-Status: paused
+Status: in progress
 Owner: Human Partner and AI Agent
 Risk: T2
-Updated: 2026-08-30
+Updated: 2026-08-31
 Proposal: `PROPOSALS/2026-08-29--photino-desktop-companion.md`
 Review Boundary: merge from `feat/c022-desktop-photino-client` into `main`
 
@@ -524,6 +524,16 @@ the session remains running and becomes detached in the mobile PWA.
   executable and the PWA-derived icon. Because a client process predating the
   rebuild remains open, the owner must fully quit and relaunch it before
   physically accepting title-bar maximize/restore and reconnect behavior.
+- 2026-08-31: physical testing after that relaunch proved maximize and
+  reconnect are causally linked through an undocumented terminal-size boundary.
+  RCA `RCA/2026-08-31--desktop-fullscreen-width-exceeds-pty-bound.md` records
+  that unrestricted xterm fitting crosses the Linux PTY adapter's private
+  500-column maximum on the 5120-pixel display. A disposable live WebSocket
+  probe remains open at 500×65 and closes at 501×65 with code 1007 and
+  `Invalid terminal message`, exactly matching the browser behavior. The native
+  bridge and reconnect backoff both operate as implemented; the missing shared
+  dimension contract makes every maximized retry fail. No corrective source or
+  deployment change has occurred yet.
 
 ## Discoveries
 
@@ -605,14 +615,12 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Retry State
 
-- Current attempt: 1
+- Current attempt: 1 for the newly identified dimension-contract cause
 - Maximum attempts per unchanged failure: 2
-- Last failure resolved: the first physical Ubuntu compatibility attempt could
-  not resolve the MagicDNS origin because Tailscale DNS acceptance was disabled. A
-  forced-address request then showed the deployed server is also pre-C022. The
-  supported causes and verification gap are recorded in the related RCA.
-  Tailscale DNS acceptance is now enabled and the C022 server is live, so the
-  next physical attempt changes both proven causes.
+- Last observed failure: native maximize now refits correctly, but the resulting
+  grid crosses the real PTY's private 500-column maximum and closes the terminal
+  WebSocket as invalid input. The exact 500/501 boundary and prior verification
+  gap are recorded in the related RCA; no corrective attempt has started.
 - Resume evidence: the owner chose predecessor-stack ordering and authorized
   local history repair. Both Git findings are resolved with an unchanged source
   tree and a passing canonical gate.
@@ -622,10 +630,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner fully quits and relaunches the rebuilt Ubuntu client, then physically
-  verifies title-bar maximize/restore refits every visible xterm and an unstable
-  transport advances through bounded reconnect backoff without rapid PTY churn.
-  Apple Silicon launch/pinning remains external.
+- Implement the RCA-bounded terminal-grid contract across desktop fitting,
+  WebSocket validation, and the Linux PTY adapter; add regression coverage for
+  the 500/501 failure boundary and supported 5K/minimum-font geometry before
+  requesting another deployment. Apple Silicon launch/pinning remains external.
 
 ## Pause Conditions
 

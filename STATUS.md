@@ -4,6 +4,17 @@ Updated: 2026-08-31
 
 ## Current
 
+- Physical Ubuntu acceptance proved the maximize and reconnect symptoms share
+  one cause. On the 5120-pixel display, unrestricted xterm fitting crosses the
+  Linux PTY adapter's undocumented 500-column maximum; the server catches that
+  resize as invalid input, closes the terminal socket with code 1007, and every
+  maximized retry repeats it. A disposable protected live probe stays open at
+  500×65 and closes immediately at 501×65, while reducing the real window below
+  the threshold restores a stable attachment. The native resize bridge and
+  bounded reconnect policy work as implemented, but their prior tests omitted
+  the browser-to-real-PTY upper-bound contract. RCA is recorded in
+  `RCA/2026-08-31--desktop-fullscreen-width-exceeds-pty-bound.md`; no corrective
+  source or deployment change has occurred yet.
 - The owner-authorized desktop stability rollout is live. Native title-bar
   maximize/restore refitting and stable-connection-gated reconnect backoff were
   committed separately as `2f76c73` and `66c7a53`. Image

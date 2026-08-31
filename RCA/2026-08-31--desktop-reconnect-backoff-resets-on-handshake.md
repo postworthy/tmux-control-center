@@ -65,3 +65,8 @@ Related Commit(s): `66c7a53`
   counts, and attachment states after the app-only replacement.
 - Physical fault-injection acceptance remains pending after the owner fully
   quits and relaunches the rebuilt desktop client.
+- Follow-up physical evidence shows the corrected policy advancing retries from
+  1 to 30 seconds while fullscreen repeatedly sends a width above the real PTY's
+  500-column limit. The policy correction is effective, but the connection
+  cannot stabilize until the dimension-contract defect recorded in
+  `RCA/2026-08-31--desktop-fullscreen-width-exceeds-pty-bound.md` is corrected.

@@ -59,3 +59,8 @@ Related Commit(s): `2f76c73`
   artifact and it has no missing native libraries.
 - Physical double-click maximize and restore acceptance remains pending after a
   full quit/relaunch of the client process that predates this rebuild.
+- Follow-up physical acceptance proves the native event now reaches the fitter,
+  but a 5K fullscreen fit crosses the server's separate 500-column PTY limit and
+  closes the terminal socket. The linked transport failure and superseding next
+  action are documented in
+  `RCA/2026-08-31--desktop-fullscreen-width-exceeds-pty-bound.md`.
