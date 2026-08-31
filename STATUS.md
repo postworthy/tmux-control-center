@@ -12,11 +12,14 @@ Updated: 2026-08-31
   larger proposals clamp both xterm and transmitted dimensions. All focused
   frontend/server/core tests, the production web build, 58 server integration
   tests, and six isolated real-Linux/tmux tests pass, including 2048 acceptance
-  and 2049 rejection. The canonical shell checks pass; its .NET leg is proven
-  in the pinned compiler-equipped .NET 10 image because the host has only SDK 8.
-  RCA is recorded in
-  `RCA/2026-08-31--desktop-fullscreen-width-exceeds-pty-bound.md`; owner-approved
-  deployment is next.
+  and 2049 rejection. Corrective commit `e43e5f5` is live as image
+  `tmux-mobile:high-resolution-grid-e43e5f5` (`sha256:73fab731...`), healthy with
+  zero restarts; predecessor `sha256:696d49f9...` is preserved as
+  `tmux-mobile:pre-high-resolution-grid-20260831`. The live protected path stays
+  connected at 2048×65 and rejects 2049×65 explicitly, all six user sessions
+  match their predeployment state, and network exposure is unchanged. RCA is
+  recorded in `RCA/2026-08-31--desktop-fullscreen-width-exceeds-pty-bound.md`;
+  physical maximized-ultrawide acceptance is next.
 - The owner-authorized desktop stability rollout is live. Native title-bar
   maximize/restore refitting and stable-connection-gated reconnect backoff were
   committed separately as `2f76c73` and `66c7a53`. Image

@@ -105,5 +105,12 @@ Related Commit(s): `2f76c73`, `66c7a53`
 - The canonical host command passes its shell guards but cannot start its .NET
   leg because the host has SDK 8 while `global.json` pins 10.0.300. The same
   solution passes in the repository's compiler-equipped .NET 10 image; frontend
-  and Compose legs pass directly. Deployment and physical fullscreen acceptance
-  remain pending.
+  and Compose legs pass directly.
+- Corrective commit `e43e5f5` is live as image
+  `tmux-mobile:high-resolution-grid-e43e5f5` (`sha256:73fab731...`), healthy at
+  zero restarts with the prior image retained as
+  `tmux-mobile:pre-high-resolution-grid-20260831`. A protected disposable live
+  WebSocket/real-PTY probe stays connected at 2048×65 for 2000 ms and rejects
+  2049×65 with the explicit code 1007 reason `Invalid terminal dimensions`.
+  All six user sessions match the predeployment snapshot. Physical fullscreen
+  acceptance remains pending.

@@ -547,6 +547,19 @@ the session remains running and becomes detached in the mobile PWA.
   image, and the remaining frontend and Compose assertions pass directly.
   Production build, rollback snapshot, deployment, and live 2048/2049 proof are
   next.
+- 2026-08-31: corrective commit `e43e5f5` is deployed as
+  `tmux-mobile:high-resolution-grid-e43e5f5` with digest
+  `sha256:73fab731...`. The prior healthy image `sha256:696d49f9...` is retained
+  as `tmux-mobile:pre-high-resolution-grid-20260831`. The candidate passed the
+  disposable host/container tmux 3.4 probe before replacing only the Compose app
+  service. The replacement is healthy with zero restarts on the unchanged
+  loopback/Serve boundary; HTTPS liveness, readiness, protocol-1 compatibility,
+  cache-busted `index-CLT48frC.js`, direct-backend 426 denial, and bounded logs
+  pass. A protected disposable live WebSocket/real-PTY probe remains connected
+  at 2048×65 for 2000 ms and rejects 2049×65 explicitly with code 1007 and
+  `Invalid terminal dimensions`. The probe session was removed, and all six
+  predeployment user sessions retain their exact IDs, names, one window, and
+  attached state. Physical maximized-ultrawide acceptance remains.
 
 ## Discoveries
 
@@ -643,10 +656,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Commit the verified 2048×1024 correction, preserve the current live image,
-  build and probe the replacement, replace only the Compose app service, and
-  prove live 2048 acceptance plus 2049 rejection without changing user tmux
-  sessions. Apple Silicon launch/pinning remains external.
+- Owner maximizes the existing Ubuntu desktop window on the 5120-pixel display
+  and confirms the terminal grid exceeds the former 500-column threshold while
+  remaining connected through settled refits. Apple Silicon launch/pinning
+  remains external.
 
 ## Pause Conditions
 
