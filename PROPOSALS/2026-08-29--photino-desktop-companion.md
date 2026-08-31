@@ -28,7 +28,7 @@ In scope:
 - A proven remote authentication/CSRF/origin/WebSocket topology that preserves
   existing server security and stores no plaintext login secret in app settings.
 - Session listing, selection, creation, validated rename, real attachment,
-  detach, reconnect, and explicit named-confirmation termination.
+  detach, reconnect, and explicit two-click confirmed termination.
 - Desktop session tabs that create nested editor layouts through one global set
   of five labeled center/left/right/top/bottom drag targets. Edge targets add a
   root-relative split; center or an explicit **Single view** action returns all

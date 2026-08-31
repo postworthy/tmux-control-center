@@ -51,8 +51,8 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
   opens a session in an independent native window. The expanded sidebar can
   rename a session through the existing validated action; inventory updates the
   sidebar and every open tab without replacing its terminal attachment.
-  Explicit session kill requires typing the exact session name; terminal `exit`
-  keeps ordinary tmux semantics.
+  Explicit session kill requires clicking × and then confirming the named
+  target; terminal `exit` keeps ordinary tmux semantics.
 
 ## Development
 

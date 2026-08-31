@@ -52,7 +52,7 @@ existing mobile PWA.
   authoritative without subordinate topology chrome.
   - Evidence: pending
 - [ ] AC5 — Session listing, selection, creation, validated rename, detach, and
-  named-confirmation kill work only on inventory-resolved targets; rename
+  two-click confirmed kill work only on inventory-resolved targets; rename
   updates the sidebar and every open tab without reconnecting, closing UI never
   kills a session, and typed `exit` retains ordinary tmux pane/window/session
   behavior.
@@ -570,7 +570,7 @@ the session remains running and becomes detached in the mobile PWA.
 - Keep tmux authoritative: a desktop tab maps to a tmux session. Tmux windows
   and panes remain available through ordinary tmux interaction inside xterm;
   retain their typed API for a future compact opt-in surface, not permanent rows.
-- Close detaches app-owned clients; explicit named confirmation kills a session;
+- Close detaches app-owned clients; explicit two-click confirmation kills a session;
   terminal input is never interpreted as an app lifecycle command.
 - Target Ubuntu x64 and Apple Silicon macOS source builds before installers or
   release distribution.
@@ -604,9 +604,10 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Resume owner acceptance for rename, right-click, and layout behavior with the
-  now-proven concurrent mobile terminal path. Apple Silicon launch/pinning
-  remains external.
+- Owner authorizes replacement of the live Compose app with the verified
+  two-click kill-confirmation build. Then resume owner acceptance for kill,
+  rename, right-click, and layout behavior with the now-proven concurrent mobile
+  terminal path. Apple Silicon launch/pinning remains external.
 
 ## Pause Conditions
 
@@ -632,7 +633,7 @@ the session remains running and becomes detached in the mobile PWA.
 - Unit 5 implementation complete locally: conventional desktop shortcuts,
   independent windows, guarded clipboard paths, authoritative wheel history,
   settled initial/fullscreen fitting, bounded Ctrl+wheel font zoom, single-row
-  chrome, collapsed icon rail, exact-name kill, ordinary `exit`, and authoritative
+  chrome, collapsed icon rail, confirmed kill, ordinary `exit`, and authoritative
   tab cleanup are implemented and verified. The root-group sizing correction is
   live with served-selector evidence. The global five-zone/single-view
   correction is deployed as healthy zero-restart image `sha256:a7f2997f...`;
@@ -673,6 +674,15 @@ the session remains running and becomes detached in the mobile PWA.
   direct backend traffic remains denied with 426, bounded startup logs contain
   no failure, and all six sessions retain their exact pre-rollout window and
   attachment counts. Physical owner acceptance remains.
+- The owner simplified desktop session termination from typed-name confirmation
+  to a two-click flow. Clicking × now opens an accessible modal that identifies
+  the session, defaults focus to Cancel, and performs no mutation until **Kill
+  session** is clicked; busy state prevents duplicate submission. The protected
+  inventory-resolved kill endpoint and detach/`exit` semantics are unchanged.
+  Focused typecheck, all twelve frontend suites, the delivery guard, production
+  bundle inspection, and canonical verification pass with 41 Desktop, 56 Server
+  integration, 27 Core, and 26 Infrastructure tests plus five intentional
+  skips. Redeployment and physical acceptance remain.
 - Unit 6 is paused only at owner/external boundaries: local source builds,
   Linux launch/identity, Ubuntu launcher, Apple Silicon app-bundle structure,
   compatibility, TLS, tests, docs, rollback, and review evidence are complete;

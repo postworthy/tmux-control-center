@@ -222,6 +222,14 @@ Results:
   duplicate-menu absence, protocol 1, backend 426 denial, bounded logs, and the
   exact six-session pre/post inventory pass. Physical convergence and
   attachment checks remain.
+- Desktop kill confirmation now uses an accessible named modal with Cancel and
+  **Kill session** buttons rather than a typed-name prompt. The first × click
+  only opens local UI state; the existing protected delete is called only by
+  the second confirmation click, and its busy state prevents duplicate
+  submission. Focused checks, production bundle inspection, and canonical
+  verification pass with twelve frontend suites, 41 Desktop, 56 Server
+  integration, 27 Core, and 26 Infrastructure tests plus five intentional
+  skips. Deployment and physical confirmation remain.
 
 ## Findings
 
@@ -290,6 +298,8 @@ tmux command was found in the reviewed C022 range.
   confirm right click opens only tmux's full terminal-rendered menu.
 - Physically verify bounded Ctrl+wheel text zoom while confirming unmodified
   wheel behavior remains unchanged in the deployed build.
+- After explicit approval, deploy the two-click kill confirmation and verify ×,
+  Cancel, and **Kill session** preserve the documented target semantics.
 - Follow `docs/desktop-acceptance.md` for both physical-platform checks and
   report only its sanitized evidence fields.
 - After physical acceptance, re-run canonical verification and update this

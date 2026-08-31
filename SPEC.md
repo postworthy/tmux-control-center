@@ -114,7 +114,7 @@ Status: Approved
   heartbeat interval, and other attached clients or the tmux session survive.
 - FR28: preserve ordinary terminal semantics: input such as `exit` is never
   intercepted, so it closes only the shell/pane/window that tmux would normally
-  close; terminating an entire session remains a distinct named-confirmation
+  close; terminating an entire session remains a distinct two-click confirmed
   action in the session list.
 - FR29: make the desktop interface behave like a conventional Linux terminal
   with keyboard-driven tabs, splits, focus, selection, copy/paste, one
@@ -193,7 +193,7 @@ Status: Approved
   non-error visual treatment and a clear "No terminal attached" explanation;
   attached sessions retain their existing presentation.
 - [ ] AC16: All/Detached filtering preserves coherent deck ordering and states;
-  killing requires a named confirmation and one protected request terminates
+  killing requires an explicit confirmation that identifies the session and one protected request terminates
   only its inventory-resolved target, refreshes inventory, audits the outcome,
   and handles authorization, CSRF, rate-limit, missing-target, and tmux failures.
 - [ ] AC17: under an isolated constrained-resource workload, subprocess and PTY
@@ -227,7 +227,7 @@ Status: Approved
   drop or **Single view** action restores one standard tab group. Each session
   appears once and remains one attachment throughout, and tmux windows/panes
   remain authoritative without permanent subordinate topology chrome.
-- [ ] AC23: session creation, validated rename, and named-confirmation
+- [ ] AC23: session creation, validated rename, and two-click confirmed
   termination operate on only the inventory-resolved target; a successful
   rename updates the sidebar and every open tab without reconnecting its
   terminal, while closing a tab merely detaches and typed `exit` retains normal

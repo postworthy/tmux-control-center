@@ -16,6 +16,9 @@ grep -Fq 'const suppressBrowserContextMenu = (event: MouseEvent) => event.preven
 ! grep -Fq 'terminal-menu' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'renameSession(session.id, name)' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'aria-label={`Rename ${session.name}`}' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
+grep -Fq 'setPendingKill(session)' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
+grep -Fq 'Kill session' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
+! grep -Fq 'Type the session name to confirm' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'Link="tmuxctl.png"' "$repository_root/src/TmuxCtl.Desktop/TmuxCtl.Desktop.csproj"
 grep -Fq '.SetIconFile(icon)' "$repository_root/src/TmuxCtl.Desktop/Program.cs"
 grep -Fq 'StartupWMClass=Tmuxctl' \

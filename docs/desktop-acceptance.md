@@ -100,8 +100,9 @@ Complete these checks with disposable tmux sessions:
    states, creates no duplicate attachment, and the tmux sessions survive.
 9. In one disposable single-pane session, type `exit`; confirm ordinary tmux
    semantics remove that session and its tab. For the other session, click its
-   list kill control: a wrong confirmation must do nothing and the exact session
-   name must terminate only that session.
+   list kill control: cancel must do nothing, while clicking **Kill session** in
+   the named confirmation must terminate only that session without requiring
+   the name to be typed.
 10. Close the desktop app. Confirm every remaining disposable tmux session stays
     alive and all desktop-owned attachments disappear within the heartbeat
     bound. Verify the mobile PWA still uses its original cards, swipe behavior,

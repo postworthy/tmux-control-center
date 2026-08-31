@@ -47,6 +47,8 @@ export default function DesktopApp() {
   const [inventoryConnected, setInventoryConnected] = useState(navigator.onLine);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [pendingKill, setPendingKill] = useState<TmuxSession | null>(null);
+  const [killBusy, setKillBusy] = useState(false);
   const deepLinkOpened = useRef(false);
   const layoutId = useRef(1);
   const newSessionInput = useRef<HTMLInputElement>(null);
@@ -279,16 +281,19 @@ export default function DesktopApp() {
     }
   };
 
-  const terminate = async (session: TmuxSession) => {
-    const confirmation = window.prompt(
-      `Kill tmux session “${session.name}”? This ends every window and pane in it. Type the session name to confirm.`);
-    if (confirmation !== session.name) return;
+  const terminate = async () => {
+    const session = pendingKill;
+    if (!session) return;
+    setKillBusy(true);
     try {
       await killSession(session.id);
       close(session.id);
+      setPendingKill(null);
       await refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not kill session");
+    } finally {
+      setKillBusy(false);
     }
   };
 
@@ -369,7 +374,8 @@ export default function DesktopApp() {
             </button>
             <button className="rename" title={`Rename ${session.name}`}
               aria-label={`Rename ${session.name}`} onClick={() => void rename(session)}>✎</button>
-            <button className="kill" title={`Kill ${session.name}`} onClick={() => void terminate(session)}>×</button>
+            <button className="kill" title={`Kill ${session.name}`}
+              onClick={() => setPendingKill(session)}>×</button>
           </div>)}
         </div>
       </>}
@@ -386,6 +392,20 @@ export default function DesktopApp() {
         onDragOver={dragOverWorkspace} onDragLeave={dragLeaveWorkspace} onDrop={dropIntoWorkspace}
         onError={setError} />
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => setError(null)}>Dismiss</button></div>}
+      {pendingKill && <div className="desktop-modal-backdrop" role="presentation"
+        onMouseDown={() => { if (!killBusy) setPendingKill(null); }}>
+        <section className="desktop-confirm-dialog" role="dialog" aria-modal="true"
+          aria-labelledby="desktop-kill-title" onMouseDown={event => event.stopPropagation()}>
+          <h2 id="desktop-kill-title">Kill “{pendingKill.name}”?</h2>
+          <p>This ends every window and pane in this tmux session.</p>
+          <div className="desktop-confirm-actions">
+            <button autoFocus disabled={killBusy} onClick={() => setPendingKill(null)}>Cancel</button>
+            <button className="danger-button" disabled={killBusy} onClick={() => void terminate()}>
+              {killBusy ? "Killing…" : "Kill session"}
+            </button>
+          </div>
+        </section>
+      </div>}
     </section>
   </main>;
 }

@@ -117,7 +117,8 @@ rows. The safe topology API remains additive for a future compact, explicit
 surface rather than appearing by default. Right click is likewise owned by the
 terminal-rendered tmux menu; tmuxctl does not overlay a second context menu.
 Closing UI detaches only the associated client; session termination remains an
-explicit confirmed operation, and terminal input is never intercepted to infer
+explicit two-click operation whose confirmation identifies the target but does
+not require retyping its name, and terminal input is never intercepted to infer
 termination intent. Desktop rename reuses the existing validated, audited,
 inventory-resolved session endpoint and updates labels without replacing the
 live terminal attachment. Ubuntu x64 and Apple Silicon macOS source builds are the
