@@ -40,6 +40,7 @@ public static class ProfileChooserPage
           <script>
           const profiles={{{profileJson}}};
           const send=value=>window.external.sendMessage(JSON.stringify(value));
+          addEventListener('keydown',event=>{if(event.code==='F12'&&!event.repeat){event.preventDefault();event.stopPropagation();send({type:'toggleFullscreen'})}},true);
           const host=document.getElementById('profiles');
           if(!profiles.length)host.innerHTML='<div class="empty">No saved servers yet.</div>';
           for(const profile of profiles){
@@ -66,6 +67,8 @@ public static class ProfileChooserPage
       main{text-align:center}.brand{color:#72d6a4;font-size:22px;font-weight:750}
       h1{margin:10px 0 6px;font-size:25px}p{margin:0;color:#8f99a5}
       </style></head><body><main><div class="brand">tmuxctl</div><h1>Checking server compatibility</h1>
-      <p>{{{WebUtility.HtmlEncode(host)}}}</p></main></body></html>
+      <p>{{{WebUtility.HtmlEncode(host)}}}</p></main>
+      <script>addEventListener('keydown',event=>{if(event.code==='F12'&&!event.repeat){event.preventDefault();event.stopPropagation();window.external.sendMessage(JSON.stringify({type:'toggleFullscreen'}))}},true)</script>
+      </body></html>
       """;
 }

@@ -560,6 +560,14 @@ the session remains running and becomes detached in the mobile PWA.
   `Invalid terminal dimensions`. The probe session was removed, and all six
   predeployment user sessions retain their exact IDs, names, one window, and
   attached state. Physical maximized-ultrawide acceptance remains.
+- 2026-08-31: added a desktop-only F12 shortcut on the native chooser,
+  compatibility screen, and server-hosted desktop page. It sends one fixed
+  native bridge command per key press, toggles each Photino window's operating-
+  system fullscreen state independently, and emits the existing geometry event
+  so mounted xterms perform their settled refit. Ordinary browser access does
+  not capture F12. Focused frontend, native, delivery, production-build, and
+  full .NET 10 checks pass; deployment and physical chromeless-fullscreen
+  acceptance remain at the owner boundary.
 
 ## Discoveries
 
@@ -641,12 +649,11 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Retry State
 
-- Current attempt: 1 for the newly identified dimension-contract cause
+- Current attempt: 1 for the F12 native-fullscreen addition
 - Maximum attempts per unchanged failure: 2
-- Last observed failure: native maximize now refits correctly, but the resulting
-  grid crosses the real PTY's private 500-column maximum and closes the terminal
-  WebSocket as invalid input. The exact 500/501 boundary and prior verification
-  gap are recorded in the related RCA; no corrective attempt has started.
+- Last observed failure: none for the F12 behavior. The first installed-artifact
+  overwrite was correctly refused because the existing tmuxctl executable is
+  running; an isolated self-contained build succeeded without stopping it.
 - Resume evidence: the owner chose predecessor-stack ordering and authorized
   local history repair. Both Git findings are resolved with an unchanged source
   tree and a passing canonical gate.
@@ -656,10 +663,11 @@ the session remains running and becomes detached in the mobile PWA.
 
 ## Next Action
 
-- Owner maximizes the existing Ubuntu desktop window on the 5120-pixel display
-  and confirms the terminal grid exceeds the former 500-column threshold while
-  remaining connected through settled refits. Apple Silicon launch/pinning
-  remains external.
+- Owner authorizes the server deployment and closes the currently running
+  tmuxctl process long enough to rebuild/install the Ubuntu launcher, then
+  confirms F12 enters and leaves chromeless fullscreen while xterm remains
+  connected and fills the surface. Apple Silicon launch/pinning remains
+  external.
 
 ## Pause Conditions
 

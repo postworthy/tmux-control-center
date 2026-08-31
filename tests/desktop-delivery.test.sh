@@ -30,6 +30,12 @@ grep -Fq '.RegisterRestoredHandler(NotifyNativeGeometryChanged)' \
 grep -Fq 'bridge.receiveMessage?.' "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
 grep -Fq 'window.addEventListener(NATIVE_WINDOW_GEOMETRY_EVENT, viewportChanged)' \
   "$repository_root/src/TmuxMobile.Web/desktop/DesktopTerminal.tsx"
+grep -Fq 'bridge.sendMessage?.(JSON.stringify({ type: "toggleFullscreen" }))' \
+  "$repository_root/src/TmuxMobile.Web/desktop/DesktopApp.tsx"
+grep -Fq 'window.SetFullScreen(!window.FullScreen);' \
+  "$repository_root/src/TmuxCtl.Desktop/Program.cs"
+grep -Fq "send({type:'toggleFullscreen'})" \
+  "$repository_root/src/TmuxCtl.Desktop/ProfileChooserPage.cs"
 grep -Fq 'MAXIMUM_TERMINAL_COLUMNS = 2048' \
   "$repository_root/src/TmuxMobile.Web/desktop/terminalLayout.ts"
 grep -Fq 'boundedTerminalGrid(terminal.cols, terminal.rows)' \

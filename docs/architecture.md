@@ -55,6 +55,11 @@ icon and generates matching Ubuntu launcher metadata whose startup class agrees
 with the actual GTK window. Apple Silicon output is a standard `.app` directory
 with `Info.plist` and a multi-size ICNS resource derived from the same artwork.
 These are native identity and pinning assets, not an installer or signing layer.
+Each native window also accepts F12 as a fixed bridge command that toggles
+Photino's operating-system fullscreen state. The browser default is suppressed
+only when the Photino bridge exists; ordinary `/desktop/` browser use is
+unchanged. Native geometry notification then drives the existing settled xterm
+refit after entering or leaving chromeless fullscreen.
 
 Opening a desktop session tab connects to the existing terminal WebSocket and
 therefore starts one real `tmux attach-session` client. Every open tab remains

@@ -18,6 +18,7 @@ import {
   type TmuxSession
 } from "./desktopApi";
 import { reconcileDesktopTabs, sessionIconLabel } from "./desktopNavigation";
+import { isNativeFullscreenToggle } from "./desktopShortcuts";
 import {
   activateWorkspaceSession,
   closeWorkspaceSession,
@@ -100,6 +101,18 @@ export default function DesktopApp() {
       } catch { /* Ignore native messages outside this page's protocol. */ }
     });
   }, []);
+
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent) => {
+      if (!isNativeFullscreenToggle(event, nativeProfilesAvailable)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const bridge = window.external as unknown as PhotinoBridge;
+      bridge.sendMessage?.(JSON.stringify({ type: "toggleFullscreen" }));
+    };
+    window.addEventListener("keydown", keydown, true);
+    return () => window.removeEventListener("keydown", keydown, true);
+  }, [nativeProfilesAvailable]);
 
   const refresh = useCallback(async () => {
     try {

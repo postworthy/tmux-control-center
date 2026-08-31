@@ -81,6 +81,18 @@ public sealed class ServerProfileStoreTests : IDisposable
         Assert.Contains("\\u003C/script\\u003E", html, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void NativePagesSendOneShotF12FullscreenToggle()
+    {
+        var chooser = ProfileChooserPage.Render([]);
+        var connecting = ProfileChooserPage.RenderConnecting("host.example");
+
+        Assert.Contains("event.code==='F12'&&!event.repeat", chooser, StringComparison.Ordinal);
+        Assert.Contains("send({type:'toggleFullscreen'})", chooser, StringComparison.Ordinal);
+        Assert.Contains("event.code==='F12'&&!event.repeat", connecting, StringComparison.Ordinal);
+        Assert.Contains("{type:'toggleFullscreen'}", connecting, StringComparison.Ordinal);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory)) Directory.Delete(_directory, recursive: true);

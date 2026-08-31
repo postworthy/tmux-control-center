@@ -88,13 +88,15 @@ public static class Program
             {
                 var command = JsonSerializer.Deserialize<ProfileCommand>(message, CommandJson)
                     ?? throw new InvalidDataException("The desktop command is empty.");
-                if (!profilesVisible && command.Type is not ("showProfiles" or "desktopReady" or "openSessionWindow"))
+                if (!profilesVisible && command.Type is not ("showProfiles" or "desktopReady" or
+                    "openSessionWindow" or "toggleFullscreen"))
                     throw new InvalidDataException("Profile changes are available only from the native server chooser.");
                 switch (command.Type)
                 {
                     case "showProfiles": ShowProfiles(); break;
                     case "desktopReady": MarkDesktopReady(); break;
                     case "openSessionWindow": OpenSessionWindow(command.SessionId); break;
+                    case "toggleFullscreen": ToggleFullscreen(); break;
                     case "connect":
                     {
                         var id = ParseId(command.Id);
@@ -210,6 +212,12 @@ public static class Program
         {
             Interlocked.Increment(ref navigationGeneration);
             CancelPendingConnection();
+        }
+
+        private void ToggleFullscreen()
+        {
+            window.SetFullScreen(!window.FullScreen);
+            NotifyNativeGeometryChanged(window);
         }
 
         private void CancelPendingConnection()
