@@ -128,6 +128,14 @@ independent authentication, and explicitly return to the launcher.
 
 ## Progress
 
+- 2026-09-01: review checkpoint `2e3374a` was merged through the recorded
+  non-fast-forward boundary as `9c7a641`. Normal, non-force
+  `git push origin main` advanced upstream from `10b5648` to that merge.
+  Independent `git ls-remote`, local `origin/main`, and local `main` all resolved
+  to `9c7a641`; ahead/behind was `0/0`, the feature tip was an ancestor of main,
+  and the worktree was clean. The C022 source is therefore integrated and
+  upstream while the living goal remains open only for its documented physical
+  Apple Silicon, Ubuntu clipboard/sleep, and two-server PWA evidence.
 - 2026-09-01: the owner explicitly authorized committing all remaining changes,
   merging C022 into local `main`, and pushing upstream. Fetch proved
   `origin/main` is an ancestor of local `main`, local `main` is the exact C022
