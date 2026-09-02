@@ -7,12 +7,15 @@ namespace TmuxMobile.Core;
 public static partial class SafeIdentifier
 {
     private const string SessionPrefix = "s_";
+    private const string WindowPrefix = "w_";
     private const string PanePrefix = "p_";
 
     public static string ForSession(string tmuxId) => Encode(SessionPrefix, tmuxId);
+    public static string ForWindow(string tmuxId) => Encode(WindowPrefix, tmuxId);
     public static string ForPane(string tmuxId) => Encode(PanePrefix, tmuxId);
 
     public static bool IsSession(string value) => IsValid(value, SessionPrefix);
+    public static bool IsWindow(string value) => IsValid(value, WindowPrefix);
     public static bool IsPane(string value) => IsValid(value, PanePrefix);
 
     private static string Encode(string prefix, string value)

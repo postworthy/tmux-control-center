@@ -96,3 +96,48 @@ signals restoration, which proceeds only when tmux has no sessions. The two
 agent classes map to fixed directory-scoped resume commands; every other prior
 process, including SSH, returns as a shell. Terminal content, argv, environment,
 credentials, and remote targets are never persisted or replayed.
+
+## D011 — Use Photino and xterm.js for the first desktop companion
+
+Date: 2026-08-29
+
+The first tmuxctl desktop client uses a self-contained .NET 10 Photino shell and
+a distinct desktop-first xterm.js interface. It connects by configured HTTPS URL
+to an already-running Linux tmuxctl server over the owner's Tailscale network and
+does not install or supervise the server. Tmux remains authoritative and every
+open terminal is a real tmux client attachment. Physical Ubuntu acceptance
+superseded the initial always-visible three-level chrome. Session tabs may be
+arranged into nested client-side editor layouts through one global set of five
+labeled drag-drop targets; edge drops split against the whole layout, while
+center or **Single view** restores one standard tab group. The targets never
+multiply with split depth, and each session remains unique and owns one terminal
+attachment through layout-only changes. Tmux windows and panes remain inside
+normal tmux terminal interaction rather than consuming permanent subordinate
+rows. The safe topology API remains additive for a future compact, explicit
+surface rather than appearing by default. Right click is likewise owned by the
+terminal-rendered tmux menu; tmuxctl does not overlay a second context menu.
+Closing UI detaches only the associated client; session termination remains an
+explicit two-click operation whose confirmation identifies the target but does
+not require retyping its name, and terminal input is never intercepted to infer
+termination intent. Desktop rename reuses the existing validated, audited,
+inventory-resolved session endpoint and updates labels without replacing the
+live terminal attachment. Ubuntu x64 and Apple Silicon macOS source builds are the
+initial targets; native installers and a native terminal renderer are deferred.
+Before loading server-hosted desktop content, the native shell requests a
+bounded, content-free, versioned capability document from the configured HTTPS
+origin. The endpoint is anonymous and rate-limited because it exposes no host,
+identity, tmux, or authentication state; the client refuses redirects and
+requires the closed version-1 feature set. Missing or incompatible support
+returns to the native chooser with an actionable update message.
+
+## D012 — Share a bounded high-resolution terminal grid
+
+Date: 2026-08-31
+
+Desktop xterm fitting, the terminal WebSocket boundary, and the Linux PTY use
+one 10–2048 column by 5–1024 row contract. The upper bound preserves complete
+grids on supported 5K/6K ultrawide and typical 8K displays at the minimum font
+size while keeping allocation finite. The desktop clamps a still-larger fitted
+grid before resizing xterm or transmitting it, the server rejects dimensions
+outside the contract explicitly, and the PTY adapter enforces the same limits
+for both initial allocation and later `TIOCSWINSZ` calls.

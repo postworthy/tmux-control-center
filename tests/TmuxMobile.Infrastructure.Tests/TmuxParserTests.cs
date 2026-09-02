@@ -25,10 +25,12 @@ public sealed class TmuxParserTests
     [Fact]
     public void ParsesPanes()
     {
-        var line = string.Join(S, "%2", "$1", "0", "1", "title", "bash", "/tmp", "1", "42", "100", "30");
+        var line = string.Join(S, "%2", "$1", "@3", "0", "1", "editor", "1", "layout",
+            "title", "bash", "/tmp", "1", "42", "100", "30");
         var pane = Assert.Single(TmuxParser.ParsePanes(line));
         Assert.True(pane.Active);
         Assert.Equal(100, pane.Width);
+        Assert.Equal("@3", pane.WindowTmuxId);
     }
 
     [Theory]

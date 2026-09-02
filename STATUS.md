@@ -1,8 +1,132 @@
 # Project Status
 
-Updated: 2026-08-11
+Updated: 2026-08-31
 
 ## Current
+
+- Physical Ubuntu acceptance proved the maximize and reconnect symptoms share
+  one cause: the 5120-pixel display crossed the Linux PTY's private 500-column
+  maximum. The owner-approved local correction replaces that mismatch with a
+  shared 10–2048 column by 5–1024 row contract across xterm, WebSocket
+  validation, and Linux PTY allocation/resizing. Wide 5K grids are preserved;
+  larger proposals clamp both xterm and transmitted dimensions. All focused
+  frontend/server/core tests, the production web build, 58 server integration
+  tests, and six isolated real-Linux/tmux tests pass, including 2048 acceptance
+  and 2049 rejection. Corrective commit `e43e5f5` is live as image
+  `tmux-mobile:high-resolution-grid-e43e5f5` (`sha256:73fab731...`), healthy with
+  zero restarts; predecessor `sha256:696d49f9...` is preserved as
+  `tmux-mobile:pre-high-resolution-grid-20260831`. The live protected path stays
+  connected at 2048×65 and rejects 2049×65 explicitly, all six user sessions
+  match their predeployment state, and network exposure is unchanged. RCA is
+  recorded in `RCA/2026-08-31--desktop-fullscreen-width-exceeds-pty-bound.md`;
+  physical maximized-ultrawide acceptance is next.
+- The owner-authorized desktop stability rollout is live. Native title-bar
+  maximize/restore refitting and stable-connection-gated reconnect backoff were
+  committed separately as `2f76c73` and `66c7a53`. Image
+  `tmux-mobile:desktop-stability-66c7a53` (`sha256:696d49f9...`) is healthy with
+  zero restarts on the unchanged loopback-only backend; the predecessor
+  `sha256:82b787f4...` is retained as
+  `tmux-mobile:pre-desktop-stability-20260831`. Ordinary MagicDNS HTTPS
+  liveness, protocol compatibility, no-cache desktop delivery, served native
+  geometry markers, readiness, bounded logs, and isolated tmux 3.4 compatibility
+  pass. All six tmux sessions retain their exact IDs, names, window counts, and
+  attachment states. The self-contained Ubuntu client was rebuilt in place and
+  the installed launcher still targets it. A pre-rebuild client process remains
+  open, so full quit/relaunch and physical maximize/reconnect acceptance are
+  next; Apple Silicon launch remains external.
+- The owner reported that the PWA lists sessions but every mobile terminal falls
+  into Reconnect after the desktop rollout. Live evidence shows two persistent
+  desktop tmux clients consume the unchanged per-owner limit of two, so the
+  mobile WebSocket receives a silent pre-handler 429. RCA is recorded in
+  `RCA/2026-08-30--desktop-terminal-capacity-blocks-mobile.md`; a bounded source
+  correction raises global/per-owner capacity to ten and records rejected
+  capacity attempts. Its focused regression test and canonical verification
+  pass. The owner authorized deployment: corrected image `sha256:1fbc3c0a...`
+  is live, healthy, and at zero restarts, with prior image `sha256:0370d1bc...`
+  preserved as `tmux-mobile:pre-terminal-capacity-20260830`. Seven sessions and
+  their windows survived unchanged. Two persistent desktop clients plus a third
+  successful mobile attachment and mobile history actions now prove the exact
+  previously failing concurrency path.
+- C022 is implemented locally on `feat/c022-desktop-photino-client` and paused
+  at its owner/external completion boundary. The
+  .NET 10/Photino shell connects to an already-running tmuxctl server and serves
+  a desktop-specific xterm.js experience with saved URL profiles, real
+  attachment-aware session tabs, authoritative tmux windows/panes, native
+  pop-outs, reconnect, desktop shortcuts, guarded clipboard input, ordinary
+  `exit`, and exact-name session kill. A bounded native compatibility preflight
+  now rejects older/incomplete servers before loading remote UI without adding
+  an authentication or origin exception. Self-contained `linux-x64` and
+  `osx-arm64` source builds pass; the Linux artifact launches with no installed
+  .NET runtime. Focused tests, dependency audits, isolated tmux/Photino runtime
+  checks, 34 desktop tests, 51 server integration tests, and canonical
+  verification pass. The owner-approved predecessor-stack fast-forward and
+  local history repair resolved the merge boundary and commit trailers. The
+  first physical Ubuntu connection attempt exposed disabled Tailscale DNS
+  acceptance and a pre-C022 deployed server. Both causes are now corrected:
+  normal MagicDNS resolution works and live image `sha256:8873036d...` serves
+  the exact protocol-1 contract on the unchanged tailnet-only origin. The prior
+  image is preserved as `tmux-mobile:pre-c022-desktop-rollback-20260829`; health,
+  loopback binding, direct-backend denial, mobile/desktop assets, and isolated
+  tmux 3.4 compatibility pass. The RCA is recorded in
+  `RCA/2026-08-29--desktop-magicdns-preflight-failure.md`. Actual Apple Silicon
+  launch and the remainder of owner Ubuntu acceptance remain required. Further
+  Tailscale changes, merge, push, and remote CI remain owner-controlled.
+  Physical testing then identified missing Ctrl+mouse-wheel text zoom. The
+  owner-approved local correction now provides desktop-only 8–32px bounded
+  zoom, routes unmodified wheel input to tmux history, refits xterm/tmux
+  dimensions, and passes focused tests, the production desktop build, and
+  canonical verification.
+  Continued Ubuntu acceptance also found local-xterm wheel history, initial and
+  fullscreen fit failures, excessive permanent topology rows, and no sidebar
+  collapse. The owner explicitly revised the first-cut desktop contract to one
+  session-tab row plus a collapsible icon rail. The RCA-backed implementation
+  now uses bounded/coalesced history requests, settled-layout refitting, one
+  permanent session row, and the narrow icon rail. Typecheck, the production
+  desktop build, all nine frontend suites, 27 core tests, 34 desktop-shell tests,
+  26 infrastructure tests (5 opt-in skips), 51 server integration tests, and the
+  canonical gate pass. The owner then explicitly authorized deployment. Image
+  `sha256:d6dadb4f...` passed the isolated tmux 3.4 probe and is healthy with
+  zero restarts on the unchanged loopback/Serve boundary; HTTPS liveness,
+  protocol-1 capabilities, corrected desktop asset `index-DcoKvsuW.js`, and
+  direct-backend 426 denial pass. Rollback image `sha256:8873036...` is tagged
+  `tmux-mobile:pre-desktop-layout-rollback-20260829`. The self-contained Ubuntu
+  launcher was rebuilt, but owner acceptance immediately observed the complete
+  pre-correction UI: no Ctrl+wheel zoom, unchanged topology rows, and no sidebar
+  collapse. Live/image digests prove the server contains the corrected bundle;
+  the live `/desktop/` default document lacks cache-control headers and Photino
+  reuses one URI with a persistent WebKit cache. The rollout is therefore not
+  accepted. `RCA/2026-08-29--desktop-webview-stale-release.md` narrows the next
+  attempt to explicit document no-store and native cache-busted navigation.
+  That correction is now implemented: 35 native desktop tests, five focused
+  cache-boundary cases, 55 total server integration tests, all nine frontend
+  suites, and the canonical gate pass. Corrective image `sha256:ba16379d...`
+  then passed the isolated tmux 3.4 probe and is live, healthy, with zero
+  restarts on the unchanged loopback/Serve boundary. The actual cache-busted
+  desktop response now carries `no-store, no-cache` and `Pragma: no-cache`;
+  HTTPS liveness and protocol 1 pass. The rebuilt Ubuntu launcher must still be
+  physically checked by the owner before the rollout is accepted. Further
+  feedback found that native window changes still did not refit xterm, terminal
+  right-click lacked split actions, and collapsed navigation hid sessions. The
+  RCA-backed correction adds independent 100 ms host-geometry detection, typed
+  active-pane horizontal/vertical split actions, and per-session collapsed-rail
+  icons with attachment state. Canonical verification now passes 55 server, 35
+  desktop, 27 core, 26 infrastructure (5 opt-in skips), and ten frontend suites.
+  Image `sha256:54ce005...` is live, healthy, and at zero restarts on the
+  unchanged Serve boundary; `sha256:ba16379...` is preserved as
+  `tmux-mobile:pre-desktop-native-resize-20260830`. The Ubuntu launcher was
+  rebuilt at `artifacts/desktop/linux-x64/tmuxctl`; owner physical acceptance is
+  the next boundary. The next acceptance pass found native pop-outs stuck on
+  their compatibility progress page and requested VS Code-style split session
+  groups. RCA identifies the later async capability transition inside the
+  earlier blocking child lifecycle. The local correction initializes pop-outs
+  directly from the parent page's established compatible connection and adds
+  ephemeral nested editor groups with left/right/top/bottom drag snap guidance,
+  center moves, unique session membership, and empty-group collapse. The revised
+  contract, architecture, and acceptance plan distinguish these client groups
+  from authoritative tmux panes. Canonical verification passes 39 desktop, 55
+  server, 27 core, 26 infrastructure (5 opt-in skips), and eleven frontend
+  suites; the self-contained Ubuntu launcher is rebuilt. This revision is not
+  deployed pending the owner-controlled production boundary.
 
 - C017 is deployed and published on `main`. The owner approved a
   live main-screen name filter and create-then-open workflow. Because creation

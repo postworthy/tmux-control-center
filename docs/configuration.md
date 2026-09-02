@@ -26,8 +26,8 @@ ASP.NET Core configuration applies in this order: checked-in JSON, environment-s
 | `Security:ExternalHttpsTermination` | false | Requires HTTPS origins. After trusted forwarded headers run, non-HTTPS application traffic receives 426; anonymous liveness and loopback readiness remain available. |
 | `Security:MaxRequestBodyBytes` | 65536 | Kestrel request body cap. |
 | `Security:MaxWebSocketMessageBytes` | 16384 | Complete client terminal message cap. |
-| `Security:MaxTerminalConnections` | 4 | Global active terminal limit. |
-| `Security:MaxTerminalConnectionsPerUser` | 2 | Per-identity active terminal limit. |
+| `Security:MaxTerminalConnections` | 10 | Global active terminal limit shared by mobile and persistent desktop tabs. |
+| `Security:MaxTerminalConnectionsPerUser` | 10 | Per-identity active terminal limit shared by mobile and persistent desktop tabs. |
 | `Security:TerminalIdleTimeoutMinutes` | 30 | PTY cleanup after no browser input. |
 | `Security:MaxTerminalInputMessagesPerSecond` | 64 | Per-connection terminal-input message bucket. |
 | `Security:MaxTerminalInputBytesPerSecond` | 262144 | Per-connection terminal-input byte bucket. |

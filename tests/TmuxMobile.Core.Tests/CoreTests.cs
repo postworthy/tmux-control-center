@@ -12,7 +12,13 @@ public sealed class SafeIdentifierTests
         Assert.Equal(first, SafeIdentifier.ForSession("$12"));
         Assert.True(SafeIdentifier.IsSession(first));
         Assert.False(SafeIdentifier.IsPane(first));
+        Assert.False(SafeIdentifier.IsWindow(first));
         Assert.DoesNotContain("$12", first);
+
+        var window = SafeIdentifier.ForWindow("@4");
+        Assert.True(SafeIdentifier.IsWindow(window));
+        Assert.False(SafeIdentifier.IsSession(window));
+        Assert.DoesNotContain("@4", window);
     }
 
     [Theory]
@@ -56,6 +62,18 @@ public sealed class InputValidationTests
         Assert.Throws<ArgumentException>(() => InputValidation.ValidateText(new string('x', 4097)));
         Assert.Throws<ArgumentException>(() => InputValidation.ValidateText("a\0b"));
     }
+}
+
+public sealed class TerminalSizeLimitsTests
+{
+    [Theory]
+    [InlineData(10, 5, true)]
+    [InlineData(2048, 1024, true)]
+    [InlineData(9, 5, false)]
+    [InlineData(2049, 1024, false)]
+    [InlineData(2048, 1025, false)]
+    public void EnforcesBoundedHighResolutionGrid(int columns, int rows, bool expected) =>
+        Assert.Equal(expected, TerminalSizeLimits.IsSupported(new(columns, rows)));
 }
 
 public sealed class StatusInferenceTests

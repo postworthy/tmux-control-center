@@ -1,5 +1,13 @@
 # Third-Party Notices
 
+## Photino.NET
+
+The tmuxctl desktop companion uses
+[Photino.NET](https://github.com/tryphotino/photino.NET), version 4.0.16, and
+its Photino.Native dependency. Photino is distributed under the Apache License
+2.0. The package's license and notices remain included in restored and published
+artifacts.
+
 ## Tempo
 
 The repository-local workflow files under `.tempo/`, `.agents/skills/`, and

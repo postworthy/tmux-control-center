@@ -231,6 +231,27 @@ Validate this against the current tailnet policy schema before saving. Prefer a 
 
 Do this against non-critical tmux sessions first.
 
+## PWA server chooser validation
+
+1. Open **Servers** from the session toolbar and confirm the current HTTPS host
+   is labelled Current.
+2. Add a labelled second tmuxctl HTTPS origin, reload the PWA, and confirm the
+   profile remains. Edit its label, then delete it and confirm it stays deleted
+   after another reload.
+3. Confirm URLs containing credentials, paths, queries, fragments, plain remote
+   HTTP, or the current origin are rejected without changing saved profiles.
+4. Re-add the second origin and tap it. Confirm the browser performs a complete
+   navigation, the destination requires its own login when appropriate, the
+   launcher fragment disappears immediately, and no launcher profile appears
+   in destination storage.
+5. Open **Servers** on the destination, use the visible Launcher Return action,
+   and confirm it returns only after the tap. Verify no automatic redirect occurs
+   after reload or reconnection.
+
+Each origin owns its own cookies, service worker, cache, preferences, and saved
+profile document. Testing a second origin requires that origin to run a server
+version containing this chooser; no cross-origin compatibility probe is made.
+
 Production web builds stamp `service-worker.js` from the generated root asset
 identity. A running installed PWA should show the existing Update ready prompt
 after a new release; close active terminals and tap Apply. The runtime image is

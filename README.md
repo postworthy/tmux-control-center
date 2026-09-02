@@ -1,6 +1,10 @@
-# Tmux Mobile Control Center
+# tmuxctl
 
-A self-hosted, observation-first PWA for viewing and interacting with tmux sessions from an iPhone. The ASP.NET Core service runs as the same non-root Linux user that owns tmux; the React client provides full-height swipeable cards and opens a real xterm.js terminal only when intervention is needed.
+A self-hosted control center for viewing and interacting with tmux sessions.
+The existing iPhone-first PWA provides observation-oriented mobile controls;
+the in-progress Photino desktop companion provides a conventional
+keyboard-and-mouse xterm.js interface on Ubuntu and macOS. The ASP.NET Core
+service runs as the same non-root Linux user that owns tmux.
 
 The production default is deliberately closed: loopback-only HTTP,
 authentication required, no configured key, and no allowed WebSocket origin.
@@ -30,6 +34,25 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
 - Owner-only workspace snapshots plus an explicit in-app restore action. Session,
   window, pane, layout, and working-directory metadata survive reboot; Codex and
   Claude resume with fixed CLI commands while other panes reopen as shells.
+- A separate server-hosted `/desktop/` interface and self-contained .NET 10
+  Photino shell. The desktop path keeps authentication, CSRF, REST, and terminal
+  WebSockets same-origin and keeps one real tmux client attached for each open
+  terminal tab without changing the mobile PWA. Switching tabs preserves those
+  attachments; closing a tab/window detaches its clients, and transient network
+  loss reconnects with bounded exponential backoff. One compact tab row maps
+  desktop tabs to tmux sessions; tmux windows and panes remain available through
+  ordinary tmux interaction inside the terminal. The session sidebar collapses
+  to a narrow desktop icon rail. Desktop shortcuts include Ctrl+PageUp/PageDown
+  for session tabs, Ctrl+Shift+W to detach the active tab, and Ctrl+Shift+C/V for
+  terminal selection copy and guarded paste. Ctrl+mouse-wheel adjusts terminal
+  text size within bounded limits while an unmodified wheel navigates
+  authoritative tmux history. Initial selection, maximize, and fullscreen
+  transitions refit the terminal to the available viewport. A pop-out control
+  opens a session in an independent native window. The expanded sidebar can
+  rename a session through the existing validated action; inventory updates the
+  sidebar and every open tab without replacing its terminal attachment.
+  Explicit session kill requires clicking × and then confirming the named
+  target; terminal `exit` keeps ordinary tmux semantics.
 
 ## Development
 
@@ -55,6 +78,39 @@ npm --prefix src/TmuxMobile.Web run dev
 
 Open `http://127.0.0.1:5173`. Vite proxies API and WebSocket traffic to the backend.
 
+For the desktop frontend hot-reload server, use:
+
+```bash
+npm --prefix src/TmuxMobile.Web run dev:desktop
+```
+
+The native client opens a server chooser when launched without arguments. It
+stores multiple labels and validated server origins in the operating system's
+application-data directory (`~/.config/tmuxctl/profiles.json` on a conventional
+Ubuntu setup) with owner-only permissions. It never stores login keys or
+terminal content. HTTP is allowed only for loopback development; normal server
+URLs must use HTTPS. A URL argument bypasses the chooser for development and
+automation:
+
+```bash
+dotnet run --project src/TmuxCtl.Desktop -- http://127.0.0.1:5179
+```
+
+The desktop login key is sent only to the server's same-origin login endpoint.
+Use the desktop sidebar's **Servers** control to return to the native chooser.
+Before loading remote UI, the native shell checks a content-free, versioned
+server capability endpoint. Older or incompatible servers return to the chooser
+with an update message. If the compatible initial page cannot load, the native
+shell returns to the chooser after 12 seconds with server, network, and TLS
+troubleshooting context.
+
+Dragging a session tab shows one global set of five labeled targets. Dropping on
+left/right or top/bottom splits against the complete current layout; the target
+set never multiplies as splits are added. Drop on **Single view** in the center,
+or use the sidebar's **Single view** action, to return every open tab to one
+standard row. These layouts do not create tmux panes, close WebSockets, or add
+attachments.
+
 ## Production build
 
 ```bash
@@ -62,9 +118,34 @@ npm --prefix src/TmuxMobile.Web ci
 npm --prefix src/TmuxMobile.Web run build
 dotnet publish src/TmuxMobile.Server/TmuxMobile.Server.csproj \
   --configuration Release --output artifacts/publish
+./scripts/build-desktop.sh linux-x64
+./scripts/build-desktop.sh osx-arm64
 ```
 
-The frontend build writes hashed assets into the server's `wwwroot`. Follow [deployment.md](docs/deployment.md) for systemd and HTTPS setup. Configuration is documented in [configuration.md](docs/configuration.md).
+The frontend build writes separate hashed mobile and desktop assets into the
+server's `wwwroot`. The desktop binary still expects an already-running server;
+it does not install or launch one. Follow [deployment.md](docs/deployment.md)
+for systemd and HTTPS setup. Configuration is documented in
+[configuration.md](docs/configuration.md).
+
+The desktop outputs bundle the .NET runtime, so the target machine does not
+need a separately installed .NET SDK or runtime. They still use each operating
+system's native web view. On Ubuntu 24.04, install the WebKitGTK runtime before
+building and registering the Linux launcher:
+
+```bash
+sudo apt-get install libwebkit2gtk-4.1-0
+./scripts/build-desktop.sh linux-x64
+./scripts/install-desktop-launcher.sh
+./artifacts/desktop/linux-x64/tmuxctl
+```
+
+The installed launcher and native window use the same icon as the PWA. Open
+tmuxctl from Ubuntu's Applications view once, then choose **Add to Favorites**
+from its dock icon. The Apple Silicon build is
+`artifacts/desktop/osx-arm64/tmuxctl.app`; copy that bundle to Applications and
+add it to the macOS Dock. This source-build delivery does not add a `.deb`,
+`.dmg`, signing, notarization, or binary publication.
 
 ## Docker Compose over Tailscale
 
@@ -118,6 +199,7 @@ above.
 - [Deployment, HTTPS, Tailscale, upgrades, and rollback](docs/deployment.md)
 - [Security model and operations](docs/security.md)
 - [HTTP and WebSocket API](docs/api.md)
+- [Desktop Ubuntu/macOS acceptance checklist](docs/desktop-acceptance.md)
 - [Configuration reference](docs/configuration.md)
 - [Docker Compose deployment](deploy/docker/README.md)
 - [Tempo project contract](SPEC.md)
@@ -125,6 +207,9 @@ above.
 ## Known limitations
 
 - One local tmux host and one owner identity are supported.
+- The first desktop cut targets Ubuntu x64 and Apple Silicon macOS. Server
+  launch, Intel macOS, Windows, native installers, signing, and published binary
+  releases are deferred.
 - PTY support is Linux-only and uses a small native `forkpty`/immediate-`exec`
   boundary compiled during build.
 - Status is heuristic and intentionally returns `Unknown` when signals are weak.

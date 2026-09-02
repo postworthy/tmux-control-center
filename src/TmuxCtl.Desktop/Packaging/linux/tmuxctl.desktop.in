@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=tmuxctl
+GenericName=Tmux terminal client
+Comment=Connect to tmuxctl sessions
+Exec="@TMUXCTL_EXECUTABLE@" %u
+Icon=@TMUXCTL_ICON@
+Terminal=false
+Categories=System;TerminalEmulator;
+StartupNotify=true
+StartupWMClass=Tmuxctl
