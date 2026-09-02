@@ -128,6 +128,20 @@ independent authentication, and explicitly return to the launcher.
 
 ## Progress
 
+- 2026-09-01: the owner explicitly authorized committing all remaining changes,
+  merging C022 into local `main`, and pushing upstream. Fetch proved
+  `origin/main` is an ancestor of local `main`, local `main` is the exact C022
+  merge base, and neither side has divergent remote work. The final Change
+  Review is ready with explicit follow-ups for Apple Silicon launch, remaining
+  Ubuntu clipboard/sleep checks, a physical two-server PWA walkthrough, and 13
+  late scope-clean commits that lack preferred trailers and were not rewritten.
+  Current frontend typecheck and all 14 unit suites pass; clean-container .NET
+  10 verification passes 32 Core, 26 Infrastructure with six opt-in skips, 42
+  Desktop, and 58 Server Integration tests. Both Compose configurations pass,
+  and production npm plus all .NET projects report no vulnerable packages. The
+  exact host canonical command still reaches the known SDK-8 boundary; the
+  repo-local SDK retry was obstructed only by an ignored root-owned build
+  artifact, so clean-container evidence is authoritative for the source tree.
 - 2026-08-31: implemented the approved PWA server launcher model and
   presentation. The full-screen chooser identifies the current origin and
   provides bounded device-local add/edit/delete controls. Explicit navigation
@@ -741,8 +755,9 @@ independent authentication, and explicitly return to the launcher.
   local history repair. Both Git findings are resolved with an unchanged source
   tree and a passing canonical gate.
 - Remaining boundary: physical Ubuntu interaction and actual Apple Silicon
-  launch evidence described in `docs/desktop-acceptance.md` cannot be produced
-  by the current headless Linux execution environment.
+  launch evidence described in `docs/desktop-acceptance.md`, plus the physical
+  two-server PWA walkthrough, cannot be produced by the current single-server
+  headless Linux execution environment.
 
 ## Next Action
 

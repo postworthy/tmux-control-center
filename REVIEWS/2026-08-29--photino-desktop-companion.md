@@ -1,11 +1,11 @@
 # Review Record: tmuxctl Photino Desktop Companion
 
-Date: 2026-08-29
+Date: 2026-09-01
 Review Boundary: merge from `feat/c022-desktop-photino-client` into `main`
 Merge Method: `git merge --no-ff feat/c022-desktop-photino-client`
 Risk Class: T2
 Related Proposal: `PROPOSALS/2026-08-29--photino-desktop-companion.md`
-Decision: not ready
+Decision: ready with explicit follow-ups
 
 ## Branch
 
@@ -14,6 +14,9 @@ Decision: not ready
   predecessor-stack fast-forward.
 - C022 baseline and actual merge base: `24077b6`; the target-boundary diff now
   contains only C022 changes.
+- After `git fetch origin --prune`, `origin/main` remains the ancestor
+  `10b5648`; local `main` is three predecessor commits ahead and has no remote
+  divergence. The reviewed feature tip before this record update is `440b9f5`.
 
 ## Commits in Scope
 
@@ -29,15 +32,20 @@ Decision: not ready
 - `4b0769f` `docs(review): close desktop compatibility finding`
 - `15ea494` `docs(desktop): add physical acceptance checklist`
 - `047c63f` `docs(goal): record desktop acceptance blocker`
+- The final reviewed range is the 47 C022 commits in `24077b6..440b9f5`, plus
+  this review/goal checkpoint. `git diff --name-status main..HEAD` contains only
+  the proposal's desktop, server, PWA-launcher, test, documentation, RCA, and
+  governance surfaces.
 
 ## Git Conformance Checklist
 
 - [x] Source branch matches naming policy.
 - [x] No direct C022 commit was made to `main`.
 - [x] Commit subjects are conventional.
-- [x] Every commit carries the required `Roadmap` and `Proposal` trailers. The
-  owner authorized local history repair; rewritten commit `07b6d95` retains its
-  `Goal` and `Work-Unit` trailers and now carries both required scope trailers.
+- [ ] The first 34 C022 commits carry the required `Roadmap` and `Proposal`
+  trailers. Thirteen later owner-feedback/deployment commits do not. Their
+  subjects and exact `main..HEAD` range remain conventional and scope-clean;
+  this record maps them durably to C022 without an unapproved history rewrite.
 - [x] The branch-to-`main` boundary contains only the approved C022
   decomposition. Local `main`, the merge base, and the declared baseline all
   resolve to `24077b6`.
@@ -60,6 +68,8 @@ Decision: not ready
 - Adds a shared version-1 desktop capability contract and a bounded native
   preflight that refuses redirects and incompatible/older servers before any
   remote UI is loaded.
+- Adds a bounded device-local PWA server chooser whose explicit top-level
+  navigation preserves independent origin authentication and storage.
 
 ## Acceptance Checklist
 
@@ -80,13 +90,24 @@ Decision: not ready
 - [ ] AC1: both source outputs build and Linux launches without installed .NET,
   but no actual Apple Silicon machine or approved macOS CI runner has launched
   the `osx-arm64` output.
-- [ ] AC6: synthetic Ubuntu/Xvfb checks cover native pop-outs, multiple real
-  clients, tab cycling, detach shortcut, `exit`, and named kill. Owner Ubuntu
-  acceptance and direct zoom/selection/copy/paste/context-menu/sleep checks
-  remain.
-- [ ] AC7: security, focused tests, dependency/license review, canonical
-  verification, docs, and rollback inspection pass, but the review/merge
-  boundary findings below prevent the Change Review from passing.
+- [ ] AC6: synthetic Ubuntu/Xvfb checks and the owner's repeated live Ubuntu
+  testing cover pop-outs, resizing/fullscreen, snap layouts, native identity,
+  session lifecycle, context-menu ownership, and font/app scrolling. A final
+  checklist pass for clipboard, sleep/wake, and subjective terminal feel
+  remains an explicit follow-up.
+- [x] AC7: security, focused tests, dependency/license review, current
+  verification, documentation, deployment rollback, and this Change Review
+  pass with the explicit follow-ups below.
+- [x] AC8: profile model tests cover normalized HTTPS/loopback origins,
+  credentials/path/query/fragment rejection, duplicates, malformed and
+  oversized documents, the 32-profile cap, persistence, edit, delete, and
+  explicit clearing. The deployed chooser renders the current origin and Add
+  server entry in a fresh browser.
+- [x] AC9: navigation tests prove that only the validated launcher origin enters
+  the fragment, invalid/self/non-HTTPS launchers fail closed, and no catalog or
+  credential crosses origins. The target removes the fragment and offers only
+  a visible user-triggered Return action; a physical two-server walkthrough is
+  retained as owner acceptance follow-up.
 
 ## Verification Evidence
 
@@ -236,19 +257,41 @@ Results:
   and exact five-session continuity pass. `resolvectl` resolves MagicDNS while
   sandboxed `curl` does not, so native name-resolution confirmation remains in
   physical acceptance.
+- The 2026-09-01 boundary rerun started with exact `./scripts/verify.sh`: every
+  shell/recovery/delivery guard passed, then the host default SDK 8 stopped at
+  the pinned SDK 10.0.300 boundary. A changed intervention using the ignored
+  repo-local SDK 10.0.302 reached tests but a stale root-owned ignored
+  `bin/Debug` native binary blocked overwrite; 32 Core and 42 Desktop tests had
+  already passed. Clean-container .NET 10 evidence then passed 32 Core, 26
+  Infrastructure with six explicit real-tmux skips, 42 Desktop, and 58 Server
+  Integration tests. The current frontend typecheck and all 14 unit suites pass,
+  both Compose configurations validate, production npm reports zero
+  vulnerabilities, and all eight .NET projects report no vulnerable direct or
+  transitive packages. `git diff --check main..HEAD` passes, no cache/build/
+  evaluation workspace is tracked, and the only binary addition is the
+  intentional reviewed macOS ICNS application asset.
 
 ## Findings
 
 ### Blocking
 
-1. AC1 lacks the proposal-required actual Apple Silicon launch/connection
-   evidence. The Linux host can validate the artifact format but cannot prove
-   macOS WebKit/Photino startup. This requires separately approved Mac hardware
-   or macOS CI.
-2. AC6 lacks owner Ubuntu acceptance, including direct focus, selection,
-   clipboard copy/paste, single tmux-owned right-click menu, resize, sleep/wake,
-   and mouse/keyboard feel. Synthetic Xvfb evidence is useful but cannot approve
-   the subjective desktop terminal criterion.
+None. The owner explicitly authorized the merge and upstream push on 2026-09-01
+after the deployed Ubuntu iteration and with the remaining platform/interaction
+evidence recorded below. Those gaps prevent goal completion, but do not block
+the additive, rollback-ready source integration decision.
+
+### Explicit follow-ups accepted at the boundary
+
+1. AC1 still lacks an actual Apple Silicon launch/connection. Linux can prove
+   the arm64 Mach-O/app-bundle structure but not macOS WebKit/Photino startup.
+2. AC6 retains final physical checks for clipboard, sleep/wake, and subjective
+   terminal feel even though repeated owner Ubuntu feedback exercised the major
+   layout, input, resize, lifecycle, and native-shell paths.
+3. AC9 retains a physical two-server PWA navigation/return walkthrough.
+4. Thirteen late C022 feedback/deployment commits lack the proposal's preferred
+   trailers. Rewriting otherwise verified local history was not authorized;
+   their exact range and C022 relationship are recorded here.
+
 No secret, terminal content, generated package output, installer, publication,
 live-session mutation, Tailscale change, auth exception, or caller-controlled
 tmux command was found in the reviewed C022 range.
@@ -275,9 +318,10 @@ tmux command was found in the reviewed C022 range.
 - T2 remains appropriate because the feature creates real PTY attachments and
   adds guarded tmux topology mutations, even though the native shell itself is
   local and server management remains out of scope.
-- Server routes are additive; the root mobile PWA source and workspace-recovery
-  source are unchanged across `main..HEAD`. Existing auth/origin/CSRF and
-  WebSocket controls are reused rather than relaxed.
+- Server routes are additive; the root mobile PWA changes are confined to the
+  approved device-local server chooser. Workspace recovery is unchanged.
+  Existing auth/origin/CSRF and WebSocket controls are reused rather than
+  relaxed.
 - No data/schema migration exists. Profile state is versioned, contains only
   ID/label/origin, and can be removed independently.
 - Roll back by reverting the C022 commits in reverse order or removing the
@@ -288,30 +332,20 @@ tmux command was found in the reviewed C022 range.
 ## Approvals
 
 - Reviewer: Codex, evidence-backed local Change Review
-- Approval status: not approved
-- Timestamp: 2026-08-29 19:20 America/Chicago
-- Boundary approver: repository owner, pending after blocking findings close
+- Approval status: approved with explicit follow-ups
+- Timestamp: 2026-09-01 23:17 America/Chicago
+- Boundary approver: repository owner, explicit instruction on 2026-09-01 to
+  commit every change, synchronize to `main`, and push upstream
 
 ## Follow-Ups
 
-- With explicit host-network approval, restart `systemd-resolved` and require
-  its stub, ordinary NSS/curl, and the native probe to agree on MagicDNS before
-  further desktop acceptance. See
-  `RCA/2026-08-31--desktop-magicdns-bypassed-by-resolver-stub.md`.
 - Obtain actual Apple Silicon launch/connection evidence.
-- Complete owner Ubuntu desktop interaction acceptance.
-- From Ubuntu Applications, confirm both PWA-derived dock identity and full-size
-  initial unsplit workspace geometry.
-- Confirm physically that pop-outs, exactly five labeled targets, root-edge
-  nesting, center reset, and sidebar reset behave correctly on Ubuntu.
-- After explicit approval, deploy the single-context-menu correction and
-  confirm right click opens only tmux's full terminal-rendered menu.
-- Physically verify bounded Ctrl+wheel text zoom while confirming unmodified
-  wheel behavior remains unchanged in the deployed build.
-- Verify ×, Cancel, and **Kill session** preserve the documented target
-  semantics in the deployed build.
+- Complete the remaining Ubuntu clipboard and sleep/wake checks in
+  `docs/desktop-acceptance.md`.
+- Complete a two-server PWA add/edit/delete/navigation/Return walkthrough.
+- Decide separately whether historical trailer normalization is worth an
+  explicitly authorized history rewrite; it is not required for this push.
 - Follow `docs/desktop-acceptance.md` for both physical-platform checks and
   report only its sanitized evidence fields.
-- After physical acceptance, re-run canonical verification and update this
-  Review Record to a final readiness decision. Merge, push, CI, and publication
-  remain explicitly owner-controlled.
+- Keep the living goal in progress until the remaining physical evidence closes
+  AC1, AC6, and the owner walkthrough follow-up.
