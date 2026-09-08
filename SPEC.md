@@ -1,7 +1,7 @@
 # SPEC - Tmux Mobile Control Center
 
-Version: 2.2
-Last updated: 2026-08-31
+Version: 2.3
+Last updated: 2026-09-08
 Status: Approved
 
 ## Product Objective
@@ -12,7 +12,7 @@ Status: Approved
 
 ## Users and Core Workflows
 
-- One Linux/tmux owner authenticates from an installed iPhone PWA over Tailscale.
+- One Linux or macOS/tmux owner authenticates from an installed iPhone PWA over Tailscale.
 - The owner swipes between stable full-screen session cards, reads bounded
   previews, invokes safe quick actions, and opens a real terminal only when
   intervention is necessary.
@@ -33,7 +33,7 @@ Status: Approved
 - FR4: expose typed REST endpoints for inventory, capture, rename, text, keys,
   and interrupt; never expose arbitrary command execution.
 - FR5: use one shared background inventory poller and retain REST fallback.
-- FR6: bridge xterm.js to a real Linux PTY running a tmux attach client.
+- FR6: bridge xterm.js to a real Unix PTY running a tmux attach client.
 - FR7: clean up PTY children without killing the underlying tmux session.
 - FR8: provide iPhone-first scroll-snapped cards, visible navigation, safe-area
   handling, accessible controls, and a mobile terminal shortcut bar.
@@ -148,7 +148,8 @@ Status: Approved
 
 ## Constraints
 
-- The tmuxctl server supports Linux and one local tmux host; desktop clients
+- The tmuxctl server supports Ubuntu x64 and Apple Silicon macOS with one local
+  tmux host per server; desktop clients
   support Ubuntu x64 and Apple Silicon macOS and may save profiles for multiple
   independently deployed servers.
 - The browser never executes shell commands and tmux remains authoritative.
@@ -326,3 +327,12 @@ Status: Approved
   terminal rendering, Electron, Linux distributions beyond the initial Ubuntu
   target, Intel macOS, Windows, `.deb`/`.dmg` installers, signing,
   notarization, app-store delivery, and published release binaries.
+
+## C023 Platform Acceptance
+
+Approved 2026-09-08: native macOS server support uses the shared Unix PTY, private
+storage, explicit tmux path and per-user launchd supervision. Linux Docker/systemd
+remain supported. Recovery stays opt-in and restores only on an explicit request.
+C023 acceptance AC1–AC9 is defined in
+`PROPOSALS/2026-09-08--linux-macos-server-desktop.md`; physical support claims
+require host-specific evidence. Existing protocols and storage schemas are unchanged.

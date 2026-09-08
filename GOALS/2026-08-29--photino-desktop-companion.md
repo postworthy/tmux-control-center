@@ -1,6 +1,6 @@
 # Goal: tmuxctl Photino Desktop Companion
 
-Status: in progress
+Status: paused
 Owner: Human Partner and AI Agent
 Risk: T2
 Updated: 2026-08-31
@@ -822,6 +822,9 @@ independent authentication, and explicitly return to the launcher.
   No native client rebuild or host tmux changes were required.
 
 ## Next Action
+
+- C022 is paused while the owner-approved C023 integration executes. Existing
+  physical acceptance remains outstanding; resume it after C023 source migration.
 
 - Verify copying into another app after reopening the owner's desktop client.
   The approved clipboard deployment is complete. Resume the
