@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.tmuxctl.server</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/ABSOLUTE/PUBLISH/TmuxMobile.Server</string>
+		<string>--contentRoot</string>
+		<string>/ABSOLUTE/PRIVATE/STATE</string>
+		<string>--webroot</string>
+		<string>/ABSOLUTE/PUBLISH/wwwroot</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/ABSOLUTE/PRIVATE/STATE</string>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>AbandonProcessGroup</key>
+	<true/>
+	<key>Umask</key>
+	<integer>63</integer>
+	<key>ThrottleInterval</key>
+	<integer>10</integer>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>ASPNETCORE_ENVIRONMENT</key>
+		<string>Production</string>
+	</dict>
+	<key>StandardOutPath</key>
+	<string>/ABSOLUTE/PRIVATE/STATE/server.stdout.log</string>
+	<key>StandardErrorPath</key>
+	<string>/ABSOLUTE/PRIVATE/STATE/server.stderr.log</string>
+</dict>
+</plist>

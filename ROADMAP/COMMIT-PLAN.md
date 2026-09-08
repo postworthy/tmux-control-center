@@ -260,6 +260,16 @@ Status: deployed; physical acceptance paused for explicitly approved host resolv
 - Planned commits: staged under
   `PROPOSALS/2026-08-29--photino-desktop-companion.md`.
 
+## C023 — Linux and macOS server/desktop support
+
+Status: approved; implementation active
+
+- Adopt the shared Unix PTY patch and portable native packaging.
+- Preserve private storage, existing Linux deployment and terminal lifecycle.
+- Add native macOS server/launchd and portable opt-in workspace recovery.
+- Verify both platforms, commit/push and preserve MacBook work during source migration.
+- Proposal: `PROPOSALS/2026-09-08--linux-macos-server-desktop.md`.
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.

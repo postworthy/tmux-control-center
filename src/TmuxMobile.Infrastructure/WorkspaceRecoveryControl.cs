@@ -50,10 +50,10 @@ public sealed class WorkspaceRecoveryControl(
             throw new SecurityException("Workspace recovery directory must not be a symbolic link.");
         if (!Directory.Exists(DirectoryPath))
         {
-            if (OperatingSystem.IsLinux()) Directory.CreateDirectory(DirectoryPath, DirectoryMode);
+            if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())) Directory.CreateDirectory(DirectoryPath, DirectoryMode);
             else Directory.CreateDirectory(DirectoryPath);
         }
-        if (!OperatingSystem.IsLinux()) return;
+        if (!(OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())) return;
         var mode = File.GetUnixFileMode(DirectoryPath);
         if ((mode & GroupOrOtherPermissions) != 0 || (mode & DirectoryMode) != DirectoryMode)
             throw new SecurityException(
@@ -121,7 +121,7 @@ public sealed class WorkspaceRecoveryControl(
                     Share = FileShare.None,
                     Options = FileOptions.Asynchronous | FileOptions.WriteThrough
                 };
-                if (OperatingSystem.IsLinux()) streamOptions.UnixCreateMode = PrivateFileMode;
+                if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())) streamOptions.UnixCreateMode = PrivateFileMode;
                 await using (var stream = new FileStream(temporary, streamOptions))
                 {
                     var bytes = Encoding.UTF8.GetBytes(content);
@@ -152,7 +152,7 @@ public sealed class WorkspaceRecoveryControl(
             return;
         }
         if (IsSymbolicLink(path)) throw new SecurityException("Workspace recovery state must not be a symbolic link.");
-        if (!OperatingSystem.IsLinux()) return;
+        if (!(OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())) return;
         var mode = File.GetUnixFileMode(path);
         if ((mode & GroupOrOtherPermissions) != 0 || (mode & PrivateFileMode) != PrivateFileMode)
             throw new SecurityException("Workspace recovery state must be owner-readable and owner-writable only.");

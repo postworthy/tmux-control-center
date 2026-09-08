@@ -5,14 +5,13 @@ using TmuxMobile.Infrastructure;
 
 namespace TmuxMobile.Infrastructure.Tests;
 
-public sealed class LinuxPseudoTerminalTests
+public sealed class UnixPseudoTerminalTests
 {
-    [LinuxIntegrationFact]
-    [Trait("Category", "LinuxIntegration")]
+    [UnixIntegrationFact]
+    [Trait("Category", "UnixIntegration")]
     public async Task ResizeAcceptsHighResolutionContractMaximumAndRejectsAboveIt()
     {
-        if (!OperatingSystem.IsLinux() || !File.Exists("/bin/bash")) return;
-        var factory = new LinuxPseudoTerminalFactory(NullLoggerFactory.Instance);
+        var factory = new UnixPseudoTerminalFactory(NullLoggerFactory.Instance);
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => factory.StartAsync("/bin/bash",
             ["-c", "sleep 300"], new TerminalSize(TerminalSizeLimits.MaximumColumns + 1, 24),
             new Dictionary<string, string> { ["TERM"] = "xterm-256color" }, CancellationToken.None));
@@ -27,11 +26,74 @@ public sealed class LinuxPseudoTerminalTests
                 TerminalSizeLimits.MaximumRows), CancellationToken.None));
     }
 
-    [LinuxIntegrationFact]
-    [Trait("Category", "LinuxIntegration")]
+    [UnixPtyFact]
+    public async Task StartAndResizeAreObservableByTheChildProcess()
+    {
+        // A non-interactive shell that reports its terminal size whenever prompted, so the
+        // test never races the child's startup.
+        const string script = "printf 'READY\\n'; while read tag; do stty size; printf 'DONE_%s\\n' \"$tag\"; done";
+        var factory = new UnixPseudoTerminalFactory(NullLoggerFactory.Instance);
+        await using var pty = await factory.StartAsync("/bin/sh", ["-c", script],
+            new TerminalSize(100, 30),
+            new Dictionary<string, string> { ["TERM"] = "xterm-256color" }, CancellationToken.None);
+        await ReadUntilAsync(pty, "READY");
+
+        // stty reports "rows cols", so the child must see the size forkpty was given.
+        AssertSize(await ReportSizeAsync(pty, "ONE"), 30, 100);
+
+        await pty.ResizeAsync(new TerminalSize(120, 40), CancellationToken.None);
+
+        // ioctl(TIOCSWINSZ) must actually reach the kernel, not merely report success.
+        AssertSize(await ReportSizeAsync(pty, "TWO"), 40, 120);
+        await pty.ResizeAsync(new(TerminalSizeLimits.MaximumColumns, TerminalSizeLimits.MaximumRows), CancellationToken.None);
+        AssertSize(await ReportSizeAsync(pty, "MAX"), TerminalSizeLimits.MaximumRows, TerminalSizeLimits.MaximumColumns);
+        await pty.ResizeAsync(new(80, 24), CancellationToken.None);
+        AssertSize(await ReportSizeAsync(pty, "BACK"), 24, 80);
+    }
+
+    [UnixPtyFact]
+    public async Task UnicodeOutputAndNaturalExitAreObservable()
+    {
+        var factory = new UnixPseudoTerminalFactory(NullLoggerFactory.Instance);
+        await using var pty = await factory.StartAsync("/bin/sh", ["-c", "printf 'lambda-λ-done\\n'"],
+            new TerminalSize(80, 24), new Dictionary<string, string>(), CancellationToken.None);
+        Assert.Contains("lambda-λ-done", await ReadUntilAsync(pty, "done"));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await pty.WaitForExitAsync(timeout.Token);
+        Assert.True(pty.HasExited);
+    }
+
+    private static void AssertSize(string output, int rows, int columns)
+    {
+        Assert.Matches($@"(?m)^\s*{rows}\s+{columns}\s*$", output);
+    }
+
+    /// <summary>Asks the child for its terminal size and returns everything it replied.</summary>
+    private static async Task<string> ReportSizeAsync(IPseudoTerminal pty, string tag)
+    {
+        await pty.Input.WriteAsync(Encoding.UTF8.GetBytes($"{tag}\n"), CancellationToken.None);
+        await pty.Input.FlushAsync(CancellationToken.None);
+        return await ReadUntilAsync(pty, $"DONE_{tag}");
+    }
+
+    private static async Task<string> ReadUntilAsync(IPseudoTerminal pty, string marker)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var buffer = new byte[4096];
+        var output = new StringBuilder();
+        while (!output.ToString().Contains(marker, StringComparison.Ordinal))
+        {
+            var read = await pty.Output.ReadAsync(buffer, timeout.Token).AsTask().WaitAsync(timeout.Token);
+            if (read == 0) throw new EndOfStreamException($"PTY closed before {marker}.");
+            output.Append(Encoding.UTF8.GetString(buffer, 0, read));
+        }
+        return output.ToString();
+    }
+
+    [UnixIntegrationFact]
+    [Trait("Category", "UnixIntegration")]
     public async Task DisconnectingPtyLeavesDedicatedTmuxSessionRunning()
     {
-        if (!OperatingSystem.IsLinux() || !File.Exists("/usr/bin/tmux")) return;
         var socket = $"tmux-mobile-test-{Guid.NewGuid():N}";
         var runner = new ProcessRunner(NullLogger<ProcessRunner>.Instance);
         var token = CancellationToken.None;
@@ -40,8 +102,8 @@ public sealed class LinuxPseudoTerminalTests
             var created = await RunTmux(runner, socket, ["new-session", "-d", "-s", "pty-test"], token);
             Assert.Equal(0, created.ExitCode);
 
-            var factory = new LinuxPseudoTerminalFactory(NullLoggerFactory.Instance);
-            await using (var pty = await factory.StartAsync("/usr/bin/tmux",
+            var factory = new UnixPseudoTerminalFactory(NullLoggerFactory.Instance);
+            await using (var pty = await factory.StartAsync(UnixTestEnvironment.TmuxExecutable,
                 ["-L", socket, "attach-session", "-t", "pty-test"], new TerminalSize(80, 24),
                 new Dictionary<string, string> { ["TERM"] = "xterm-256color" }, token))
             {
@@ -68,11 +130,10 @@ public sealed class LinuxPseudoTerminalTests
         }
     }
 
-    [LinuxIntegrationFact]
-    [Trait("Category", "LinuxIntegration")]
+    [UnixIntegrationFact]
+    [Trait("Category", "UnixIntegration")]
     public async Task MouseAwareAlternateScreenReceivesWheelEventThroughAttachedTmuxClient()
     {
-        if (!OperatingSystem.IsLinux() || !File.Exists("/usr/bin/tmux")) return;
         var socket = $"tmux-mobile-mouse-{Guid.NewGuid():N}";
         var outputPath = Path.Combine(Path.GetTempPath(), $"tmux-mobile-mouse-{Guid.NewGuid():N}.bin");
         var runner = new ProcessRunner(NullLogger<ProcessRunner>.Instance);
@@ -86,8 +147,8 @@ public sealed class LinuxPseudoTerminalTests
             var mouseEnabled = await RunTmux(runner, socket, ["set-option", "-g", "mouse", "on"], token);
             Assert.Equal(0, mouseEnabled.ExitCode);
 
-            var factory = new LinuxPseudoTerminalFactory(NullLoggerFactory.Instance);
-            await using var pty = await factory.StartAsync("/usr/bin/tmux",
+            var factory = new UnixPseudoTerminalFactory(NullLoggerFactory.Instance);
+            await using var pty = await factory.StartAsync(UnixTestEnvironment.TmuxExecutable,
                 ["-L", socket, "attach-session", "-t", "mouse-test"], new TerminalSize(80, 24),
                 new Dictionary<string, string> { ["TERM"] = "xterm-256color" }, token);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -126,12 +187,11 @@ public sealed class LinuxPseudoTerminalTests
         }
     }
 
-    [LinuxIntegrationFact]
-    [Trait("Category", "LinuxIntegration")]
+    [UnixIntegrationFact]
+    [Trait("Category", "UnixIntegration")]
     public async Task DisposalKillsStubbornPtyProcessGroup()
     {
-        if (!File.Exists("/bin/bash") || !File.Exists("/usr/bin/pgrep")) return;
-        var factory = new LinuxPseudoTerminalFactory(NullLoggerFactory.Instance);
+        var factory = new UnixPseudoTerminalFactory(NullLoggerFactory.Instance);
         var pty = await factory.StartAsync("/bin/bash",
             ["-c", "trap '' HUP TERM; sleep 300 & printf 'STUBBORN_READY\\n'; wait"], new TerminalSize(80, 24),
             new Dictionary<string, string> { ["TERM"] = "xterm-256color" }, CancellationToken.None);
@@ -167,20 +227,24 @@ public sealed class LinuxPseudoTerminalTests
     private static Task<ProcessResult> RunTmux(
         ProcessRunner runner, string socket, IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {
-        var all = new List<string> { "-L", socket };
+        var all = new List<string> { "-f", "/dev/null", "-L", socket };
         all.AddRange(arguments);
-        return runner.RunAsync(new("/usr/bin/tmux", all, TimeSpan.FromSeconds(5), 8192,
+        return runner.RunAsync(new(UnixTestEnvironment.TmuxExecutable, all, TimeSpan.FromSeconds(5), 8192,
             "test.tmux-isolated"), cancellationToken);
     }
 }
 
-public sealed class LinuxIntegrationFactAttribute : FactAttribute
+/// <summary>
+/// Runs wherever the PTY layer is supported. Unlike the tmux integration tests this needs
+/// nothing but /bin/sh, so it stays enabled by default to guard the native interop contract.
+/// </summary>
+public sealed class UnixPtyFactAttribute : FactAttribute
 {
-    public LinuxIntegrationFactAttribute()
+    public UnixPtyFactAttribute()
     {
-        if (!OperatingSystem.IsLinux())
-            Skip = "Linux PTY integration requires Linux.";
-        else if (Environment.GetEnvironmentVariable("TMUX_MOBILE_RUN_LINUX_INTEGRATION") != "1")
-            Skip = "Set TMUX_MOBILE_RUN_LINUX_INTEGRATION=1 to run the isolated real-tmux PTY test.";
+        if (!OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS())
+            Skip = "PTY support requires Linux or macOS.";
+        else if (!File.Exists("/bin/sh"))
+            Skip = "PTY test requires /bin/sh.";
     }
 }

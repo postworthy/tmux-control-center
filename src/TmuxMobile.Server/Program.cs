@@ -50,7 +50,10 @@ var dataProtection = builder.Configuration.GetSection(DataProtectionSettings.Sec
 var keyDirectory = Path.IsPathFullyQualified(dataProtection.KeysDirectory)
     ? dataProtection.KeysDirectory
     : Path.Combine(builder.Environment.ContentRootPath, dataProtection.KeysDirectory);
-Directory.CreateDirectory(keyDirectory);
+if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+    Directory.CreateDirectory(keyDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+else
+    Directory.CreateDirectory(keyDirectory);
 builder.Services.AddDataProtection()
     .SetApplicationName("TmuxMobile")
     .PersistKeysToFileSystem(new DirectoryInfo(keyDirectory));
@@ -194,7 +197,7 @@ builder.Services.AddSingleton<ISessionAnalyzer>(sp =>
 builder.Services.AddSingleton<TmuxService>();
 builder.Services.AddSingleton<ITmuxService>(sp => sp.GetRequiredService<TmuxService>());
 builder.Services.AddSingleton<ITmuxTargetResolver>(sp => sp.GetRequiredService<TmuxService>());
-builder.Services.AddSingleton<IPseudoTerminalFactory, LinuxPseudoTerminalFactory>();
+builder.Services.AddSingleton<IPseudoTerminalFactory, UnixPseudoTerminalFactory>();
 builder.Services.AddSingleton<InventoryStore>();
 builder.Services.AddSingleton<IInventoryStore>(sp => sp.GetRequiredService<InventoryStore>());
 builder.Services.AddHostedService<InventoryPollingService>();

@@ -93,7 +93,7 @@ public sealed class JsonLineAuditLogger(
                     Share = FileShare.Read,
                     Options = FileOptions.Asynchronous
                 };
-                if (OperatingSystem.IsLinux())
+                if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()))
                     streamOptions.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
                 await using var stream = new FileStream(path, streamOptions);
                 var bytes = Encoding.UTF8.GetBytes(line);
@@ -131,11 +131,11 @@ public static class AuditStorage
             ?? throw new InvalidOperationException("Audit destination must have a parent directory.");
         if (!Directory.Exists(directory))
         {
-            if (OperatingSystem.IsLinux()) Directory.CreateDirectory(directory, DirectoryMode);
+            if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())) Directory.CreateDirectory(directory, DirectoryMode);
             else Directory.CreateDirectory(directory);
         }
 
-        if (!OperatingSystem.IsLinux()) return;
+        if (!(OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())) return;
 
         var directoryMode = File.GetUnixFileMode(directory);
         if ((directoryMode & GroupOrOtherPermissions) != 0)

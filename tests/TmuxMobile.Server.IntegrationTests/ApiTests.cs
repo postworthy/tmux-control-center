@@ -216,7 +216,7 @@ public sealed class ApiTests
         Assert.Equal("1", fields[0]);
         Assert.True(Guid.TryParseExact(fields[1], "D", out _));
         Assert.True(long.TryParse(fields[2], out _));
-        if (OperatingSystem.IsLinux())
+        if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()))
             Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite,
                 File.GetUnixFileMode(emptyFactory.RestoreRequestPath));
         Assert.Contains(emptyFactory.AuditRecords,
@@ -771,11 +771,11 @@ public sealed class TmuxFactory(bool authenticated,
     public void WriteRecoverySnapshot()
     {
         Directory.CreateDirectory(recoveryPath);
-        if (OperatingSystem.IsLinux()) File.SetUnixFileMode(recoveryPath,
+        if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())) File.SetUnixFileMode(recoveryPath,
             UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         var path = Path.Combine(recoveryPath, "workspace.v1.tsv");
         File.WriteAllText(path, "tmux-mobile-workspace\t1\n");
-        if (OperatingSystem.IsLinux()) File.SetUnixFileMode(path,
+        if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())) File.SetUnixFileMode(path,
             UnixFileMode.UserRead | UnixFileMode.UserWrite);
     }
     public sealed record HistoryCall(TerminalHistoryAction Action, int Pages);
@@ -784,7 +784,7 @@ public sealed class TmuxFactory(bool authenticated,
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         Directory.CreateDirectory(recoveryPath);
-        if (OperatingSystem.IsLinux()) File.SetUnixFileMode(recoveryPath,
+        if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())) File.SetUnixFileMode(recoveryPath,
             UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         builder.UseEnvironment(authenticated ? "Development" : "Production");
         builder.ConfigureAppConfiguration((_, configuration) =>

@@ -6,7 +6,7 @@ ASP.NET Core configuration applies in this order: checked-in JSON, environment-s
 |---|---:|---|
 | `Urls` | `http://127.0.0.1:5179` | Loopback by default. HTTPS can be configured directly with Kestrel certificate settings. |
 | `AllowedHosts` | `localhost;127.0.0.1` | Semicolon-separated Host allowlist. Set the exact MagicDNS/DNS name. |
-| `Tmux:ExecutablePath` | `/usr/bin/tmux` | Must be absolute. |
+| `Tmux:ExecutablePath` | `/usr/bin/tmux` | Must be absolute; use `/opt/homebrew/bin/tmux` for a typical Apple Silicon Homebrew installation. |
 | `Tmux:SocketName` | null | Optional `tmux -L` socket; letters, digits, `_`, `-`, max 64. |
 | `Tmux:PollingIntervalSeconds` | 3 | Shared metadata poll, 1–60 seconds. |
 | `Tmux:PreviewRefreshIntervalSeconds` | 10 | Per-pane preview cache interval, 2–300 seconds. |
@@ -33,7 +33,7 @@ ASP.NET Core configuration applies in this order: checked-in JSON, environment-s
 | `Security:MaxTerminalInputBytesPerSecond` | 262144 | Per-connection terminal-input byte bucket. |
 | `ForwardedHeaders:Enabled` | false | Enable only behind a known local proxy. |
 | `ForwardedHeaders:KnownProxies` | loopback v4/v6 | Explicit IPs allowed to set forwarded scheme/address. |
-| `Audit:Destination` | `logs/audit.jsonl` | Use an absolute production path beneath an owner-only directory. Linux startup rejects group/other-accessible audit storage. |
+| `Audit:Destination` | `logs/audit.jsonl` | Use an absolute production path beneath an owner-only directory. Linux and macOS startup reject group/other-accessible audit storage. |
 | `DataProtection:KeysDirectory` | `data-protection` | Persistent cookie keys; use an absolute protected production path. |
 | `WorkspaceRecovery:Enabled` | false | Enables status and the explicit app-triggered restore request bridge. Compose profiles enable it. |
 | `WorkspaceRecovery:ControlDirectory` | `workspace-recovery` | Must be absolute when enabled and owner-private (`0700`); snapshot, request, and status files are `0600`. The host helper and app container must share this exact directory. |

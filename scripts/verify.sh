@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bash tests/first-run-setup.test.sh
-sh -n deploy/docker/healthcheck-watchdog.sh
-bash tests/healthcheck-watchdog.test.sh
-bash tests/tmux-workspace-recovery.test.sh
-bash tests/desktop-delivery.test.sh
-
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"
+platform="$(uname -s)"
+case "$platform" in
+  Linux)
+    bash tests/first-run-setup.test.sh
+    sh -n deploy/docker/healthcheck-watchdog.sh
+    bash tests/healthcheck-watchdog.test.sh
+    ;;
+  Darwin)
+    echo "macOS native profile: Linux-only setup/watchdog/Compose checks remain required on Linux."
+    ;;
+  *) echo "Verification requires Linux or macOS." >&2; exit 69 ;;
+esac
+bash tests/tmux-workspace-recovery.test.sh
+bash tests/desktop-delivery.test.sh
+bash tests/native-delivery.test.sh
 
 export DOTNET_CLI_HOME="${DOTNET_CLI_HOME:-$repository_root/.dotnet}"
 export NUGET_PACKAGES="${NUGET_PACKAGES:-$repository_root/.nuget/packages}"
@@ -16,9 +25,14 @@ export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 dotnet restore TmuxMobile.sln
-dotnet test TmuxMobile.sln --no-restore
+TMUX_MOBILE_RUN_UNIX_INTEGRATION=1 dotnet test TmuxMobile.sln --no-restore
 npm --prefix src/TmuxMobile.Web run typecheck
 npm --prefix src/TmuxMobile.Web run test:unit
+if [[ "$platform" == Darwin ]]; then
+  echo "macOS common/native verification passed; run the Linux gate separately."
+  exit 0
+fi
+
 docker compose --env-file deploy/docker/.env.example config --quiet
 
 serve_config=$(mktemp)

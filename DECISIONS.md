@@ -141,3 +141,23 @@ size while keeping allocation finite. The desktop clamps a still-larger fitted
 grid before resizing xterm or transmitting it, the server rejects dimensions
 outside the contract explicitly, and the PTY adapter enforces the same limits
 for both initial allocation and later `TIOCSWINSZ` calls.
+
+## D013 — C023 Unix portability and source migration
+
+On 2026-09-08 the owner approved the C023 proposal and explicitly authorized
+implementation, commits, push to existing origin
+`git@github.com:postworthy/tmux-control-center.git`, and migration of reviewed
+source to `/Users/landon/code/tmux-control-center` on the MacBook (SSHFS mount
+`~/work-laptop-mnt/tmux-control-center`). Preserve a backup of the incoming Mac
+work before replacing incorporated files; preserve unrelated files and local
+settings. Use a feature branch, with no force push or main merge. Native Mac
+server support supersedes D011's Linux-only server assumption; desktop remains
+a remote client. Production service restart/installation is a separate boundary.
+
+### C023 main integration authorization
+
+On 2026-09-08 Landon explicitly authorized merging all work into main. The earlier
+no-main-merge boundary is superseded for the verified clipboard/C023 commit stack.
+Use a normal merge commit, push to existing origin/main and fast-forward the Mac
+checkout to the same main revision. Preserve its backup, stash and personal files.
+Production service and physical-acceptance boundaries remain unchanged.

@@ -3,6 +3,8 @@
 **/node_modules/
 **/.test-dist/
 src/TmuxMobile.Infrastructure/libtmuxmobilepty.so
+src/TmuxMobile.Infrastructure/libtmuxmobilepty.dylib
+src/TmuxMobile.Server/wwwroot/desktop/
 
 # Local SDK/package caches
 .dotnet/

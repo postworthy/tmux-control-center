@@ -1,8 +1,28 @@
 # Project Status
 
-Updated: 2026-08-31
+Updated: 2026-09-08
 
 ## Current
+
+- C023 Linux/macOS source integration passes canonical verification on both hosts
+  (166 .NET tests, zero skips, 15 frontend test files). Native server publishing,
+  real PTY resize/shutdown, portable recovery and isolated desktop startup pass.
+  The Mac startup resize callback crash was fixed by waiting for desktopReady.
+  The owner approved merging the complete clipboard/C023 stack into `main`,
+  pushing main and synchronizing the Mac checkout. Canonical verification passes
+  on both hosts. Original Mac work is backed
+  up and stashed, and verified native builds are under
+  `artifacts/c023-20260908-d93d17e/` on the Mac. Physical
+  Dock/clipboard/cross-server matrix and live launchd/Tailscale acceptance remain
+  open; C022 is paused during this integration. See the C023 goal and review.
+
+- The owner-approved desktop system clipboard fix is deployed as
+  `tmux-mobile:desktop-system-clipboard-20260908`: healthy, zero restarts, exact
+  HTTPS asset matches, and all six tmux pane processes preserved. Mouse
+  selections and tmux OSC 52 copies can now reach other desktop apps. Reopen
+  the desktop client to load the updated assets; owner copy/paste acceptance
+  remains next. The previous image is retained for rollback. See
+  `REVIEWS/2026-09-08--desktop-system-clipboard.md` for evidence.
 
 - Physical Ubuntu acceptance proved the maximize and reconnect symptoms share
   one cause: the 5120-pixel display crossed the Linux PTY's private 500-column

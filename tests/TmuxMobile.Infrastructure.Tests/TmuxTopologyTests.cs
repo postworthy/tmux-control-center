@@ -7,16 +7,19 @@ namespace TmuxMobile.Infrastructure.Tests;
 
 public sealed class TmuxTopologyTests
 {
-    [LinuxIntegrationFact]
-    [Trait("Category", "LinuxIntegration")]
+    [UnixIntegrationFact]
+    [Trait("Category", "UnixIntegration")]
     public async Task RealIsolatedTmuxTopologyRoundTripsWithoutKillingSession()
     {
-        if (!OperatingSystem.IsLinux() || !File.Exists("/usr/bin/tmux")) return;
         var socket = $"tmux-mobile-topology-{Guid.NewGuid():N}";
         var runner = new ProcessRunner(NullLogger<ProcessRunner>.Instance);
         var service = CreateService(runner, socket);
         try
         {
+            var bootstrap = await runner.RunAsync(new(UnixTestEnvironment.TmuxExecutable,
+                ["-f", "/dev/null", "-L", socket, "new-session", "-d", "-s", "isolated-bootstrap", "/bin/sh"],
+                TimeSpan.FromSeconds(5), 8192, "test.tmux-topology-bootstrap"), CancellationToken.None);
+            Assert.Equal(0, bootstrap.ExitCode);
             var session = await service.CreateSessionAsync("topology-test", CancellationToken.None);
             var original = Assert.Single((await service.GetTopologyAsync(session.Id, CancellationToken.None)).Windows);
             var created = await service.CreateWindowAsync(session.Id, "editor", CancellationToken.None);
@@ -49,7 +52,7 @@ public sealed class TmuxTopologyTests
         }
         finally
         {
-            var request = new ProcessRequest("/usr/bin/tmux", ["-L", socket, "kill-server"],
+            var request = new ProcessRequest(UnixTestEnvironment.TmuxExecutable, ["-L", socket, "kill-server"],
                 TimeSpan.FromSeconds(5), 8192, "test.tmux-topology-cleanup");
             await runner.RunAsync(request, CancellationToken.None);
         }
@@ -110,7 +113,7 @@ public sealed class TmuxTopologyTests
     private static ProcessResult Ok(string output = "") => new(0, output, "", TimeSpan.Zero, false, false);
 
     private static TmuxService CreateService(IProcessRunner runner, string? socket = null) => new(
-        runner, Options.Create(new TmuxOptions { SocketName = socket }),
+        runner, Options.Create(new TmuxOptions { SocketName = socket, ExecutablePath = runner is ProcessRunner ? UnixTestEnvironment.TmuxExecutable : "/usr/bin/tmux" }),
         new RuleBasedSessionAnalyzer(new StatusOptions()), TimeProvider.System,
         NullLogger<TmuxService>.Instance);
 

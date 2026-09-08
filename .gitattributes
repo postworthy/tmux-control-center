@@ -4,3 +4,6 @@
 *.ico binary
 *.woff binary
 *.woff2 binary
+
+# Captured review patches contain space-prefixed empty context lines.
+PROPOSALS/supporting/*.patch -whitespace

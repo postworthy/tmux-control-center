@@ -54,8 +54,8 @@ public sealed class TmuxHistoryControlTests
         Assert.Equal(["copy-mode", "-q", "-t", "$test:"], runner.Requests[^1].Arguments);
     }
 
-    [LinuxIntegrationFact]
-    [Trait("Category", "LinuxIntegration")]
+    [UnixIntegrationFact]
+    [Trait("Category", "UnixIntegration")]
     public async Task RealIsolatedTmuxEntersAndExitsCopyMode()
     {
         var socket = $"tmux-mobile-history-{Guid.NewGuid():N}";
@@ -108,7 +108,7 @@ public sealed class TmuxHistoryControlTests
 
     private static TmuxService CreateService(IProcessRunner runner, string? socket = null) => new(
         runner,
-        Options.Create(new TmuxOptions { SocketName = socket }),
+        Options.Create(new TmuxOptions { SocketName = socket, ExecutablePath = runner is ProcessRunner ? UnixTestEnvironment.TmuxExecutable : "/usr/bin/tmux" }),
         new RuleBasedSessionAnalyzer(new StatusOptions()),
         TimeProvider.System,
         NullLogger<TmuxService>.Instance);
@@ -116,9 +116,9 @@ public sealed class TmuxHistoryControlTests
     private static Task<ProcessResult> RunTmux(ProcessRunner runner, string socket,
         IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {
-        var all = new List<string> { "-L", socket };
+        var all = new List<string> { "-f", "/dev/null", "-L", socket };
         all.AddRange(arguments);
-        return runner.RunAsync(new("/usr/bin/tmux", all, TimeSpan.FromSeconds(5), 8192,
+        return runner.RunAsync(new(UnixTestEnvironment.TmuxExecutable, all, TimeSpan.FromSeconds(5), 8192,
             "test.tmux-history-isolated"), cancellationToken);
     }
 

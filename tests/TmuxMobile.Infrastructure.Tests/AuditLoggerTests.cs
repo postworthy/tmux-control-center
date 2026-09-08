@@ -23,7 +23,7 @@ public sealed class AuditLoggerTests
         Assert.Contains("\"action\":\"pane.text\"", content, StringComparison.Ordinal);
         Assert.Contains("\"target\":\"p_safe\"", content, StringComparison.Ordinal);
         Assert.DoesNotContain("terminal input", content, StringComparison.Ordinal);
-        if (OperatingSystem.IsLinux())
+        if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()))
         {
             Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite,
                 File.GetUnixFileMode(path));
@@ -37,7 +37,7 @@ public sealed class AuditLoggerTests
     {
         var root = Path.Combine(Path.GetTempPath(), $"tmux-mobile-audit-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
-        if (OperatingSystem.IsLinux())
+        if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()))
             File.SetUnixFileMode(root, UnixFileMode.UserRead | UnixFileMode.UserWrite |
                 UnixFileMode.UserExecute | UnixFileMode.GroupRead);
         var logger = CreateLogger(Path.Combine(root, "audit.jsonl"));
@@ -45,7 +45,7 @@ public sealed class AuditLoggerTests
         var result = await logger.WriteAsync("session.rename", "owner", "s_safe", true,
             CancellationToken.None);
 
-        if (OperatingSystem.IsLinux()) Assert.False(result);
+        if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())) Assert.False(result);
         else Assert.True(result);
     }
 

@@ -1,6 +1,6 @@
 # Goal: tmuxctl Photino Desktop Companion
 
-Status: in progress
+Status: paused
 Owner: Human Partner and AI Agent
 Risk: T2
 Updated: 2026-08-31
@@ -767,11 +767,68 @@ independent authentication, and explicitly return to the launcher.
   two-server PWA walkthrough, cannot be produced by the current single-server
   headless Linux execution environment.
 
+### 2026-09-08 clipboard correction checkpoint
+
+- Owner-approved scope: selecting tmux session text must populate the normal
+  desktop clipboard for pasting into other apps. The owner confirmed ordinary
+  mouse selection currently pastes only back into tmux and Shift did not help.
+- Smallest work unit: AC6 clipboard behavior on
+  `fix/desktop-system-clipboard`, T1 under the existing C022 authority envelope.
+  Add tmux OSC 52 writes and xterm mouse-release copying, with an embedded
+  WebKit copy-command fallback and existing explicit-copy shortcuts.
+- Exit evidence: decode actual isolated-tmux copied output, copy through Linux
+  WebKit, and read the exact sentinel from a separate xclip process; focused
+  frontend checks/build, canonical verification, docs, and review.
+- Implemented: bounded UTF-8 text-only writes; no OSC clipboard reads; inactive
+  or unfocused terminal output cannot write; no content logging/storage or
+  native browser-permission changes. Ctrl+C interrupt behavior is preserved.
+- Evidence: 15 frontend test files pass; desktop production build passes;
+  `PATH="$PWD/.dotnet:$PATH" ./scripts/verify.sh` exits 0. Linux WebKit/Xvfb
+  tests passed both user-gesture and no-gesture copies with exact external
+  xclip readback; a disposable real tmux server emitted a sentinel OSC 52
+  payload which also passed WebKit-to-xclip readback. Live tmux configuration
+  was only read (`set-clipboard external`); live sessions were not modified.
+- Verification recovery: default PATH selected .NET 8; used the existing local
+  .NET 10 SDK. Backed up four stale generated native-library copies owned by
+  another user to `/tmp/tmuxctl-clipboard-check/` and regenerated them. One
+  unrelated recovery-shell test had a transient parse error; the next complete
+  canonical run passed.
+- Review: `REVIEWS/2026-09-08--desktop-system-clipboard.md`.
+- Rollback: revert this clipboard change; no settings/data migration or host
+  tmux reconfiguration is required.
+- Merge and physical macOS acceptance remain pending. The wider
+  C022 goal remains in progress.
+
+### 2026-09-08 owner-approved clipboard deployment
+
+- Owner explicitly authorized deployment with `deploy`. Only the tested
+  desktop assets were layered onto the exact currently running server image;
+  runtime image configuration and every Compose setting except the image tag
+  were verified identical before replacement of the app service.
+- Deployed `tmux-mobile:desktop-system-clipboard-20260908`, image
+  `sha256:efdd5ec8aa763a7e87f2b5796ab71dfd82d2e40a05c64fd6a48bab71f547750d`.
+  The ignored deployment environment now selects this tag for subsequent starts.
+- HTTPS serves byte-identical `index.html`, `index-BfoBZxns.js`, and
+  `index-HeZ-p1xA.css`; desktop HTML remains no-store. HTTPS health returns 200,
+  direct HTTP remains denied with 426, and all six pre-rollout pane IDs,
+  window/session IDs, and pane process IDs are preserved.
+- Final Docker status is healthy with zero restarts.
+- Rollback image: `tmux-mobile:pre-system-clipboard-20260908` (previous digest
+  `sha256:903b662a28c00e9d58e3fcb39c5ead7b237eb8e85c4fc5d122764f75e1f9205c`).
+  Protected settings backup and asset build context are under ignored
+  `artifacts/desktop-system-clipboard-20260908/`; the Docker context excludes
+  settings backups. To roll back, restore the previous image tag in the ignored
+  deployment environment and recreate only the app with Compose `--no-build`.
+  No native client rebuild or host tmux changes were required.
+
 ## Next Action
 
-- Obtain owner interaction acceptance for add/edit/delete, second-origin
-  navigation, and explicit Return using the deployed PWA; continue the existing
-  physical Ubuntu/macOS desktop acceptance boundary separately.
+- C022 is paused while the owner-approved C023 integration executes. Existing
+  physical acceptance remains outstanding; resume it after C023 source migration.
+
+- Verify copying into another app after reopening the owner's desktop client.
+  The approved clipboard deployment is complete. Resume the
+  remaining physical Ubuntu/macOS and two-origin PWA acceptance afterward.
 
 ## Pause Conditions
 

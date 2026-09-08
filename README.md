@@ -44,7 +44,12 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
   ordinary tmux interaction inside the terminal. The session sidebar collapses
   to a narrow desktop icon rail. Desktop shortcuts include Ctrl+PageUp/PageDown
   for session tabs, Ctrl+Shift+W to detach the active tab, and Ctrl+Shift+C/V for
-  terminal selection copy and guarded paste. Ctrl+mouse-wheel adjusts terminal
+  terminal selection copy and guarded paste. Completed mouse selections also
+  copy to the system clipboard, including tmux copy-mode selections delivered
+  through OSC 52, so the text can be pasted into other desktop apps. Hold Shift
+  while dragging to select with xterm when tmux captures the mouse; Ctrl+Shift+C
+  (or Command+C on macOS) copies that selection explicitly. Copy is limited to
+  128 KiB and terminal clipboard-read requests are ignored. Ctrl+mouse-wheel adjusts terminal
   text size within bounded limits while an unmodified wheel navigates
   authoritative tmux history. Initial selection, maximize, and fullscreen
   transitions refit the terminal to the available viewport. A pop-out control
@@ -56,15 +61,18 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
 
 ## Development
 
-Requirements: Linux, .NET 10 SDK, Node.js 20+, npm, and tmux 3.2+.
+Requirements: Ubuntu Linux x64 or Apple Silicon macOS, .NET 10 SDK,
+Node/npm compatible with the frontend dependencies, a C compiler, and tmux.
+The recovery helper needs Bash 4.3+. See [native macOS setup](docs/macos-server.md)
+for explicit Homebrew paths, native server builds and launchd configuration.
 
 ```bash
 npm --prefix src/TmuxMobile.Web ci
 npm --prefix src/TmuxMobile.Web run build
 dotnet restore
 dotnet test
-TMUX_MOBILE_RUN_LINUX_INTEGRATION=1 \
-  dotnet test tests/TmuxMobile.Infrastructure.Tests --filter Category=LinuxIntegration
+TMUX_MOBILE_RUN_UNIX_INTEGRATION=1 \
+  dotnet test tests/TmuxMobile.Infrastructure.Tests --filter Category=UnixIntegration
 ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/TmuxMobile.Server
 ```
 

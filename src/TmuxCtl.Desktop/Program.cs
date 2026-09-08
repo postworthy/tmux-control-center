@@ -67,8 +67,13 @@ public static class Program
     private static void NotifyNativeGeometryChanged(object? sender, EventArgs _) =>
         NotifyNativeGeometryChanged(sender);
 
-    private static void NotifyNativeGeometryChanged(object? sender) =>
-        ((PhotinoWindow)sender!).SendWebMessage(NativeGeometryChangedMessage);
+    private static void NotifyNativeGeometryChanged(object? sender)
+    {
+        // AppKit can resize during native window creation. A page-originated
+        // ready message proves the web view exists before sending into Photino.
+        if (sender is PhotinoWindow window && Windows.Any(controller => controller.CanReceiveGeometry(window)))
+            window.SendWebMessage(NativeGeometryChangedMessage);
+    }
 
     private sealed class DesktopWindowController(
         PhotinoWindow window, ServerProfileStore profiles, DesktopCapabilityProbe capabilityProbe) : IDisposable
@@ -78,6 +83,10 @@ public static class Program
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
         };
         private bool profilesVisible;
+        private bool desktopReady;
+
+        public bool CanReceiveGeometry(PhotinoWindow candidate) =>
+            ReferenceEquals(window, candidate) && desktopReady;
         private int navigationGeneration;
         private DesktopServerUrl? server;
         private CancellationTokenSource? connectionCancellation;
@@ -132,6 +141,7 @@ public static class Program
         public void Connect(DesktopServerUrl selected, string? sessionId = null)
         {
             CancelPendingConnection();
+            desktopReady = false;
             profilesVisible = false;
             server = selected;
             var generation = Interlocked.Increment(ref navigationGeneration);
@@ -145,6 +155,7 @@ public static class Program
         private void ConnectKnownCompatible(DesktopServerUrl selected, string sessionId)
         {
             CancelPendingConnection();
+            desktopReady = false;
             profilesVisible = false;
             server = selected;
             Interlocked.Increment(ref navigationGeneration);
@@ -179,6 +190,7 @@ public static class Program
         public void ShowProfiles(string? error = null)
         {
             CancelPendingConnection();
+            desktopReady = false;
             profilesVisible = true;
             server = null;
             Interlocked.Increment(ref navigationGeneration);
@@ -210,6 +222,9 @@ public static class Program
 
         private void MarkDesktopReady()
         {
+            if (profilesVisible || server is null) return;
+            desktopReady = true;
+            NotifyNativeGeometryChanged(window);
             Interlocked.Increment(ref navigationGeneration);
             CancelPendingConnection();
         }

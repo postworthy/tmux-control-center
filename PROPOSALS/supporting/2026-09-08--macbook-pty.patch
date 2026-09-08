@@ -1,0 +1,208 @@
+diff --git a/src/TmuxMobile.Infrastructure/LinuxPseudoTerminal.cs b/src/TmuxMobile.Infrastructure/LinuxPseudoTerminal.cs
+index 1b43545..70d4ab7 100644
+--- a/src/TmuxMobile.Infrastructure/LinuxPseudoTerminal.cs
++++ b/src/TmuxMobile.Infrastructure/LinuxPseudoTerminal.cs
+@@ -13,7 +13,8 @@ public sealed class LinuxPseudoTerminalFactory(ILoggerFactory loggerFactory) : I
+         IReadOnlyDictionary<string, string> environment,
+         CancellationToken cancellationToken)
+     {
+-        if (!OperatingSystem.IsLinux()) throw new PlatformNotSupportedException("PTY support currently requires Linux.");
++        if (!OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS())
++            throw new PlatformNotSupportedException("PTY support requires Linux or macOS.");
+         cancellationToken.ThrowIfCancellationRequested();
+         return Task.FromResult<IPseudoTerminal>(
+             LinuxPseudoTerminal.Start(executable, arguments, size, environment,
+@@ -23,7 +24,6 @@ public sealed class LinuxPseudoTerminalFactory(ILoggerFactory loggerFactory) : I
+ 
+ public sealed class LinuxPseudoTerminal : IPseudoTerminal
+ {
+-    private const int Tiocswinsz = 0x5414;
+     private const int SigHup = 1;
+     private const int SigKill = 9;
+     private const int SigTerm = 15;
+@@ -108,8 +108,9 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
+             throw new ArgumentOutOfRangeException(nameof(size));
+         var winsize = new Native.WinSize((ushort)size.Rows, (ushort)size.Columns, 0, 0);
+         var descriptor = _output.SafeFileHandle.DangerousGetHandle().ToInt32();
+-        if (Native.ioctl(descriptor, Tiocswinsz, ref winsize) < 0)
+-            throw new InvalidOperationException("Unable to resize PTY.");
++        if (Native.tmux_mobile_set_winsize(descriptor, ref winsize) < 0)
++            throw new InvalidOperationException(
++                $"Unable to resize PTY; errno {Marshal.GetLastPInvokeError()}.");
+         return ValueTask.CompletedTask;
+     }
+ 
+@@ -174,8 +175,11 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
+         [DllImport("tmuxmobilepty", SetLastError = true)]
+         internal static extern int tmux_mobile_forkpty_exec(
+             out int master, ref WinSize winsize, IntPtr executable, IntPtr argv);
++        // ioctl is variadic; call it through the native shim so the C compiler
++        // emits the correct calling sequence (see native/tmux_mobile_pty.c).
++        [DllImport("tmuxmobilepty", SetLastError = true)]
++        internal static extern int tmux_mobile_set_winsize(int fd, ref WinSize winsize);
+         [DllImport("libc", SetLastError = true)] internal static extern int dup(int fd);
+-        [DllImport("libc", SetLastError = true)] internal static extern int ioctl(int fd, int request, ref WinSize value);
+         [DllImport("libc", SetLastError = true)] internal static extern int kill(int pid, int signal);
+         [DllImport("libc", SetLastError = true)] internal static extern int waitpid(int pid, out int status, int options);
+     }
+diff --git a/src/TmuxMobile.Infrastructure/TmuxMobile.Infrastructure.csproj b/src/TmuxMobile.Infrastructure/TmuxMobile.Infrastructure.csproj
+index 9c710f3..19f1c8c 100644
+--- a/src/TmuxMobile.Infrastructure/TmuxMobile.Infrastructure.csproj
++++ b/src/TmuxMobile.Infrastructure/TmuxMobile.Infrastructure.csproj
+@@ -12,18 +12,30 @@
+     <TargetFramework>net10.0</TargetFramework>
+     <ImplicitUsings>enable</ImplicitUsings>
+     <Nullable>enable</Nullable>
+-    <NativePtyLibrary>$(IntermediateOutputPath)libtmuxmobilepty.so</NativePtyLibrary>
++    <NativePtyLibraryLinux>$(IntermediateOutputPath)libtmuxmobilepty.so</NativePtyLibraryLinux>
++    <NativePtyLibraryMacOS>$(IntermediateOutputPath)libtmuxmobilepty.dylib</NativePtyLibraryMacOS>
+   </PropertyGroup>
+ 
+   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+-    <None Include="$(NativePtyLibrary)" Link="libtmuxmobilepty.so"
++    <None Include="$(NativePtyLibraryLinux)" Link="libtmuxmobilepty.so"
+           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+   </ItemGroup>
+ 
+-  <Target Name="BuildNativePtyLibrary" BeforeTargets="CoreCompile"
++  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
++    <None Include="$(NativePtyLibraryMacOS)" Link="libtmuxmobilepty.dylib"
++          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
++  </ItemGroup>
++
++  <Target Name="BuildNativePtyLibraryLinux" BeforeTargets="CoreCompile"
+           Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+-    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(NativePtyLibrary)'))" />
+-    <Exec Command="cc -shared -fPIC -O2 -Wall -Wextra -Werror -o &quot;$(NativePtyLibrary)&quot; &quot;$(MSBuildProjectDirectory)/native/tmux_mobile_pty.c&quot; -lutil" />
++    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(NativePtyLibraryLinux)'))" />
++    <Exec Command="cc -shared -fPIC -O2 -Wall -Wextra -Werror -o &quot;$(NativePtyLibraryLinux)&quot; &quot;$(MSBuildProjectDirectory)/native/tmux_mobile_pty.c&quot; -lutil" />
++  </Target>
++
++  <Target Name="BuildNativePtyLibraryMacOS" BeforeTargets="CoreCompile"
++          Condition="$([MSBuild]::IsOSPlatform('OSX'))">
++    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(NativePtyLibraryMacOS)'))" />
++    <Exec Command="cc -dynamiclib -O2 -Wall -Wextra -Werror -o &quot;$(NativePtyLibraryMacOS)&quot; &quot;$(MSBuildProjectDirectory)/native/tmux_mobile_pty.c&quot;" />
+   </Target>
+ 
+ </Project>
+diff --git a/src/TmuxMobile.Infrastructure/native/tmux_mobile_pty.c b/src/TmuxMobile.Infrastructure/native/tmux_mobile_pty.c
+index 0695be6..61afd5d 100644
+--- a/src/TmuxMobile.Infrastructure/native/tmux_mobile_pty.c
++++ b/src/TmuxMobile.Infrastructure/native/tmux_mobile_pty.c
+@@ -1,4 +1,10 @@
++#if defined(__APPLE__)
++#include <util.h>
++#else
+ #include <pty.h>
++#endif
++
++#include <sys/ioctl.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ 
+@@ -8,10 +14,28 @@ int tmux_mobile_forkpty_exec(
+     const char *executable,
+     char *const arguments[])
+ {
+-    pid_t process_id = forkpty(master_fd, NULL, NULL, window_size);
++    /* forkpty takes a non-const winsize on some platforms, so copy it. */
++    struct winsize size = *window_size;
++    pid_t process_id = forkpty(master_fd, NULL, NULL, &size);
+     if (process_id != 0)
+         return process_id;
+ 
+     execv(executable, arguments);
+     _exit(127);
+ }
++
++/*
++ * ioctl(2) is variadic: int ioctl(int, unsigned long, ...).
++ *
++ * On arm64 Apple platforms the ABI passes variadic arguments on the stack
++ * rather than in registers, so a P/Invoke that declares ioctl as a fixed-arity
++ * function puts the winsize pointer in a register the callee never reads. The
++ * kernel then copies whatever the stack happened to hold, which silently
++ * corrupts the terminal size instead of failing. Making the call from C lets
++ * the compiler emit the correct calling sequence, and keeps the value of
++ * TIOCSWINSZ (which differs per platform) out of the managed side.
++ */
++int tmux_mobile_set_winsize(int fd, const struct winsize *window_size)
++{
++    return ioctl(fd, TIOCSWINSZ, window_size);
++}
+diff --git a/tests/TmuxMobile.Infrastructure.Tests/LinuxPseudoTerminalTests.cs b/tests/TmuxMobile.Infrastructure.Tests/LinuxPseudoTerminalTests.cs
+index eb13c0f..f42507d 100644
+--- a/tests/TmuxMobile.Infrastructure.Tests/LinuxPseudoTerminalTests.cs
++++ b/tests/TmuxMobile.Infrastructure.Tests/LinuxPseudoTerminalTests.cs
+@@ -27,6 +27,49 @@ public sealed class LinuxPseudoTerminalTests
+                 TerminalSizeLimits.MaximumRows), CancellationToken.None));
+     }
+ 
++    [UnixPtyFact]
++    public async Task StartAndResizeAreObservableByTheChildProcess()
++    {
++        // A non-interactive shell that reports its terminal size whenever prompted, so the
++        // test never races the child's startup.
++        const string script = "printf 'READY\\n'; while read tag; do stty size; printf 'DONE_%s\\n' \"$tag\"; done";
++        var factory = new LinuxPseudoTerminalFactory(NullLoggerFactory.Instance);
++        await using var pty = await factory.StartAsync("/bin/sh", ["-c", script],
++            new TerminalSize(100, 30),
++            new Dictionary<string, string> { ["TERM"] = "xterm-256color" }, CancellationToken.None);
++        await ReadUntilAsync(pty, "READY");
++
++        // stty reports "rows cols", so the child must see the size forkpty was given.
++        Assert.Contains("30 100", await ReportSizeAsync(pty, "ONE"));
++
++        await pty.ResizeAsync(new TerminalSize(120, 40), CancellationToken.None);
++
++        // ioctl(TIOCSWINSZ) must actually reach the kernel, not merely report success.
++        Assert.Contains("40 120", await ReportSizeAsync(pty, "TWO"));
++    }
++
++    /// <summary>Asks the child for its terminal size and returns everything it replied.</summary>
++    private static async Task<string> ReportSizeAsync(IPseudoTerminal pty, string tag)
++    {
++        await pty.Input.WriteAsync(Encoding.UTF8.GetBytes($"{tag}\n"), CancellationToken.None);
++        await pty.Input.FlushAsync(CancellationToken.None);
++        return await ReadUntilAsync(pty, $"DONE_{tag}");
++    }
++
++    private static async Task<string> ReadUntilAsync(IPseudoTerminal pty, string marker)
++    {
++        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
++        var buffer = new byte[4096];
++        var output = new StringBuilder();
++        while (!output.ToString().Contains(marker, StringComparison.Ordinal))
++        {
++            var read = await pty.Output.ReadAsync(buffer, timeout.Token);
++            if (read == 0) break;
++            output.Append(Encoding.UTF8.GetString(buffer, 0, read));
++        }
++        return output.ToString();
++    }
++
+     [LinuxIntegrationFact]
+     [Trait("Category", "LinuxIntegration")]
+     public async Task DisconnectingPtyLeavesDedicatedTmuxSessionRunning()
+@@ -174,6 +217,21 @@ public sealed class LinuxPseudoTerminalTests
+     }
+ }
+ 
++/// <summary>
++/// Runs wherever the PTY layer is supported. Unlike the tmux integration tests this needs
++/// nothing but /bin/sh, so it stays enabled by default to guard the native interop contract.
++/// </summary>
++public sealed class UnixPtyFactAttribute : FactAttribute
++{
++    public UnixPtyFactAttribute()
++    {
++        if (!OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS())
++            Skip = "PTY support requires Linux or macOS.";
++        else if (!File.Exists("/bin/sh"))
++            Skip = "PTY test requires /bin/sh.";
++    }
++}
++
+ public sealed class LinuxIntegrationFactAttribute : FactAttribute
+ {
+     public LinuxIntegrationFactAttribute()
