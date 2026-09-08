@@ -61,15 +61,18 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
 
 ## Development
 
-Requirements: Linux, .NET 10 SDK, Node.js 20+, npm, and tmux 3.2+.
+Requirements: Ubuntu Linux x64 or Apple Silicon macOS, .NET 10 SDK,
+Node/npm compatible with the frontend dependencies, a C compiler, and tmux.
+The recovery helper needs Bash 4.3+. See [native macOS setup](docs/macos-server.md)
+for explicit Homebrew paths, native server builds and launchd configuration.
 
 ```bash
 npm --prefix src/TmuxMobile.Web ci
 npm --prefix src/TmuxMobile.Web run build
 dotnet restore
 dotnet test
-TMUX_MOBILE_RUN_LINUX_INTEGRATION=1 \
-  dotnet test tests/TmuxMobile.Infrastructure.Tests --filter Category=LinuxIntegration
+TMUX_MOBILE_RUN_UNIX_INTEGRATION=1 \
+  dotnet test tests/TmuxMobile.Infrastructure.Tests --filter Category=UnixIntegration
 ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/TmuxMobile.Server
 ```
 

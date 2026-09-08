@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+if (( BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 3) )); then
+  echo "Workspace recovery requires Bash 4.3 or newer; on macOS use Homebrew Bash." >&2
+  exit 69
+fi
 readonly SNAPSHOT_VERSION=1
-readonly SCRIPT_PATH="$(readlink -f -- "${BASH_SOURCE[0]}")"
+readonly SCRIPT_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+readonly SCRIPT_PATH="$SCRIPT_DIRECTORY/$(basename "${BASH_SOURCE[0]}")"
+source "$SCRIPT_DIRECTORY/workspace-platform.sh"
 readonly STATE_DIR="${TMUX_WORKSPACE_STATE_DIR:-${XDG_STATE_HOME:-${HOME:?HOME is required}/.local/state}/tmux-mobile-workspace}"
 readonly SNAPSHOT_PATH="$STATE_DIR/workspace.v1.tsv"
 readonly REQUEST_PATH="$STATE_DIR/restore.request"
@@ -22,7 +28,7 @@ log() {
 }
 
 tmux_command() {
-  tmux "${tmux_arguments[@]}" "$@"
+  "${TMUX_WORKSPACE_TMUX:-tmux}" "${tmux_arguments[@]}" "$@"
 }
 
 prepare_state_directory() {
@@ -31,22 +37,22 @@ prepare_state_directory() {
     return 1
   fi
   mkdir -p -- "$STATE_DIR" || return 1
-  chmod 0700 -- "$STATE_DIR" || return 1
-  [[ "$(stat -c '%u' -- "$STATE_DIR")" == "$(id -u)" ]] || {
+  chmod 0700 "$STATE_DIR" || return 1
+  [[ "$(workspace_stat_owner "$STATE_DIR")" == "$(id -u)" ]] || {
     log "state directory must be owned by the recovery user"
     return 1
   }
 }
 
 encode_field() {
-  printf '%s' "$1" | base64 --wrap=0
+  printf '%s' "$1" | base64 | tr -d '\r\n'
 }
 
 decode_field() {
   local encoded="$1" decoded_value
   local -n result="$2"
   [[ "$encoded" =~ ^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$ ]] || return 1
-  decoded_value="$(printf '%s' "$encoded" | base64 --decode 2>/dev/null)" || return 1
+  decoded_value="$(printf '%s' "$encoded" | workspace_base64_decode 2>/dev/null)" || return 1
   [[ -n "$decoded_value" && "$decoded_value" != *$'\n'* && "$decoded_value" != *$'\r'* && "$decoded_value" != *"$FIELD_SEPARATOR"* ]] || return 1
   result="$decoded_value"
 }
@@ -61,7 +67,7 @@ classify_command() {
 
 atomic_replace() {
   local temporary="$1" destination="$2"
-  chmod 0600 -- "$temporary" || return 1
+  chmod 0600 "$temporary" || return 1
   mv -f -- "$temporary" "$destination"
 }
 
@@ -74,7 +80,7 @@ save_snapshot() {
     rm -f -- "$raw_file"
     return 1
   }
-  chmod 0600 -- "$raw_file" "$snapshot_file"
+  chmod 0600 "$raw_file" "$snapshot_file"
 
   local format
   format="#{session_name}${FORMAT_SEPARATOR}#{window_index}${FORMAT_SEPARATOR}#{window_name}${FORMAT_SEPARATOR}#{window_layout}${FORMAT_SEPARATOR}#{window_active}${FORMAT_SEPARATOR}#{pane_index}${FORMAT_SEPARATOR}#{pane_current_path}${FORMAT_SEPARATOR}#{pane_current_command}${FORMAT_SEPARATOR}#{pane_active}"
@@ -141,9 +147,9 @@ pane_restore_command() {
 
 snapshot_is_secure() {
   [[ -f "$SNAPSHOT_PATH" && ! -L "$SNAPSHOT_PATH" ]] || return 1
-  [[ "$(stat -c '%u' -- "$SNAPSHOT_PATH")" == "$(id -u)" ]] || return 1
+  [[ "$(workspace_stat_owner "$SNAPSHOT_PATH")" == "$(id -u)" ]] || return 1
   local mode
-  mode="$(stat -c '%a' -- "$SNAPSHOT_PATH")"
+  mode="$(workspace_stat_mode "$SNAPSHOT_PATH")"
   (( (8#$mode & 077) == 0 ))
 }
 
@@ -309,7 +315,7 @@ write_status() {
 
 consume_restore_request() {
   [[ -f "$REQUEST_PATH" && ! -L "$REQUEST_PATH" ]] || return 0
-  [[ "$(stat -c '%u' -- "$REQUEST_PATH")" == "$(id -u)" ]] || {
+  [[ "$(workspace_stat_owner "$REQUEST_PATH")" == "$(id -u)" ]] || {
     log "ignored restore request with invalid ownership"
     return 0
   }
@@ -328,7 +334,7 @@ consume_restore_request() {
   case "$result" in
     0)
       local count
-      count="$(tmux_command list-sessions -F '#{session_id}' 2>/dev/null | wc -l)"
+      count="$(tmux_command list-sessions -F '#{session_id}' 2>/dev/null | wc -l | tr -d '[:space:]')"
       write_status restored "$request_id" "$count"
       ;;
     10) write_status blocked-live-sessions "$request_id" 0 ;;
@@ -349,10 +355,19 @@ run_daemon() {
   }
   prepare_state_directory || return 1
   exec 9>"$STATE_DIR/daemon.lock" || return 1
-  chmod 0600 -- "$STATE_DIR/daemon.lock" || return 1
-  if ! flock -n 9; then
+  chmod 0600 "$STATE_DIR/daemon.lock" || return 1
+  local lock_status=0
+  if [[ $(uname -s) == Darwin || -n "${TMUX_WORKSPACE_LOCK_HELPER:-}" ]]; then
+    "${TMUX_WORKSPACE_LOCK_HELPER:-$SCRIPT_DIRECTORY/tmux-workspace-lock}" || lock_status=$?
+  else
+    flock -n 9 || lock_status=$?
+  fi
+  if (( lock_status == 1 )); then
     log "another recovery daemon already owns the state directory"
     return 0
+  elif (( lock_status != 0 )); then
+    log "cannot acquire recovery lock; check native helper installation"
+    return 1
   fi
   trap 'save_snapshot || true; exit 0' TERM INT
   log "daemon started; restore requires an explicit app request"

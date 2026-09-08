@@ -61,6 +61,8 @@ the environment file's home, PATH, and state directory:
 ```bash
 sudo install -o root -g root -m 0755 scripts/tmux-workspace-recovery.sh \
   /usr/local/libexec/tmux-mobile-workspace-recovery
+sudo install -o root -g root -m 0644 scripts/workspace-platform.sh \
+  /usr/local/libexec/workspace-platform.sh
 sudo install -o root -g root -m 0644 deploy/systemd/tmux-mobile-workspace@.service \
   /etc/systemd/system/
 sudo install -d -o root -g root -m 0755 /etc/tmux-mobile
@@ -87,7 +89,8 @@ the last snapshot remains recoverable. Do not delete or edit a snapshot during
 normal rollback.
 
 If administrator access is unavailable on a desktop host, install the supplied
-user unit instead: copy the helper to `~/.local/libexec/`, the unit to
+user unit instead: copy both the helper (as `tmux-mobile-workspace-recovery`) and
+`workspace-platform.sh` to `~/.local/libexec/`, the unit to
 `~/.config/systemd/user/`, and an edited environment file to
 `~/.config/tmux-mobile/workspace.env`; then enable
 `tmux-mobile-workspace.service` with `systemctl --user`. It starts when that
