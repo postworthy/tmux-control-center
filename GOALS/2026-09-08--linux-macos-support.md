@@ -1,6 +1,6 @@
 # Goal: Linux and macOS server/desktop support
 
-Status: active
+Status: paused
 Owner: Landon and Codex
 Risk: T2
 Updated: 2026-09-08
@@ -31,7 +31,7 @@ The proposal's AC1–AC9 definitions are authoritative.
 - [x] AC6 — portable optional recovery. Evidence: see criterion mapping in `REVIEWS/2026-09-08--linux-macos-server-desktop.md`.
 - [ ] AC7 — desktop/PWA matrix and physical acceptance. Evidence: see criterion mapping in `REVIEWS/2026-09-08--linux-macos-server-desktop.md`.
 - [x] AC8 — platform-aware canonical gates. Evidence: see criterion mapping in `REVIEWS/2026-09-08--linux-macos-server-desktop.md`.
-- [ ] AC9 — docs/review/rollback and approved migration. Evidence: see criterion mapping in `REVIEWS/2026-09-08--linux-macos-server-desktop.md`.
+- [x] AC9 — docs/review/rollback and approved migration. Evidence: see criterion mapping in `REVIEWS/2026-09-08--linux-macos-server-desktop.md`.
 
 ## Authority Envelope
 
@@ -53,7 +53,7 @@ history changes, expanded architecture, unclear security/privacy or lost host ac
 | 5 native delivery | complete | source publish and launchd templates | publish/package checks |
 | 6 recovery | complete | portable utilities and locking | recovery suite |
 | 7 platform matrix | physical follow-ups | canonical platform gates and available host evidence | verify.sh and builds |
-| 8 review/migration | active | reviewed commits pushed and Mac source reconciled | hashes, Git and backup |
+| 8 review/migration | complete | reviewed commits pushed and Mac source reconciled | hashes, Git and backup |
 
 Thin slice: unit 4 permits a private foreground Mac server to serve a real terminal.
 
@@ -95,7 +95,7 @@ Thin slice: unit 4 permits a private foreground Mac server to serve a real termi
 
 ## Next Action
 
-- Commit and push the reviewed integration, then migrate the exact commits into the backed-up MacBook checkout.
+- Obtain physical client/server-pairing, clipboard/Dock and operator service acceptance for the remaining AC5/AC7 boundaries.
 
 ## Pause Conditions
 
@@ -104,5 +104,12 @@ Thin slice: unit 4 permits a private foreground Mac server to serve a real termi
 
 ## Outcomes
 
-- Implementation and host-native verification complete. Push/source migration is
-  next; physical matrix and production service acceptance remain separate.
+- Source task complete: reviewed commits through d93d17e pushed to origin and
+  migrated to the MacBook feature branch; the migrated checkout passes canonical
+  verification (166 .NET tests, zero skips, 15 frontend test files).
+- Original Mac work is preserved in the private backup and named stash
+  aea2ad71272e0755e3c7da70bc14f72bb7ac105b. Personal untracked files/settings remain.
+- Verified native server and desktop artifacts are available on the Mac under
+  artifacts/c023-20260908-d93d17e. Final documentation sync follows this checkpoint.
+- Full goal completion remains paused at physical matrix and live service
+  acceptance; C022 is not marked complete. No production rollout occurred.

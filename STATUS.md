@@ -8,7 +8,10 @@ Updated: 2026-09-08
   (166 .NET tests, zero skips, 15 frontend test files). Native server publishing,
   real PTY resize/shutdown, portable recovery and isolated desktop startup pass.
   The Mac startup resize callback crash was fixed by waiting for desktopReady.
-  Reviewed commits/push and backed-up Mac source migration are next. Physical
+  Reviewed commits are pushed on `feat/c023-linux-macos-support`; the MacBook
+  checkout matches and passes canonical verification. Its original work is backed
+  up and stashed, and verified native builds are under
+  `artifacts/c023-20260908-d93d17e/` on the Mac. Physical
   Dock/clipboard/cross-server matrix and live launchd/Tailscale acceptance remain
   open; C022 is paused during this integration. See the C023 goal and review.
 

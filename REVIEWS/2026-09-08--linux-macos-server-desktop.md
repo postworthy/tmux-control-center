@@ -66,7 +66,7 @@ those older-version claims were not independently reproduced.
 | AC6 recovery | Snapshot/restore of isolated 1-session/2-window/3-pane workspace; fixed Codex/Claude resumes, live-session refusal, corrupt-state rejection, private modes, second-daemon exclusion and stop preservation pass on both | Production service setup remains separate |
 | AC7 desktop | Both native packages build; actual Mac process and Linux/Xvfb process survive startup with isolated profiles after regression fix | Dock, physical clipboard, sleep/reconnect and all four client/server pairings remain |
 | AC8 gates | Canonical command exits 0 on both hosts: 166 .NET tests (32 Core, 42 Desktop, 34 Infrastructure, 58 Server), no skips; 15 frontend files pass; Linux setup/watchdog/Compose remain mandatory; Mac reports exclusions explicitly | None for tested gates |
-| AC9 review/migration | Review/provenance/backup and rollback plan complete; commit/push/migration recorded in subsequent checkpoint | Source migration pending at this pre-push review |
+| AC9 review/migration | Review/provenance/backup and rollback plan complete; commit/push/migration recorded in subsequent checkpoint | Completed in the source-handoff checkpoint below |
 
 Commands:
 
@@ -118,3 +118,37 @@ backup or named stash, without deleting unrelated files/settings. Linux rollback
 reverts C023 commits while retaining d3baaae, rebuilds prior assets and runs the
 Linux gate. No schema migration is involved. Production deployment must preserve
 its own prior publish/configuration and validate session survival separately.
+
+## Completed source handoff
+
+Reviewed commits above d3baaae:
+
+- `14c845c` — approved contracts and original Mac patch evidence.
+- `4d2a5df` — shared Unix PTY, private storage and native tests.
+- `1a8b38d` — native server delivery, launchd templates and portable recovery.
+- `8210ab1` — desktop geometry initialization regression correction.
+- `d93d17e` — dual-platform review/evidence checkpoint.
+
+The branch was pushed to the existing GitHub origin and the Mac fetched the exact
+`d93d17e5dcc374b90b6c8bbf04d352bd304d51ec` revision over its existing HTTPS origin.
+The Mac's original four tracked edits were preserved in named stash
+`aea2ad71272e0755e3c7da70bc14f72bb7ac105b`, also recorded in the private backup.
+Its single-branch clone originally fetched only main; an additional fetch mapping
+for C023 was required to configure normal tracking. The failed initial tracking
+setup left the index at the desired target; this was verified and then completed
+without reset, overwrite or history rewrite.
+
+The Mac now checks out `feat/c023-linux-macos-support`, tracks its origin branch,
+and has no modified tracked files. `MACOS-PTY-FIX.md` and
+`scripts/auto-tmux-session.sh` remain as the owner's untracked local files.
+Existing ignored settings/state/builds were preserved. Canonical verification
+passed again in the migrated checkout, including 166 .NET tests with zero skips
+and 15 frontend test files; log: `/tmp/tmuxctl-c023-migrated-verify.log` on the Mac.
+
+Verified source-built Mac artifacts were copied to
+`/Users/landon/code/tmux-control-center/artifacts/c023-20260908-d93d17e/`:
+`server/` is the self-contained native server and `tmuxctl.app` is the desktop
+bundle. These are ignored local artifacts, not published Git binaries.
+No production service was restarted, replaced, or installed. C023 source handoff
+is complete; the goal pauses at physical/service acceptance. This documentation
+checkpoint is pushed and synchronized afterward with unchanged application code.
