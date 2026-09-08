@@ -5,6 +5,10 @@ Silicon to reach the Mac's local tmux socket. The desktop can connect to either 
 Linux or Mac server and does not start a server itself. Linux Docker/systemd setup
 remains in [deployment.md](deployment.md).
 
+For client installation and everyday controls, see the [desktop guide](desktop.md).
+From a fresh checkout, run the commands below at the repository root; see
+[development setup](development.md#prerequisites) for the clone command.
+
 ## Prerequisites and verification
 
 Use the .NET 10 SDK, Node/npm compatible with the frontend dependencies, Xcode

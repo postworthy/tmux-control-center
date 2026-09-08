@@ -1,6 +1,6 @@
 # Security
 
-This service controls terminals owned by its Linux account and must be treated as a privileged local control plane. Tailscale narrows network reachability; it does not make unsafe application behavior safe.
+This service controls terminals owned by its Linux or macOS account and must be treated as a privileged local control plane. Tailscale narrows network reachability; it does not make unsafe application behavior safe.
 
 ## Trust model
 
@@ -86,7 +86,7 @@ Protect the shared recovery directory with mode `0700` and its files with mode
 credentials, and SSH destinations, but working directories and tmux names can
 still be sensitive metadata.
 
-On Linux the audit parent must be owner-only (`0700`) and an existing file must
+On Linux and macOS the audit parent must be owner-only (`0700`) and an existing file must
 be owner-readable/writable only (`0600`). Startup fails if either grants group
 or other access. Audit append cancellation, I/O, authorization, or permission
 failure is emitted as a structured application error; the action result is not

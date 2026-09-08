@@ -113,7 +113,7 @@ Initial activation and viewport changes use an
 immediate animation-frame fit plus delayed settled-layout fits, with observers
 on both the host and terminal stage and explicit window/fullscreen/visibility
 triggers. Each successful dimension change is reported through the existing
-terminal resize envelope. The browser, WebSocket boundary, and Linux PTY share
+terminal resize envelope. The browser, WebSocket boundary, and Unix PTY share
 a finite 10–2048 column by 5–1024 row contract. That ceiling preserves complete
 fitting on supported 5K/6K and typical 8K displays at the minimum desktop font
 size while bounding tmux grid allocation; a still-larger proposal is clamped in
@@ -253,11 +253,24 @@ The service worker caches only application-shell GETs. Requests under `/api`, `/
   kept behavior-neutral and verified before security behavior changes.
 - The single-user API-key bootstrap is smaller than adding an external identity provider, while keeping authorization boundaries ready for replacement.
 - The small repository-owned native `forkpty`/`exec` boundary avoids running
-  managed child code after fork, at the cost of a Linux/glibc build dependency.
+  managed child code after fork, with a native C compiler dependency on Linux and macOS.
 - tmux format output is delimiter-based. tmux-local names and titles are treated as untrusted display text, but pathological embedded delimiter/newline values can make a record fail closed with a parse error.
 - The audit sink is an owner-only JSON-lines file. Its result is independent of
   the tmux action result so a failed append cannot make an already-applied
   action look safe to retry. Rotation is delegated to systemd/logrotate.
+
+Session status is heuristic and returns `Unknown` when signals are weak. Preview
+polling is cached per active pane; it is not terminal history indexing. Each
+server manages one local tmux host and one owner identity. Saved server switching
+does not aggregate hosts. There is no arbitrary shell-command API, file browsing,
+generic process restart, recording, or notifications. Session creation accepts
+only a validated name and starts tmux's configured default command; clients cannot
+supply a command, path, environment, or tmux options.
+
+Workspace restore is explicit and requires empty tmux state. It preserves session,
+window, pane, layout, and working-directory metadata, but not terminal output,
+command arguments, environment, credentials, SSH connections, or process memory.
+Codex and Claude resume with fixed CLI commands; other panes reopen as shells.
 
 ## Extension points
 

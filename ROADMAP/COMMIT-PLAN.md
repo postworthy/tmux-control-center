@@ -270,6 +270,15 @@ Status: approved; implementation active
 - Verify both platforms, commit/push and preserve MacBook work during source migration.
 - Proposal: `PROPOSALS/2026-09-08--linux-macos-server-desktop.md`.
 
+## C024 — Approachable README and focused guides
+
+Status: implemented; review evidence in `REVIEWS/2026-09-08--readme-cleanup.md`
+
+- Shorten the landing page and give explicit existing-server, Linux, and Mac routes.
+- Preserve desktop controls and contributor commands in focused guides.
+- Correct stale platform claims without changing runtime behavior.
+- Proposal: `PROPOSALS/2026-09-08--readme-cleanup.md`.
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.
