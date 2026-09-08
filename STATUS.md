@@ -4,6 +4,14 @@ Updated: 2026-09-08
 
 ## Current
 
+- C023 Linux/macOS source integration passes canonical verification on both hosts
+  (166 .NET tests, zero skips, 15 frontend test files). Native server publishing,
+  real PTY resize/shutdown, portable recovery and isolated desktop startup pass.
+  The Mac startup resize callback crash was fixed by waiting for desktopReady.
+  Reviewed commits/push and backed-up Mac source migration are next. Physical
+  Dock/clipboard/cross-server matrix and live launchd/Tailscale acceptance remain
+  open; C022 is paused during this integration. See the C023 goal and review.
+
 - The owner-approved desktop system clipboard fix is deployed as
   `tmux-mobile:desktop-system-clipboard-20260908`: healthy, zero restarts, exact
   HTTPS asset matches, and all six tmux pane processes preserved. Mouse
