@@ -152,3 +152,25 @@ bundle. These are ignored local artifacts, not published Git binaries.
 No production service was restarted, replaced, or installed. C023 source handoff
 is complete; the goal pauses at physical/service acceptance. This documentation
 checkpoint is pushed and synchronized afterward with unchanged application code.
+
+## Owner-approved main integration
+
+On 2026-09-08, after confirmation that the work was only on the feature branch,
+Landon explicitly instructed: "merge itall into main". This authorizes merging
+all work from `8e8cc37..deb95a2`, including the independent clipboard fix, plus
+this documentation checkpoint, pushing main and synchronizing the Mac checkout.
+It supersedes the earlier main-merge boundary in this record and the C023 goal.
+
+Preflight: local main and freshly fetched origin/main both equal 8e8cc37; local
+worktree is clean and the Mac has only its two preserved personal untracked files.
+`PATH="$PWD/.dotnet:$PATH" ./scripts/verify.sh` passed again (exit 0; 166 .NET tests,
+zero skips; 15 frontend files plus shell/type/native-delivery/Compose checks).
+Log: `/tmp/c023-main-verify.log`. Prior Mac verification remains applicable because
+application source is unchanged. The merged tree must equal the reviewed feature
+tree. Merge method: `git merge --no-ff feat/c023-linux-macos-support`.
+
+Decision: ready for the explicitly approved main merge with the previously
+recorded physical UI and production service follow-ups. Merge approval does not
+mark those acceptance criteria complete or authorize a service restart. Rollback
+is a revert of the integration merge using its main parent, preserving any later
+main work; no history rewriting or deletion of Mac backups/stash is required.

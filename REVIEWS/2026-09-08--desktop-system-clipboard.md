@@ -93,3 +93,9 @@ again: 158 .NET tests passed, six opt-in tests skipped, all 15 frontend test
 files passed, and typecheck, shell, delivery, and Compose checks passed.
 `git diff --check` also passed. Ready for the requested local commit; physical
 clipboard acceptance and merge approval remain pending.
+
+## Main merge approval
+
+On 2026-09-08 the owner explicitly authorized merging all integrated work into
+main. Clipboard commit d3baaae is included through the C023 feature branch; the
+C023 review records the final verification and approved merge boundary.

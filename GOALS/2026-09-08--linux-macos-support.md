@@ -6,7 +6,7 @@ Risk: T2
 Updated: 2026-09-08
 Proposal: `PROPOSALS/2026-09-08--linux-macos-server-desktop.md`
 Review Boundary: reviewed feature-branch commit/push and MacBook source migration;
-merge to main and live deployment remain separate.
+main merge is now explicitly authorized; live deployment remains separate.
 
 ## Outcome
 
@@ -16,7 +16,7 @@ while preserving local state. Each server controls one local tmux host.
 
 ## Non-Goals
 
-- No main merge, force push, live service restart, shell startup changes, secrets
+- No force push, live service restart, shell startup changes, secrets
   transfer, Windows/Intel Mac expansion or binary publication.
 
 ## Acceptance Criteria
@@ -39,7 +39,7 @@ May continue: owner-approved T2 implementation in C023, local reversible work,
 commits, push to existing origin, backed-up source migration to the named MacBook,
 isolated verification required for that migration. Approval: 2026-09-08 user request.
 
-Pause for: main merge, production changes, service installation/restart, destructive
+Pause for: production changes, service installation/restart, destructive
 history changes, expanded architecture, unclear security/privacy or lost host access.
 
 ## Work Units
@@ -113,3 +113,10 @@ Thin slice: unit 4 permits a private foreground Mac server to serve a real termi
   artifacts/c023-20260908-d93d17e. Final documentation sync follows this checkpoint.
 - Full goal completion remains paused at physical matrix and live service
   acceptance; C022 is not marked complete. No production rollout occurred.
+
+## Main integration approval
+
+The owner authorized merging all clipboard/C023 work into main, pushing main and
+synchronizing the Mac checkout on 2026-09-08. This supersedes the earlier feature-
+branch-only handoff boundary. The final Linux canonical recheck passes; the review
+records the approved range and method. Physical/service acceptance remains paused.
