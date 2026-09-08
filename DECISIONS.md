@@ -161,3 +161,11 @@ no-main-merge boundary is superseded for the verified clipboard/C023 commit stac
 Use a normal merge commit, push to existing origin/main and fast-forward the Mac
 checkout to the same main revision. Preserve its backup, stash and personal files.
 Production service and physical-acceptance boundaries remain unchanged.
+
+## D014 — C024 documentation cleanup and publication
+
+On 2026-09-08 Landon approved the README cleanup proposal and explicitly
+authorized implementation, commits, merge into main, and push to the existing
+origin. Scope is documentation only: newcomer routes, focused desktop/development
+guides, and accurate platform descriptions. Use a feature branch, canonical
+verification, a review record, and a normal merge; no production changes.

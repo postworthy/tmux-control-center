@@ -1,4 +1,8 @@
-# Docker Compose deployment
+# Linux Docker Compose deployment
+
+This guide hosts the server beside your Linux tmux sessions. Start with
+[Prepare](#prepare) below. To host sessions on an Apple Silicon
+Mac, use the [native macOS guide](../../docs/macos-server.md).
 
 This deployment runs one non-root application container. Direct HTTPS profiles
 publish only on the host's explicit Tailscale IPv4 address; the Tailscale Serve
@@ -55,6 +59,18 @@ stopping the host tmux server or its sessions. Invalid watchdog thresholds or
 ambiguous process ownership fail closed without signaling another process.
 
 ## Prepare
+
+Have Git, tmux, Docker Engine with Compose v2, and Tailscale installed on the
+Linux host. Sign the host into your tailnet and run tmux as your non-root user.
+Clone the repository and run the following guide commands from its root:
+
+```bash
+git clone https://github.com/postworthy/tmux-control-center.git
+cd tmux-control-center
+```
+
+Choose guided or manual preparation below. Both require host-specific
+configuration before starting the server.
 
 ### Guided first run
 

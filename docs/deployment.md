@@ -1,4 +1,7 @@
-# Deployment
+# Linux deployment
+
+For Apple Silicon, use the [native macOS guide](macos-server.md). For client
+builds and connection steps, see the [desktop guide](desktop.md).
 
 Run the service as the same non-root Linux user that owns the tmux server. That gives the service the access needed to attach, but a service compromise has all permissions of that account. Use a dedicated account for tmux workloads when practical.
 
