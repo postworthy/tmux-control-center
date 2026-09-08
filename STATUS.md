@@ -1,8 +1,16 @@
 # Project Status
 
-Updated: 2026-08-31
+Updated: 2026-09-08
 
 ## Current
+
+- The owner-approved desktop system clipboard fix is deployed as
+  `tmux-mobile:desktop-system-clipboard-20260908`: healthy, zero restarts, exact
+  HTTPS asset matches, and all six tmux pane processes preserved. Mouse
+  selections and tmux OSC 52 copies can now reach other desktop apps. Reopen
+  the desktop client to load the updated assets; owner copy/paste acceptance
+  remains next. The previous image is retained for rollback. See
+  `REVIEWS/2026-09-08--desktop-system-clipboard.md` for evidence.
 
 - Physical Ubuntu acceptance proved the maximize and reconnect symptoms share
   one cause: the 5120-pixel display crossed the Linux PTY's private 500-column

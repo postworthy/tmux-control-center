@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
+import { browserClipboardEnvironment, copyTerminalText, tmuxClipboardText } from "./terminalClipboard";
 import { terminalWebSocketUrl } from "./desktopApi";
 import { DEFAULT_TERMINAL_FONT_SIZE, terminalFontSizeForWheel } from "./fontZoom";
 import {
@@ -191,6 +192,27 @@ export default function DesktopTerminal({
       scheduleSettledFit();
     };
     const terminalHost = hostRef.current!;
+    const copyText = (text: string) => {
+      void copyTerminalText(text, browserClipboardEnvironment())
+        .catch((error: Error) => { if (!stopped) errorCallbackRef.current(error.message); });
+    };
+    let selecting = false;
+    const selectionStarted = (event: MouseEvent) => { selecting = event.button === 0; };
+    const selectionFinished = (event: MouseEvent) => {
+      if (!selecting || event.button !== 0) return;
+      selecting = false;
+      // xterm finalizes selection in its document mouseup listener.
+      queueMicrotask(() => {
+        if (!stopped && activeRef.current) copyText(terminal.getSelection());
+      });
+    };
+    terminalHost.addEventListener("mousedown", selectionStarted, true);
+    document.addEventListener("mouseup", selectionFinished);
+    const tmuxCopy = terminal.parser.registerOscHandler(52, data => {
+      const text = tmuxClipboardText(data);
+      if (text && activeRef.current && document.hasFocus()) copyText(text);
+      return true;
+    });
     terminalHost.addEventListener("wheel", terminalWheel, { capture: true, passive: false });
     const suppressBrowserContextMenu = (event: MouseEvent) => event.preventDefault();
     terminalHost.addEventListener("contextmenu", suppressBrowserContextMenu, true);
@@ -206,13 +228,14 @@ export default function DesktopTerminal({
       if (socket?.readyState === WebSocket.OPEN) socket.send(encoder.encode(data));
     });
     terminal.attachCustomKeyEventHandler(event => {
-      if (event.type !== "keydown" || !event.ctrlKey || !event.shiftKey) return true;
-      if (event.code === "KeyC") {
-        const selection = terminal.getSelection();
-        if (selection) void navigator.clipboard.writeText(selection)
-          .catch(() => errorCallbackRef.current("Clipboard copy was denied by the desktop environment."));
+      if (event.type !== "keydown") return true;
+      if (event.code === "KeyC" && !event.altKey &&
+          ((event.ctrlKey && event.shiftKey) || event.metaKey)) {
+        event.preventDefault();
+        copyText(terminal.getSelection());
         return false;
       }
+      if (!event.ctrlKey || !event.shiftKey) return true;
       if (event.code === "KeyV") {
         void navigator.clipboard.readText().then(value => {
           if (!value) return;
@@ -316,6 +339,9 @@ export default function DesktopTerminal({
       document.removeEventListener("visibilitychange", visibilityChanged);
       terminalHost.removeEventListener("wheel", terminalWheel, true);
       terminalHost.removeEventListener("contextmenu", suppressBrowserContextMenu, true);
+      terminalHost.removeEventListener("mousedown", selectionStarted, true);
+      document.removeEventListener("mouseup", selectionFinished);
+      tmuxCopy.dispose();
       observer.disconnect();
       input.dispose();
       socketRef.current?.close(1000, "Desktop tab closed");

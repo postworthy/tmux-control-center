@@ -44,7 +44,12 @@ Tailscale Serve, and publish its Serve backend only on host loopback.
   ordinary tmux interaction inside the terminal. The session sidebar collapses
   to a narrow desktop icon rail. Desktop shortcuts include Ctrl+PageUp/PageDown
   for session tabs, Ctrl+Shift+W to detach the active tab, and Ctrl+Shift+C/V for
-  terminal selection copy and guarded paste. Ctrl+mouse-wheel adjusts terminal
+  terminal selection copy and guarded paste. Completed mouse selections also
+  copy to the system clipboard, including tmux copy-mode selections delivered
+  through OSC 52, so the text can be pasted into other desktop apps. Hold Shift
+  while dragging to select with xterm when tmux captures the mouse; Ctrl+Shift+C
+  (or Command+C on macOS) copies that selection explicitly. Copy is limited to
+  128 KiB and terminal clipboard-read requests are ignored. Ctrl+mouse-wheel adjusts terminal
   text size within bounded limits while an unmodified wheel navigates
   authoritative tmux history. Initial selection, maximize, and fullscreen
   transitions refit the terminal to the available viewport. A pop-out control

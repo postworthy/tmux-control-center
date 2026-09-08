@@ -85,7 +85,17 @@ Complete these checks with disposable tmux sessions:
    terminal to split tmux panes and confirm that topology remains distinct and
    authoritative from another client. Collapse the left sidebar and confirm only
    its narrow icon rail remains, including its reset icon, then expand it.
-7. Select terminal text and copy it with Ctrl+Shift+C. Paste a harmless sentinel
+7. Select a harmless sentinel with the mouse in tmux copy mode, release the
+   mouse, and paste into a separate desktop text editor using its normal Paste
+   action. Repeat with Shift+drag (xterm selection), Ctrl+Shift+C, and Unicode
+   and multiline text; on macOS also test Command+C. The external clipboard
+   must contain the selected text, not just tmux's internal paste buffer.
+   Tmux must emit OSC 52 for its own copy-mode selections (`set-clipboard`
+   `external` or `on`, and terminal clipboard capability); xterm selection
+   copying works independently of that host configuration. Empty selections,
+   inactive-tab terminal output, and OSC 52 clipboard queries must not replace
+   or read the clipboard. Oversized copies must not write clipboard content.
+   Paste a harmless sentinel
    with Ctrl+Shift+V; multiline paste must ask for confirmation. Right-click and
    verify only tmux's terminal-rendered menu appears, with no smaller tmuxctl
    menu overlapping it. Hold Ctrl while scrolling the mouse wheel in both
