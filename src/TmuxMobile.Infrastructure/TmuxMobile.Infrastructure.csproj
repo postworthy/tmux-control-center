@@ -1,29 +1,40 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
     <ProjectReference Include="..\TmuxMobile.Core\TmuxMobile.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <NativePtyLibrary>$(IntermediateOutputPath)libtmuxmobilepty.so</NativePtyLibrary>
   </PropertyGroup>
 
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-    <None Include="$(NativePtyLibrary)" Link="libtmuxmobilepty.so"
+  <!-- Resolve IntermediateOutputPath after SDK target framework/RID inference. -->
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <PropertyGroup>
+    <NativePtyFileName Condition="$([MSBuild]::IsOSPlatform('Linux'))">libtmuxmobilepty.so</NativePtyFileName>
+    <NativePtyFileName Condition="$([MSBuild]::IsOSPlatform('OSX'))">libtmuxmobilepty.dylib</NativePtyFileName>
+    <NativePtyLibrary>$(IntermediateOutputPath)native/$(NETCoreSdkRuntimeIdentifier)/$(NativePtyFileName)</NativePtyLibrary>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(NativePtyFileName)' != ''">
+    <None Include="$(NativePtyLibrary)" Link="$(NativePtyFileName)"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
-
-  <Target Name="BuildNativePtyLibrary" BeforeTargets="CoreCompile"
-          Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(NativePtyLibrary)'))" />
-    <Exec Command="cc -shared -fPIC -O2 -Wall -Wextra -Werror -o &quot;$(NativePtyLibrary)&quot; &quot;$(MSBuildProjectDirectory)/native/tmux_mobile_pty.c&quot; -lutil" />
+  <Target Name="ValidateNativePtyTarget" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(NativePtyFileName)' == ''" Text="The native server PTY requires a Linux or macOS build host." />
+    <Error Condition="'$(RuntimeIdentifier)' != '' and '$(RuntimeIdentifier)' != '$(NETCoreSdkRuntimeIdentifier)'"
+           Text="Build the native server on its target OS/architecture. Requested $(RuntimeIdentifier); compiler host is $(NETCoreSdkRuntimeIdentifier)." />
   </Target>
-
+  <Target Name="BuildNativePtyLibrary" BeforeTargets="CoreCompile;GetCopyToOutputDirectoryItems"
+          DependsOnTargets="ValidateNativePtyTarget"
+          Inputs="$(MSBuildProjectDirectory)/native/tmux_mobile_pty.c;$(MSBuildProjectFullPath)"
+          Outputs="$(NativePtyLibrary)">
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(NativePtyLibrary)'))" />
+    <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))"
+          Command="cc -shared -fPIC -O2 -Wall -Wextra -Werror -o &quot;$(NativePtyLibrary)&quot; &quot;$(MSBuildProjectDirectory)/native/tmux_mobile_pty.c&quot; -lutil" />
+    <Exec Condition="$([MSBuild]::IsOSPlatform('OSX'))"
+          Command="cc -dynamiclib -O2 -Wall -Wextra -Werror -o &quot;$(NativePtyLibrary)&quot; &quot;$(MSBuildProjectDirectory)/native/tmux_mobile_pty.c&quot;" />
+    <ItemGroup><FileWrites Include="$(NativePtyLibrary)" /></ItemGroup>
+  </Target>
 </Project>

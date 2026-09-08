@@ -4,7 +4,7 @@ using TmuxMobile.Core;
 
 namespace TmuxMobile.Infrastructure;
 
-public sealed class LinuxPseudoTerminalFactory(ILoggerFactory loggerFactory) : IPseudoTerminalFactory
+public sealed class UnixPseudoTerminalFactory(ILoggerFactory loggerFactory) : IPseudoTerminalFactory
 {
     public Task<IPseudoTerminal> StartAsync(
         string executable,
@@ -13,17 +13,17 @@ public sealed class LinuxPseudoTerminalFactory(ILoggerFactory loggerFactory) : I
         IReadOnlyDictionary<string, string> environment,
         CancellationToken cancellationToken)
     {
-        if (!OperatingSystem.IsLinux()) throw new PlatformNotSupportedException("PTY support currently requires Linux.");
+        if (!OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS())
+            throw new PlatformNotSupportedException("PTY support requires Linux or macOS.");
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult<IPseudoTerminal>(
-            LinuxPseudoTerminal.Start(executable, arguments, size, environment,
-                loggerFactory.CreateLogger<LinuxPseudoTerminal>()));
+            UnixPseudoTerminal.Start(executable, arguments, size, environment,
+                loggerFactory.CreateLogger<UnixPseudoTerminal>()));
     }
 }
 
-public sealed class LinuxPseudoTerminal : IPseudoTerminal
+public sealed class UnixPseudoTerminal : IPseudoTerminal
 {
-    private const int Tiocswinsz = 0x5414;
     private const int SigHup = 1;
     private const int SigKill = 9;
     private const int SigTerm = 15;
@@ -36,7 +36,7 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
     private int _disposed;
     private int _exitStatus;
 
-    private LinuxPseudoTerminal(int masterFd, int processId, ILogger logger)
+    private UnixPseudoTerminal(int masterFd, int processId, ILogger logger)
     {
         ProcessId = processId;
         _logger = logger;
@@ -62,7 +62,7 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
     public int ProcessId { get; }
     public bool HasExited => _waitTask.IsCompleted;
 
-    public static LinuxPseudoTerminal Start(
+    public static UnixPseudoTerminal Start(
         string executable,
         IReadOnlyList<string> arguments,
         TerminalSize size,
@@ -91,7 +91,7 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
                 executablePointer, argvBlock);
             if (pid < 0) throw new InvalidOperationException($"forkpty failed with errno {Marshal.GetLastPInvokeError()}.");
             logger.LogInformation("Started PTY child {ProcessId}", pid);
-            return new LinuxPseudoTerminal(master, pid, logger);
+            return new UnixPseudoTerminal(master, pid, logger);
         }
         finally
         {
@@ -108,8 +108,9 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
             throw new ArgumentOutOfRangeException(nameof(size));
         var winsize = new Native.WinSize((ushort)size.Rows, (ushort)size.Columns, 0, 0);
         var descriptor = _output.SafeFileHandle.DangerousGetHandle().ToInt32();
-        if (Native.ioctl(descriptor, Tiocswinsz, ref winsize) < 0)
-            throw new InvalidOperationException("Unable to resize PTY.");
+        if (Native.tmux_mobile_set_winsize(descriptor, ref winsize) < 0)
+            throw new InvalidOperationException(
+                $"Unable to resize PTY; errno {Marshal.GetLastPInvokeError()}.");
         return ValueTask.CompletedTask;
     }
 
@@ -174,8 +175,11 @@ public sealed class LinuxPseudoTerminal : IPseudoTerminal
         [DllImport("tmuxmobilepty", SetLastError = true)]
         internal static extern int tmux_mobile_forkpty_exec(
             out int master, ref WinSize winsize, IntPtr executable, IntPtr argv);
+        // ioctl is variadic; call it through the native shim so the C compiler
+        // emits the correct calling sequence (see native/tmux_mobile_pty.c).
+        [DllImport("tmuxmobilepty", SetLastError = true)]
+        internal static extern int tmux_mobile_set_winsize(int fd, ref WinSize winsize);
         [DllImport("libc", SetLastError = true)] internal static extern int dup(int fd);
-        [DllImport("libc", SetLastError = true)] internal static extern int ioctl(int fd, int request, ref WinSize value);
         [DllImport("libc", SetLastError = true)] internal static extern int kill(int pid, int signal);
         [DllImport("libc", SetLastError = true)] internal static extern int waitpid(int pid, out int status, int options);
     }
