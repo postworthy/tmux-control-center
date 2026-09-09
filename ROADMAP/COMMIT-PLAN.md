@@ -279,6 +279,15 @@ Status: implemented; review evidence in `REVIEWS/2026-09-08--readme-cleanup.md`
 - Correct stale platform claims without changing runtime behavior.
 - Proposal: `PROPOSALS/2026-09-08--readme-cleanup.md`.
 
+## C025 — Expired authentication recovery
+
+Status: implemented and deployed; merge and publication authorized 2026-09-09.
+
+- Prompt for the access key on protected HTTP 401 in desktop and PWA.
+- Retain server and pending session name; refresh CSRF after explicit login.
+- Verify browser recovery, API regression, canonical checks and deployed assets.
+- Proposal: `PROPOSALS/2026-09-09--expired-auth-reprompt.md`.
+
 ## Later
 
 - Validate the deployment on the target Linux host and iPhone.

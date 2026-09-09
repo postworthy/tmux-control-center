@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { authenticationRequired, subscribeAuthentication } from "./authentication";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   createSession,
   getClientConfig,
@@ -29,6 +30,7 @@ const ACTIVE_KEY = "tmux-mobile-active-session";
 const TerminalView = lazy(() => import("./TerminalView").then((module) => ({ default: module.TerminalView })));
 
 export default function App() {
+  const authRequired = useSyncExternalStore(subscribeAuthentication, authenticationRequired);
   const inventory = useInventory();
   const deck = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState(() => localStorage.getItem(ACTIVE_KEY) ?? "");
@@ -202,13 +204,13 @@ export default function App() {
       onReturnToLauncher={() => launcherOrigin && location.assign(launcherOrigin)} />
   );
 
-  if (terminalTarget) return (
+  if (terminalTarget && !authRequired) return (
     <Suspense fallback={<State title="Opening terminal…" busy />}>
       <TerminalView session={terminalTarget} tmuxPrefix={tmuxPrefix} onBack={() => setTerminalTarget(null)} />
     </Suspense>
   );
 
-  if (inventory.state === "unauthorized") {
+  if (authRequired || inventory.state === "unauthorized") {
     return (
       <main className="center-state">
         <form className="login-card" onSubmit={async (event) => {
@@ -219,7 +221,7 @@ export default function App() {
         }}>
           <span className="brand-mark" aria-hidden="true">&gt;_</span>
           <h1>Tmux Mobile</h1>
-          <p>Sign in to your private control service.</p>
+          <p>Enter your access key to sign in or renew an expired sign-in.</p>
           <label htmlFor="api-key">Access key</label>
           <input id="api-key" type="password" value={apiKey} required autoComplete="current-password"
             onChange={(event) => setApiKey(event.target.value)} />

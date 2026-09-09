@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { authenticationRequired, subscribeAuthentication } from "../src/authentication";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import DesktopWorkspace, { type DesktopTab } from "./DesktopWorkspace";
 import { type TerminalConnectionState } from "./DesktopTerminal";
 import {
@@ -55,7 +56,7 @@ export default function DesktopApp() {
   const [focusedGroupId, setFocusedGroupId] = useState("group-0");
   const [draggingSessionId, setDraggingSessionId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<WorkspaceDropZone | null>(null);
-  const [authRequired, setAuthRequired] = useState(false);
+  const authRequired = useSyncExternalStore(subscribeAuthentication, authenticationRequired);
   const [apiKey, setApiKey] = useState("");
   const [newName, setNewName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -134,15 +135,22 @@ export default function DesktopApp() {
     try {
       setSessions(await getSessions());
       setInventoryLoaded(true);
-      setAuthRequired(false);
       setError(null);
     } catch (cause) {
-      if (cause instanceof UnauthorizedError) setAuthRequired(true);
-      else setError(cause instanceof Error ? cause.message : "Could not reach tmuxctl");
+      if (!(cause instanceof UnauthorizedError)) setError(cause instanceof Error ? cause.message : "Could not reach tmuxctl");
     }
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+    const resume = () => { if (document.visibilityState === "visible") void refresh(); };
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      window.removeEventListener("focus", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [refresh]);
 
   useEffect(() => {
     if (authRequired) return;
@@ -165,6 +173,7 @@ export default function DesktopApp() {
         setInventoryConnected(true);
       });
       current.addEventListener("message", event => {
+        if (stopped) return;
         const snapshot = JSON.parse(String(event.data)) as InventorySnapshot;
         setSessions(snapshot.sessions);
         setInventoryLoaded(true);
@@ -176,6 +185,7 @@ export default function DesktopApp() {
         socket = null;
         setInventoryConnected(false);
         if (!stopped) {
+          void refresh();
           timer = window.setTimeout(connect, reconnectDelay(attempt));
           attempt = nextReconnectAttempt(attempt);
         }
@@ -393,6 +403,7 @@ export default function DesktopApp() {
         <div className="brand-mark">tmuxctl</div>
         <h1>Connect to your tmux server</h1>
         <p>{location.host}</p>
+        <p>Enter your access key to sign in or renew an expired sign-in.</p>
         <label>Login key<input autoFocus type="password" value={apiKey}
           onChange={event => setApiKey(event.target.value)} autoComplete="current-password" /></label>
         <button type="submit">Connect</button>

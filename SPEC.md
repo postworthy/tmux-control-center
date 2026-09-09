@@ -336,3 +336,12 @@ remain supported. Recovery stays opt-in and restores only on an explicit request
 C023 acceptance AC1–AC9 is defined in
 `PROPOSALS/2026-09-08--linux-macos-server-desktop.md`; physical support claims
 require host-specific evidence. Existing protocols and storage schemas are unchanged.
+
+## Expired authentication recovery (2026-09-09)
+
+Desktop and PWA prompt for the access key on the current server when a protected
+HTTP request returns 401, including session creation. Live inventory does not
+clear that prompt. Successful sign-in renews CSRF state; the user can retry the
+action without restarting or selecting the server again. Resume and inventory
+disconnect check HTTP authentication. Cookie expiration policy is unchanged;
+passwords are not persisted and mutations are not automatically replayed.
