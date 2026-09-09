@@ -101,3 +101,12 @@ Paste uses the guarded confirmation flow. Font zoom has bounded limits.
 For testing on actual hardware, use the [desktop acceptance checklist](desktop-acceptance.md).
 A successful source build does not establish clipboard, fullscreen, sleep/wake,
 or reconnect acceptance on a physical device.
+
+## When a sign-in expires
+
+If an action needs authentication again, the desktop client and PWA show an
+access-key prompt on the current server. Enter your key, then retry the action;
+you do not need to restart the app or choose the server again. A pending new
+session name is retained. Open terminals detach while the prompt is shown and
+reconnect after sign-in; the underlying tmux sessions keep running. The existing
+eight-hour sliding login policy still applies, and passwords are not saved.

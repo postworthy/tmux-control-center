@@ -1,4 +1,5 @@
-import type { TmuxSession, WorkspaceRecoveryStatus } from "./types";
+import { setAuthenticationRequired } from "./authentication.js";
+import type { TmuxSession, WorkspaceRecoveryStatus } from "./types.js";
 
 let csrfToken: string | null = null;
 
@@ -11,7 +12,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers }
   });
-  if (response.status === 401) throw new UnauthorizedError("Authentication required");
+  if (response.status === 401) {
+    csrfToken = null;
+    if (path !== "/api/auth/login") setAuthenticationRequired(true);
+    throw new UnauthorizedError("Your sign-in has expired. Enter your access key to continue.");
+  }
   if (!response.ok) {
     const detail = await response.json().catch(() => null) as { error?: string; detail?: string } | null;
     throw new Error(detail?.error ?? detail?.detail ?? `Request failed (${response.status})`);
@@ -29,6 +34,7 @@ async function csrf(): Promise<string> {
 export async function login(apiKey: string): Promise<void> {
   await request("/api/auth/login", { method: "POST", body: JSON.stringify({ apiKey }) });
   csrfToken = null;
+  setAuthenticationRequired(false);
 }
 
 export const getSessions = () => request<TmuxSession[]>("/api/sessions");

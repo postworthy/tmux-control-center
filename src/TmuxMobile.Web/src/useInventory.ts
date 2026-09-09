@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { authenticationRequired, subscribeAuthentication } from "./authentication";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { getSessions, UnauthorizedError } from "./api";
 import type { InventorySnapshot, TmuxSession } from "./types";
 
 export type LoadState = "loading" | "ready" | "empty" | "error" | "unauthorized";
 
 export function useInventory() {
+  const authRequired = useSyncExternalStore(subscribeAuthentication, authenticationRequired);
   const [sessions, setSessions] = useState<TmuxSession[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [connected, setConnected] = useState(navigator.onLine);
@@ -27,26 +29,39 @@ export function useInventory() {
     }
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+    const resume = () => { if (document.visibilityState === "visible") void refresh(); };
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      window.removeEventListener("focus", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [refresh]);
 
   useEffect(() => {
+    if (authRequired) return;
     let stopped = false;
     let timer = 0;
     const connect = () => {
-      if (stopped || socket.current?.readyState === WebSocket.OPEN) return;
+      if (stopped || socket.current?.readyState === WebSocket.OPEN || socket.current?.readyState === WebSocket.CONNECTING) return;
       const protocol = location.protocol === "https:" ? "wss:" : "ws:";
       const ws = new WebSocket(`${protocol}//${location.host}/ws/inventory`);
       socket.current = ws;
-      ws.onopen = () => { reconnect.current = 0; setConnected(true); };
+      ws.onopen = () => { if (!stopped) { reconnect.current = 0; setConnected(true); } };
       ws.onmessage = (event) => {
+        if (stopped) return;
         const snapshot = JSON.parse(String(event.data)) as InventorySnapshot;
         setSessions(snapshot.sessions);
         setState(snapshot.sessions.length ? "ready" : "empty");
       };
       ws.onclose = () => {
-        if (socket.current === ws) socket.current = null;
+        if (socket.current !== ws) return;
+        socket.current = null;
         setConnected(false);
         if (!stopped) {
+          void refresh();
           const delay = Math.min(30_000, 1000 * 2 ** reconnect.current++);
           timer = window.setTimeout(connect, delay);
         }
@@ -65,7 +80,7 @@ export function useInventory() {
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offline);
     };
-  }, [refresh]);
+  }, [refresh, authRequired]);
 
   return { sessions, state, connected, error, refresh };
 }

@@ -169,3 +169,19 @@ authorized implementation, commits, merge into main, and push to the existing
 origin. Scope is documentation only: newcomer routes, focused desktop/development
 guides, and accurate platform descriptions. Use a feature branch, canonical
 verification, a review record, and a normal merge; no production changes.
+
+## 2026-09-09 — Authentication recovery deployment
+
+The user explicitly requested deployment of the reviewed expired-authentication
+fix. Authorized rollout: build a uniquely tagged Docker image from the reviewed
+feature worktree, run the isolated tmux compatibility probe, replace the existing
+Tailscale Serve app container with its existing environment/state mounts, and
+verify health and delivered frontend assets. Keep the previous image
+`tmux-mobile:desktop-system-clipboard-20260908` for rollback. No Serve mapping,
+credential, authentication-policy, git merge or push changes are required.
+
+## 2026-09-09 — Authentication recovery integration authorization
+
+The user explicitly authorized committing the authentication recovery change,
+merging it into main, and pushing to the configured upstream (origin/main).
+Use a normal merge commit and preserve the unrelated untracked scroll RCA.
